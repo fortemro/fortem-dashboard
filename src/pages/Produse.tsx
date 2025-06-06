@@ -7,7 +7,11 @@ import { Package } from 'lucide-react';
 
 export default function Produse() {
   const { distribuitori } = useDistribuitori();
-  const [selectedDistributor, setSelectedDistributor] = useState<string>('');
+  const [selectedDistributor, setSelectedDistributor] = useState<string>('all');
+
+  const handleDistributorChange = (value: string) => {
+    setSelectedDistributor(value);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -22,12 +26,12 @@ export default function Produse() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <Select value={selectedDistributor} onValueChange={setSelectedDistributor}>
+            <Select value={selectedDistributor} onValueChange={handleDistributorChange}>
               <SelectTrigger className="w-full sm:w-64">
                 <SelectValue placeholder="Filtrează după distribuitor" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Toți distribuitorii</SelectItem>
+                <SelectItem value="all">Toți distribuitorii</SelectItem>
                 {distribuitori.map((distribuitor) => (
                   <SelectItem key={distribuitor.id} value={distribuitor.id}>
                     {distribuitor.nume_companie}
@@ -38,7 +42,7 @@ export default function Produse() {
           </div>
         </div>
 
-        <ProduseGrid distributorId={selectedDistributor || undefined} />
+        <ProduseGrid distributorId={selectedDistributor === 'all' ? undefined : selectedDistributor} />
       </div>
     </div>
   );
