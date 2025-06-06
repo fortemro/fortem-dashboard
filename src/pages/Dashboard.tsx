@@ -2,7 +2,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, User, Building2, BarChart3, Users, FileText, Package, UserCircle } from 'lucide-react';
+import { LogOut, User, Building2, BarChart3, Users, FileText, Package, UserCircle, ShoppingCart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { useProfile } from '@/hooks/useProfile';
@@ -47,6 +47,12 @@ export default function Dashboard() {
                 <Button variant="outline" size="sm">
                   <Package className="h-4 w-4 mr-2" />
                   Produse
+                </Button>
+              </Link>
+              <Link to="/comanda">
+                <Button variant="outline" size="sm">
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Comandă Nouă
                 </Button>
               </Link>
               <div className="flex items-center text-sm text-gray-700">
@@ -161,6 +167,12 @@ export default function Dashboard() {
                   <Button variant="outline" className="w-full justify-start">
                     <Package className="h-4 w-4 mr-2" />
                     Explorează produsele
+                  </Button>
+                </Link>
+                <Link to="/comanda">
+                  <Button variant="outline" className="w-full justify-start">
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Creează comandă nouă
                   </Button>
                 </Link>
               </div>

@@ -12,55 +12,52 @@ export type Database = {
       comenzi: {
         Row: {
           adresa_livrare: string
-          cod_postal_livrare: string | null
           created_at: string
           data_comanda: string
-          data_livrare_estimata: string | null
           distribuitor_id: string
           id: string
-          moneda: string | null
+          judet_livrare: string | null
+          mzv_emitent: string | null
           numar_comanda: string
+          numar_paleti: number
           observatii: string | null
           oras_livrare: string
           status: string | null
           telefon_livrare: string | null
-          total: number
           updated_at: string
           user_id: string
         }
         Insert: {
           adresa_livrare: string
-          cod_postal_livrare?: string | null
           created_at?: string
           data_comanda?: string
-          data_livrare_estimata?: string | null
           distribuitor_id: string
           id?: string
-          moneda?: string | null
+          judet_livrare?: string | null
+          mzv_emitent?: string | null
           numar_comanda: string
+          numar_paleti?: number
           observatii?: string | null
           oras_livrare: string
           status?: string | null
           telefon_livrare?: string | null
-          total?: number
           updated_at?: string
           user_id: string
         }
         Update: {
           adresa_livrare?: string
-          cod_postal_livrare?: string | null
           created_at?: string
           data_comanda?: string
-          data_livrare_estimata?: string | null
           distribuitor_id?: string
           id?: string
-          moneda?: string | null
+          judet_livrare?: string | null
+          mzv_emitent?: string | null
           numar_comanda?: string
+          numar_paleti?: number
           observatii?: string | null
           oras_livrare?: string
           status?: string | null
           telefon_livrare?: string | null
-          total?: number
           updated_at?: string
           user_id?: string
         }
