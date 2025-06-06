@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProduseGrid } from '@/components/ProduseGrid';
@@ -14,7 +13,7 @@ export default function Produse() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <div className="flex items-center mb-4">
