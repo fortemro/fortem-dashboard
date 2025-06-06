@@ -1,0 +1,71 @@
+
+import { useToast } from '@/hooks/use-toast';
+
+interface ItemComanda {
+  produs_id: string;
+  nume_produs: string;
+  cantitate: number;
+  pret_unitar: number;
+}
+
+export function useFormValidation() {
+  const { toast } = useToast();
+
+  const validateForm = (data: any, items: ItemComanda[]) => {
+    // Validări de bază
+    if (!data.oras_livrare || !data.adresa_livrare) {
+      toast({
+        title: "Eroare",
+        description: "Orașul și adresa de livrare sunt obligatorii",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (items.length === 0) {
+      toast({
+        title: "Eroare",
+        description: "Adaugă cel puțin un produs în comandă",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    // Verifică că toate itemii au produs selectat
+    const itemsWithoutProduct = items.filter(item => !item.produs_id);
+    if (itemsWithoutProduct.length > 0) {
+      toast({
+        title: "Eroare",
+        description: "Toate produsele trebuie să fie selectate",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    // Verifică că toate itemii au cantitate
+    const itemsWithoutQuantity = items.filter(item => !item.cantitate || item.cantitate <= 0);
+    if (itemsWithoutQuantity.length > 0) {
+      toast({
+        title: "Eroare",
+        description: "Toate produsele trebuie să aibă o cantitate validă",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    // Verifică că toate itemii au preț manual introdus
+    const itemsWithoutPrice = items.filter(item => !item.pret_unitar || item.pret_unitar <= 0);
+    if (itemsWithoutPrice.length > 0) {
+      toast({
+        title: "Eroare",
+        description: "Toate produsele trebuie să aibă un preț de vânzare manual introdus",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  return { validateForm };
+}

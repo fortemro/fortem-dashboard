@@ -2,15 +2,13 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { useProduse } from '@/hooks/useProduse';
-import { useComenzi } from '@/hooks/useComenzi';
-import { useToast } from '@/hooks/use-toast';
-import { Calculator } from 'lucide-react';
 import { DistributorSelector } from './DistributorSelector';
 import { DeliveryForm } from './DeliveryForm';
 import { ProductList } from './ProductList';
+import { OrderFormActions } from './OrderFormActions';
+import { useOrderSubmission } from './OrderSubmissionHandler';
 
 interface ItemComanda {
   produs_id: string;
@@ -20,8 +18,6 @@ interface ItemComanda {
 }
 
 export function ComandaForm() {
-  const { createComanda } = useComenzi();
-  const { toast } = useToast();
   const [selectedDistribuitor, setSelectedDistribuitor] = useState<string>('');
   const { produse, loading: loadingProduse } = useProduse();
   const [items, setItems] = useState<ItemComanda[]>([]);
@@ -77,115 +73,17 @@ export function ComandaForm() {
     setItems(newItems);
   };
 
-  const onSubmit = async (data: any) => {
-    console.log('Form submitted with data:', data);
-    console.log('Items:', items);
-
-    // Validări de bază
-    if (!data.oras_livrare || !data.adresa_livrare) {
-      toast({
-        title: "Eroare",
-        description: "Orașul și adresa de livrare sunt obligatorii",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (items.length === 0) {
-      toast({
-        title: "Eroare",
-        description: "Adaugă cel puțin un produs în comandă",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Verifică că toate itemii au produs selectat
-    const itemsWithoutProduct = items.filter(item => !item.produs_id);
-    if (itemsWithoutProduct.length > 0) {
-      toast({
-        title: "Eroare",
-        description: "Toate produsele trebuie să fie selectate",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Verifică că toate itemii au cantitate
-    const itemsWithoutQuantity = items.filter(item => !item.cantitate || item.cantitate <= 0);
-    if (itemsWithoutQuantity.length > 0) {
-      toast({
-        title: "Eroare",
-        description: "Toate produsele trebuie să aibă o cantitate validă",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Verifică că toate itemii au preț manual introdus
-    const itemsWithoutPrice = items.filter(item => !item.pret_unitar || item.pret_unitar <= 0);
-    if (itemsWithoutPrice.length > 0) {
-      toast({
-        title: "Eroare",
-        description: "Toate produsele trebuie să aibă un preț de vânzare manual introdus",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Folosește distribuitor_id din primul produs pentru comandă (toate produsele sunt de la Fortem)
-    const distribuitorId = produse.length > 0 ? produse[0].distribuitor_id : null;
-    if (!distribuitorId) {
-      toast({
-        title: "Eroare", 
-        description: "Nu s-a putut determina distribuitor_id pentru comandă",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      await createComanda(
-        {
-          distribuitor_id: distribuitorId, // Folosește distribuitor_id din produse
-          oras_livrare: data.oras_livrare,
-          adresa_livrare: data.adresa_livrare,
-          judet_livrare: data.judet_livrare || '',
-          telefon_livrare: data.telefon_livrare || '',
-          observatii: data.observatii || '',
-          numar_paleti: data.numar_paleti || 0
-        },
-        items.map(item => ({
-          produs_id: item.produs_id,
-          cantitate: item.cantitate,
-          pret_unitar: item.pret_unitar // prețul din câmpul manual
-        }))
-      );
-
-      toast({
-        title: "Succes",
-        description: "Comanda a fost creată cu succes cu statusul 'In asteptare'"
-      });
-
-      // Reset form
-      form.reset();
-      setItems([]);
-      setSelectedDistribuitor('');
-    } catch (error) {
-      console.error('Error creating comanda:', error);
-      toast({
-        title: "Eroare",
-        description: error instanceof Error ? error.message : "A apărut o eroare la crearea comenzii",
-        variant: "destructive"
-      });
-    }
-  };
-
   const resetForm = () => {
     form.reset();
     setItems([]);
     setSelectedDistribuitor('');
   };
+
+  const { submitOrder } = useOrderSubmission({
+    produse,
+    items,
+    onSuccess: resetForm
+  });
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -195,7 +93,7 @@ export function ComandaForm() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(submitOrder)} className="space-y-6">
               <DistributorSelector
                 form={form}
                 onDistributorChange={handleDistributorChange}
@@ -215,15 +113,7 @@ export function ComandaForm() {
                 onDeleteItem={stergeItem}
               />
 
-              <div className="flex justify-end space-x-4">
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Resetează
-                </Button>
-                <Button type="submit" size="lg" className="bg-green-600 hover:bg-green-700">
-                  <Calculator className="h-5 w-5 mr-2" />
-                  Trimite Comanda
-                </Button>
-              </div>
+              <OrderFormActions onReset={resetForm} />
             </form>
           </Form>
         </CardContent>
