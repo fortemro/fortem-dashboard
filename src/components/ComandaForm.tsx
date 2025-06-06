@@ -18,18 +18,14 @@ interface ItemComanda {
   nume_produs: string;
   cantitate: number;
   pret_unitar: number;
-  nr_paleti?: number;
-  ml_comanda?: number;
-  bucati_per_palet?: number;
-  kg_per_buc?: number;
-  dimensiuni?: string;
 }
 
 export function ComandaForm() {
-  const { distribuitori } = useDistribuitori();
+  const { distribuitori } = useDistribuitori(true); // Filtrează doar distribuitorii alocați utilizatorului
   const { createComanda } = useComenzi();
   const { toast } = useToast();
   const [selectedDistribuitor, setSelectedDistribuitor] = useState<string>('');
+  const [selectedDistributorData, setSelectedDistributorData] = useState<any>(null);
   const { produse } = useProduse(selectedDistribuitor);
   const [items, setItems] = useState<ItemComanda[]>([]);
 
@@ -46,14 +42,32 @@ export function ComandaForm() {
     }
   });
 
+  const handleDistributorChange = (distributorId: string) => {
+    setSelectedDistribuitor(distributorId);
+    const distributorData = distribuitori.find(d => d.id === distributorId);
+    
+    if (distributorData) {
+      setSelectedDistributorData(distributorData);
+      // Completează automat câmpurile de adresă și persoană contact
+      form.setValue('adresa_livrare', distributorData.adresa);
+      form.setValue('oras_livrare', distributorData.oras);
+      form.setValue('judet_livrare', distributorData.judet || '');
+      form.setValue('telefon_livrare', distributorData.telefon || '');
+      
+      // Setează persoana de contact în observații
+      const observatii = distributorData.persoana_contact 
+        ? `Persoană contact: ${distributorData.persoana_contact}`
+        : '';
+      form.setValue('observatii', observatii);
+    }
+  };
+
   const adaugaItem = () => {
     setItems([...items, {
       produs_id: '',
       nume_produs: '',
       cantitate: 0,
-      pret_unitar: 0,
-      nr_paleti: 0,
-      ml_comanda: 0
+      pret_unitar: 0
     }]);
   };
 
@@ -65,43 +79,14 @@ export function ComandaForm() {
     const newItems = [...items];
     const item = newItems[index];
     
-    // Găsește produsul pentru calculări
-    const produs = produse.find(p => p.id === item.produs_id);
-    
     if (field === 'produs_id') {
       const selectedProdus = produse.find(p => p.id === value);
       if (selectedProdus) {
         item.nume_produs = selectedProdus.nume;
-        item.bucati_per_palet = selectedProdus.bucati_per_palet || 0;
-        item.kg_per_buc = selectedProdus.kg_per_buc || 0;
-        item.dimensiuni = selectedProdus.dimensiuni || '';
       }
     }
     
     (item as any)[field] = value;
-
-    // Calculări automate
-    if (produs) {
-      if (field === 'nr_paleti' && produs.bucati_per_palet) {
-        item.cantitate = Number(value) * produs.bucati_per_palet;
-      }
-      
-      if (field === 'cantitate' && produs.bucati_per_palet) {
-        item.nr_paleti = Math.ceil(Number(value) / produs.bucati_per_palet);
-      }
-      
-      if (field === 'ml_comanda' && produs.dimensiuni) {
-        // Calculează bucăți necesare din ml (exemplu simplificat)
-        const dimensiuni = produs.dimensiuni.split('X');
-        if (dimensiuni.length >= 3) {
-          const lungime = parseFloat(dimensiuni[0]) || 0;
-          if (lungime > 0) {
-            item.cantitate = Math.ceil(Number(value) / (lungime / 1000)); // conversie mm la m
-          }
-        }
-      }
-    }
-
     setItems(newItems);
   };
 
@@ -115,14 +100,22 @@ export function ComandaForm() {
       return;
     }
 
-    // Calculează numărul total de paleți
-    const numarPaleti = items.reduce((sum, item) => sum + (item.nr_paleti || 0), 0);
+    // Verifică că toate itemii au preț manual introdus
+    const itemsWithoutPrice = items.filter(item => !item.pret_unitar || item.pret_unitar <= 0);
+    if (itemsWithoutPrice.length > 0) {
+      toast({
+        title: "Eroare",
+        description: "Toate produsele trebuie să aibă un preț de vânzare manual introdus",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       await createComanda(
         {
           ...data,
-          numar_paleti: numarPaleti
+          numar_paleti: data.numar_paleti || 0
         },
         items.map(item => ({
           produs_id: item.produs_id,
@@ -140,6 +133,7 @@ export function ComandaForm() {
       form.reset();
       setItems([]);
       setSelectedDistribuitor('');
+      setSelectedDistributorData(null);
     } catch (error) {
       toast({
         title: "Eroare",
@@ -158,55 +152,54 @@ export function ComandaForm() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Informații generale */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="distribuitor_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Distribuitor</FormLabel>
-                      <Select 
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          setSelectedDistribuitor(value);
-                        }}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selectează distribuitor" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {distribuitori.map((dist) => (
-                            <SelectItem key={dist.id} value={dist.id}>
-                              {dist.nume_companie}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="mzv_emitent"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>MZV Emitent</FormLabel>
+              {/* Selectare Distribuitor */}
+              <FormField
+                control={form.control}
+                name="distribuitor_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Selectează Distribuitorul *</FormLabel>
+                    <Select 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        handleDistributorChange(value);
+                      }}
+                      value={field.value}
+                    >
                       <FormControl>
-                        <Input {...field} />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selectează distribuitorul alocat" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                      <SelectContent>
+                        {distribuitori.map((dist) => (
+                          <SelectItem key={dist.id} value={dist.id}>
+                            {dist.nume_companie}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              {/* Adresa de livrare */}
+              {/* Informații MZV */}
+              <FormField
+                control={form.control}
+                name="mzv_emitent"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>MZV Emitent</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Numele MZV-ului emitent" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Adresa de livrare - se completează automat */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
@@ -279,7 +272,26 @@ export function ComandaForm() {
                 )}
               />
 
-              {/* Produse */}
+              {/* Număr Paleți */}
+              <FormField
+                control={form.control}
+                name="numar_paleti"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Număr Paleți</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Secțiunea dinamică pentru produse */}
               <Card>
                 <CardHeader>
                   <div className="flex justify-between items-center">
@@ -294,9 +306,9 @@ export function ComandaForm() {
                   {items.map((item, index) => (
                     <Card key={index} className="mb-4">
                       <CardContent className="pt-4">
-                        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                           <div className="md:col-span-2">
-                            <Label>Produs</Label>
+                            <Label>Produs *</Label>
                             <Select
                               value={item.produs_id}
                               onValueChange={(value) => updateItem(index, 'produs_id', value)}
@@ -315,41 +327,24 @@ export function ComandaForm() {
                           </div>
 
                           <div>
-                            <Label>Nr. Paleți</Label>
-                            <Input
-                              type="number"
-                              value={item.nr_paleti || 0}
-                              onChange={(e) => updateItem(index, 'nr_paleti', parseInt(e.target.value) || 0)}
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Bucăți</Label>
+                            <Label>Cantitate *</Label>
                             <Input
                               type="number"
                               value={item.cantitate}
                               onChange={(e) => updateItem(index, 'cantitate', parseInt(e.target.value) || 0)}
+                              placeholder="0"
                             />
                           </div>
 
                           <div>
-                            <Label>ML Comandă</Label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={item.ml_comanda || 0}
-                              onChange={(e) => updateItem(index, 'ml_comanda', parseFloat(e.target.value) || 0)}
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Preț/Unitate (RON)</Label>
+                            <Label>Preț Vânzare Manual (RON) *</Label>
                             <Input
                               type="number"
                               step="0.01"
                               value={item.pret_unitar}
                               onChange={(e) => updateItem(index, 'pret_unitar', parseFloat(e.target.value) || 0)}
-                              placeholder="Preț manual"
+                              placeholder="0.00"
+                              className="font-semibold"
                             />
                           </div>
 
@@ -385,9 +380,6 @@ export function ComandaForm() {
                           {items.reduce((sum, item) => sum + (item.cantitate * item.pret_unitar), 0).toFixed(2)} RON
                         </span>
                       </div>
-                      <div className="text-sm text-gray-600 mt-1">
-                        Total paleți: {items.reduce((sum, item) => sum + (item.nr_paleti || 0), 0)}
-                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -398,12 +390,13 @@ export function ComandaForm() {
                   form.reset();
                   setItems([]);
                   setSelectedDistribuitor('');
+                  setSelectedDistributorData(null);
                 }}>
                   Resetează
                 </Button>
-                <Button type="submit">
-                  <Calculator className="h-4 w-4 mr-2" />
-                  Creează Comanda
+                <Button type="submit" size="lg" className="bg-green-600 hover:bg-green-700">
+                  <Calculator className="h-5 w-5 mr-2" />
+                  Trimite Comanda
                 </Button>
               </div>
             </form>

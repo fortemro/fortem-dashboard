@@ -69,6 +69,13 @@ export type Database = {
             referencedRelation: "distribuitori"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_comenzi_distribuitor"
+            columns: ["distribuitor_id"]
+            isOneToOne: false
+            referencedRelation: "distribuitori"
+            referencedColumns: ["id"]
+          },
         ]
       }
       distribuitori: {
@@ -80,6 +87,7 @@ export type Database = {
           email: string | null
           id: string
           judet: string | null
+          mzv_alocat: string | null
           nume_companie: string
           oras: string
           persoana_contact: string | null
@@ -94,6 +102,7 @@ export type Database = {
           email?: string | null
           id?: string
           judet?: string | null
+          mzv_alocat?: string | null
           nume_companie: string
           oras: string
           persoana_contact?: string | null
@@ -108,6 +117,7 @@ export type Database = {
           email?: string | null
           id?: string
           judet?: string | null
+          mzv_alocat?: string | null
           nume_companie?: string
           oras?: string
           persoana_contact?: string | null
@@ -145,6 +155,20 @@ export type Database = {
           total_item?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_itemi_comanda_comanda"
+            columns: ["comanda_id"]
+            isOneToOne: false
+            referencedRelation: "comenzi"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_itemi_comanda_produs"
+            columns: ["produs_id"]
+            isOneToOne: false
+            referencedRelation: "produse"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "itemi_comanda_comanda_id_fkey"
             columns: ["comanda_id"]
@@ -256,6 +280,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_produse_distribuitor"
+            columns: ["distribuitor_id"]
+            isOneToOne: false
+            referencedRelation: "distribuitori"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "produse_distribuitor_id_fkey"
             columns: ["distribuitor_id"]
