@@ -73,16 +73,6 @@ export function useComenzi() {
 
       if (itemsError) throw itemsError;
 
-      // Calculează și actualizează totalul comenzii
-      const total = items.reduce((sum, item) => sum + (item.cantitate * item.pret_unitar), 0);
-      
-      const { error: updateError } = await supabase
-        .from('comenzi')
-        .update({ total })
-        .eq('id', comanda.id);
-
-      if (updateError) throw updateError;
-
       await fetchComenzi();
       return comanda;
     } catch (error) {
