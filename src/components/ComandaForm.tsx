@@ -23,7 +23,7 @@ export function ComandaForm() {
   const { createComanda } = useComenzi();
   const { toast } = useToast();
   const [selectedDistribuitor, setSelectedDistribuitor] = useState<string>('');
-  const { produse, loading: loadingProduse } = useProduse(); // Încarcă toate produsele
+  const { produse, loading: loadingProduse } = useProduse();
   const [items, setItems] = useState<ItemComanda[]>([]);
 
   console.log('ComandaForm - selectedDistribuitor:', selectedDistribuitor);
@@ -38,7 +38,6 @@ export function ComandaForm() {
       judet_livrare: '',
       telefon_livrare: '',
       observatii: '',
-      mzv_emitent: '',
       numar_paleti: 0
     }
   });
@@ -79,10 +78,35 @@ export function ComandaForm() {
   };
 
   const onSubmit = async (data: any) => {
+    console.log('Form submitted with data:', data);
+    console.log('Items:', items);
+
     if (items.length === 0) {
       toast({
         title: "Eroare",
         description: "Adaugă cel puțin un produs în comandă",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Verifică că toate itemii au produs selectat
+    const itemsWithoutProduct = items.filter(item => !item.produs_id);
+    if (itemsWithoutProduct.length > 0) {
+      toast({
+        title: "Eroare",
+        description: "Toate produsele trebuie să fie selectate",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Verifică că toate itemii au cantitate
+    const itemsWithoutQuantity = items.filter(item => !item.cantitate || item.cantitate <= 0);
+    if (itemsWithoutQuantity.length > 0) {
+      toast({
+        title: "Eroare",
+        description: "Toate produsele trebuie să aibă o cantitate validă",
         variant: "destructive"
       });
       return;
@@ -102,19 +126,24 @@ export function ComandaForm() {
     try {
       await createComanda(
         {
-          ...data,
+          distribuitor_id: data.distribuitor_id,
+          oras_livrare: data.oras_livrare,
+          adresa_livrare: data.adresa_livrare,
+          judet_livrare: data.judet_livrare,
+          telefon_livrare: data.telefon_livrare,
+          observatii: data.observatii,
           numar_paleti: data.numar_paleti || 0
         },
         items.map(item => ({
           produs_id: item.produs_id,
           cantitate: item.cantitate,
-          pret_unitar: item.pret_unitar
+          pret_unitar: item.pret_unitar // prețul din câmpul manual
         }))
       );
 
       toast({
         title: "Succes",
-        description: "Comanda a fost creată cu succes"
+        description: "Comanda a fost creată cu succes cu statusul 'Nouă'"
       });
 
       // Reset form
@@ -122,6 +151,7 @@ export function ComandaForm() {
       setItems([]);
       setSelectedDistribuitor('');
     } catch (error) {
+      console.error('Error creating comanda:', error);
       toast({
         title: "Eroare",
         description: "A apărut o eroare la crearea comenzii",
