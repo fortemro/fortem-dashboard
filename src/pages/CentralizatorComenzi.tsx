@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
@@ -135,13 +134,14 @@ export default function CentralizatorComenzi() {
         itemsData = items || [];
       }
 
-      // Construiește obiectele detaliate
+      // Construiește obiectele detaliate cu mapping corect
       const comenziDetaliate: ComandaDetaliata[] = comenziData?.map(comanda => {
         const comandaItems = itemsData.filter(item => item.comanda_id === comanda.id);
         const totalComanda = comandaItems.reduce((sum, item) => sum + (item.total_item || 0), 0);
 
         return {
           ...comanda,
+          distribuitor: comanda.distribuitori, // Map distribuitori to distribuitor
           items: comandaItems.map(item => ({
             id: item.id,
             cantitate: item.cantitate,
