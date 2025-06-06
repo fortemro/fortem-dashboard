@@ -4,12 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { useProduse } from '@/hooks/useProduse';
 import { Package, Euro, Ruler, Weight, Truck } from 'lucide-react';
 
-interface ProduseGridProps {
-  distributorId?: string;
-}
-
-export function ProduseGrid({ distributorId }: ProduseGridProps) {
-  const { produse, loading } = useProduse(distributorId);
+export function ProduseGrid() {
+  const { produse, loading } = useProduse();
 
   if (loading) {
     return (
@@ -36,10 +32,7 @@ export function ProduseGrid({ distributorId }: ProduseGridProps) {
           <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Nu sunt produse disponibile</h3>
           <p className="text-gray-500">
-            {distributorId 
-              ? 'Acest distribuitor nu are produse disponibile momentan.' 
-              : 'Nu sunt produse disponibile momentan.'
-            }
+            Nu sunt produse disponibile momentan.
           </p>
         </CardContent>
       </Card>
