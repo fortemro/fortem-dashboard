@@ -35,7 +35,7 @@ export function ProductList({
   onUpdateItem,
   onDeleteItem
 }: ProductListProps) {
-  const isAddProductDisabled = !selectedDistribuitor || loadingProduse;
+  const isAddProductDisabled = loadingProduse;
 
   console.log('ProductList - selectedDistribuitor:', selectedDistribuitor);
   console.log('ProductList - produse:', produse);
@@ -61,27 +61,21 @@ export function ProductList({
               Adaugă Produs
             </Button>
             
-            {!selectedDistribuitor && (
-              <p className="text-xs text-gray-500 text-right max-w-48">
-                Selectează mai întâi un distribuitor pentru a putea adăuga produse
-              </p>
-            )}
-            
-            {selectedDistribuitor && loadingProduse && (
+            {loadingProduse && (
               <p className="text-xs text-blue-600 text-right">
                 Se încarcă produsele...
               </p>
             )}
             
-            {selectedDistribuitor && !loadingProduse && produse.length === 0 && (
+            {!loadingProduse && produse.length === 0 && (
               <p className="text-xs text-orange-600 text-right">
-                Nu există produse disponibile pentru acest distribuitor
+                Nu există produse în baza de date
               </p>
             )}
             
-            {selectedDistribuitor && !loadingProduse && produse.length > 0 && (
+            {!loadingProduse && produse.length > 0 && (
               <p className="text-xs text-green-600 text-right">
-                {produse.length} produse disponibile
+                {produse.length} produse disponibile în total
               </p>
             )}
           </div>

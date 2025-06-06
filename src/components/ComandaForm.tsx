@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { useProduse } from '@/hooks/useProduse';
-import { useDistribuitori } from '@/hooks/useDistribuitori';
 import { useComenzi } from '@/hooks/useComenzi';
 import { useToast } from '@/hooks/use-toast';
 import { Calculator } from 'lucide-react';
@@ -24,9 +23,7 @@ export function ComandaForm() {
   const { createComanda } = useComenzi();
   const { toast } = useToast();
   const [selectedDistribuitor, setSelectedDistribuitor] = useState<string>('');
-  const [selectedDistributorData, setSelectedDistributorData] = useState<any>(null);
-  const { distribuitori } = useDistribuitori(true);
-  const { produse, loading: loadingProduse } = useProduse(selectedDistribuitor);
+  const { produse, loading: loadingProduse } = useProduse(); // Încarcă toate produsele
   const [items, setItems] = useState<ItemComanda[]>([]);
 
   console.log('ComandaForm - selectedDistribuitor:', selectedDistribuitor);
@@ -46,26 +43,9 @@ export function ComandaForm() {
     }
   });
 
-  const handleDistributorChange = (distributorId: string) => {
-    console.log('handleDistributorChange called with:', distributorId);
-    setSelectedDistribuitor(distributorId);
-    const distributorData = distribuitori.find(d => d.id === distributorId);
-    
-    if (distributorData) {
-      console.log('Found distributor data:', distributorData);
-      setSelectedDistributorData(distributorData);
-      // Completează automat câmpurile de adresă și persoană contact
-      form.setValue('adresa_livrare', distributorData.adresa);
-      form.setValue('oras_livrare', distributorData.oras);
-      form.setValue('judet_livrare', distributorData.judet || '');
-      form.setValue('telefon_livrare', distributorData.telefon || '');
-      
-      // Setează persoana de contact în observații
-      const observatii = distributorData.persoana_contact 
-        ? `Persoană contact: ${distributorData.persoana_contact}`
-        : '';
-      form.setValue('observatii', observatii);
-    }
+  const handleDistributorChange = (distributorName: string) => {
+    console.log('handleDistributorChange called with:', distributorName);
+    setSelectedDistribuitor(distributorName);
   };
 
   const adaugaItem = () => {
@@ -141,7 +121,6 @@ export function ComandaForm() {
       form.reset();
       setItems([]);
       setSelectedDistribuitor('');
-      setSelectedDistributorData(null);
     } catch (error) {
       toast({
         title: "Eroare",
@@ -155,7 +134,6 @@ export function ComandaForm() {
     form.reset();
     setItems([]);
     setSelectedDistribuitor('');
-    setSelectedDistributorData(null);
   };
 
   return (
@@ -171,7 +149,7 @@ export function ComandaForm() {
                 form={form}
                 onDistributorChange={handleDistributorChange}
                 selectedDistributor={selectedDistribuitor}
-                selectedDistributorData={selectedDistributorData}
+                selectedDistributorData={null}
               />
 
               <DeliveryForm form={form} />

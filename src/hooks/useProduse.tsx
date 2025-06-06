@@ -20,9 +20,8 @@ export function useProduse(distributorId?: string) {
         .select('*')
         .eq('activ', true);
 
-      if (distributorId) {
-        query = query.eq('distribuitor_id', distributorId);
-      }
+      // Nu mai filtrăm după distribuitor - încărcăm toate produsele
+      // Utilizatorul poate alege orice produs din lista completă
 
       const { data, error } = await query.order('nume');
 
