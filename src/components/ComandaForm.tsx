@@ -123,10 +123,21 @@ export function ComandaForm() {
       return;
     }
 
+    // Folosește distribuitor_id din primul produs pentru comandă (toate produsele sunt de la Fortem)
+    const distribuitorId = produse.length > 0 ? produse[0].distribuitor_id : null;
+    if (!distribuitorId) {
+      toast({
+        title: "Eroare", 
+        description: "Nu s-a putut determina distribuitor_id pentru comandă",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       await createComanda(
         {
-          distribuitor_id: data.distribuitor_id,
+          distribuitor_id: distribuitorId, // Folosește distribuitor_id din produse
           oras_livrare: data.oras_livrare,
           adresa_livrare: data.adresa_livrare,
           judet_livrare: data.judet_livrare,

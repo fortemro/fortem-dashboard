@@ -11,20 +11,6 @@ interface DeliveryFormProps {
 export function DeliveryForm({ form }: DeliveryFormProps) {
   return (
     <div className="space-y-4">
-      <FormField
-        control={form.control}
-        name="mzv_emitent"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>MZV Emitent</FormLabel>
-            <FormControl>
-              <Input {...field} placeholder="Numele MZV-ului emitent" />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <FormField
           control={form.control}
@@ -33,7 +19,7 @@ export function DeliveryForm({ form }: DeliveryFormProps) {
             <FormItem>
               <FormLabel>Oraș Livrare *</FormLabel>
               <FormControl>
-                <Input {...field} required />
+                <Input {...field} value={field.value || ''} required />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -47,7 +33,7 @@ export function DeliveryForm({ form }: DeliveryFormProps) {
             <FormItem>
               <FormLabel>Județ Livrare</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -61,7 +47,7 @@ export function DeliveryForm({ form }: DeliveryFormProps) {
             <FormItem>
               <FormLabel>Telefon Livrare</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -76,7 +62,7 @@ export function DeliveryForm({ form }: DeliveryFormProps) {
           <FormItem>
             <FormLabel>Adresa Completă Livrare *</FormLabel>
             <FormControl>
-              <Input {...field} required />
+              <Input {...field} value={field.value || ''} required />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -90,7 +76,7 @@ export function DeliveryForm({ form }: DeliveryFormProps) {
           <FormItem>
             <FormLabel>Observații</FormLabel>
             <FormControl>
-              <Input {...field} />
+              <Input {...field} value={field.value || ''} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -107,6 +93,7 @@ export function DeliveryForm({ form }: DeliveryFormProps) {
               <Input 
                 type="number" 
                 {...field} 
+                value={field.value || 0}
                 onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
               />
             </FormControl>
