@@ -79,14 +79,13 @@ export type Database = {
           activ: boolean | null
           adresa: string
           cod_fiscal: string | null
-          cod_postal: string | null
           created_at: string
           email: string | null
           id: string
+          judet: string | null
           nume_companie: string
           oras: string
           persoana_contact: string | null
-          tara: string | null
           telefon: string | null
           updated_at: string
         }
@@ -94,14 +93,13 @@ export type Database = {
           activ?: boolean | null
           adresa: string
           cod_fiscal?: string | null
-          cod_postal?: string | null
           created_at?: string
           email?: string | null
           id?: string
+          judet?: string | null
           nume_companie: string
           oras: string
           persoana_contact?: string | null
-          tara?: string | null
           telefon?: string | null
           updated_at?: string
         }
@@ -109,14 +107,13 @@ export type Database = {
           activ?: boolean | null
           adresa?: string
           cod_fiscal?: string | null
-          cod_postal?: string | null
           created_at?: string
           email?: string | null
           id?: string
+          judet?: string | null
           nume_companie?: string
           oras?: string
           persoana_contact?: string | null
-          tara?: string | null
           telefon?: string | null
           updated_at?: string
         }
@@ -229,42 +226,42 @@ export type Database = {
       profiluri_utilizatori: {
         Row: {
           adresa: string | null
-          cod_postal: string | null
           created_at: string
-          data_nasterii: string | null
           id: string
+          judet: string | null
           nume: string
+          nume_complet: string | null
           oras: string | null
           prenume: string
-          tara: string | null
+          rol: string | null
           telefon: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           adresa?: string | null
-          cod_postal?: string | null
           created_at?: string
-          data_nasterii?: string | null
           id?: string
+          judet?: string | null
           nume: string
+          nume_complet?: string | null
           oras?: string | null
           prenume: string
-          tara?: string | null
+          rol?: string | null
           telefon?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           adresa?: string | null
-          cod_postal?: string | null
           created_at?: string
-          data_nasterii?: string | null
           id?: string
+          judet?: string | null
           nume?: string
+          nume_complet?: string | null
           oras?: string | null
           prenume?: string
-          tara?: string | null
+          rol?: string | null
           telefon?: string | null
           updated_at?: string
           user_id?: string

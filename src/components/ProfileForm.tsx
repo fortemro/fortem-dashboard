@@ -1,12 +1,13 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
-import { User, Phone, MapPin, Calendar } from 'lucide-react';
+import { User, Phone, MapPin, Calendar, UserCog } from 'lucide-react';
 
 export function ProfileForm() {
   const { profile, createProfile, updateProfile, loading } = useProfile();
@@ -14,19 +15,54 @@ export function ProfileForm() {
   const [formData, setFormData] = useState({
     nume: profile?.nume || '',
     prenume: profile?.prenume || '',
+    nume_complet: profile?.nume_complet || '',
     telefon: profile?.telefon || '',
     adresa: profile?.adresa || '',
     oras: profile?.oras || '',
-    cod_postal: profile?.cod_postal || '',
-    tara: profile?.tara || 'România',
-    data_nasterii: profile?.data_nasterii || ''
+    judet: profile?.judet || '',
+    rol: profile?.rol || 'MZV'
   });
   const [submitting, setSubmitting] = useState(false);
 
+  // Actualizează formData când se încarcă profilul
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        nume: profile.nume || '',
+        prenume: profile.prenume || '',
+        nume_complet: profile.nume_complet || '',
+        telefon: profile.telefon || '',
+        adresa: profile.adresa || '',
+        oras: profile.oras || '',
+        judet: profile.judet || '',
+        rol: profile.rol || 'MZV'
+      });
+    }
+  }, [profile]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        [name]: value
+      };
+      
+      // Actualizează automat nume_complet când se schimbă numele sau prenumele
+      if (name === 'nume' || name === 'prenume') {
+        const nume = name === 'nume' ? value : prev.nume;
+        const prenume = name === 'prenume' ? value : prev.prenume;
+        updated.nume_complet = `${nume} ${prenume}`.trim();
+      }
+      
+      return updated;
+    });
+  };
+
+  const handleRolChange = (value: string) => {
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      rol: value
     }));
   };
 
@@ -113,6 +149,37 @@ export function ProfileForm() {
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="nume_complet">Nume Complet</Label>
+            <Input
+              id="nume_complet"
+              name="nume_complet"
+              value={formData.nume_complet}
+              onChange={handleInputChange}
+              placeholder="Se completează automat"
+              readOnly
+              className="bg-gray-50"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="rol">
+              <UserCog className="h-4 w-4 inline mr-1" />
+              Rol
+            </Label>
+            <Select value={formData.rol} onValueChange={handleRolChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selectează rolul" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="MZV">MZV</SelectItem>
+                <SelectItem value="Admin">Admin</SelectItem>
+                <SelectItem value="Manager">Manager</SelectItem>
+                <SelectItem value="User">User</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="telefon">
               <Phone className="h-4 w-4 inline mr-1" />
               Telefon
@@ -139,7 +206,7 @@ export function ProfileForm() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="oras">Oraș</Label>
               <Input
@@ -150,37 +217,14 @@ export function ProfileForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cod_postal">Cod Poștal</Label>
+              <Label htmlFor="judet">Județ</Label>
               <Input
-                id="cod_postal"
-                name="cod_postal"
-                value={formData.cod_postal}
+                id="judet"
+                name="judet"
+                value={formData.judet}
                 onChange={handleInputChange}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="tara">Țară</Label>
-              <Input
-                id="tara"
-                name="tara"
-                value={formData.tara}
-                onChange={handleInputChange}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="data_nasterii">
-              <Calendar className="h-4 w-4 inline mr-1" />
-              Data Nașterii
-            </Label>
-            <Input
-              id="data_nasterii"
-              name="data_nasterii"
-              type="date"
-              value={formData.data_nasterii}
-              onChange={handleInputChange}
-            />
           </div>
 
           <Button type="submit" disabled={submitting} className="w-full">
