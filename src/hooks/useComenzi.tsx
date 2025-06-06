@@ -49,12 +49,34 @@ export function useComenzi() {
       console.log('Creating comanda with data:', comandaData);
       console.log('Creating comanda with items:', items);
 
-      // Creează comanda cu statusul 'Nouă' și mzv_emitent setat la ID-ul utilizatorului logat
+      // Găsește distribuitor-ul pentru a determina MZV-ul responsabil
+      const { data: distribuitor, error: distributorError } = await supabase
+        .from('distribuitori')
+        .select('mzv_alocat, nume_companie')
+        .eq('id', comandaData.distribuitor_id)
+        .single();
+
+      if (distributorError) {
+        console.error('Error fetching distribuitor:', distributorError);
+        throw new Error('Nu s-a putut găsi distribuitor-ul');
+      }
+
+      // Determină MZV-ul pentru comandă
+      let mzvEmitent = user.id; // fallback la utilizatorul logat
+      
+      if (distribuitor?.mzv_alocat) {
+        mzvEmitent = distribuitor.mzv_alocat;
+        console.log('Using allocated MZV for distribuitor:', distribuitor.nume_companie, 'MZV:', mzvEmitent);
+      } else {
+        console.log('No MZV allocated for distribuitor, using current user as MZV:', user.id);
+      }
+
+      // Creează comanda cu statusul 'Nouă' și MZV-ul determinat
       const insertData: any = {
         ...comandaData,
         user_id: user.id,
         status: 'Nouă',
-        mzv_emitent: user.id, // ID-ul utilizatorului logat în câmpul mzv_emitent
+        mzv_emitent: mzvEmitent,
         data_comanda: new Date().toISOString()
       };
 
