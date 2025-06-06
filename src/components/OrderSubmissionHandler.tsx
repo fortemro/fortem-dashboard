@@ -2,6 +2,7 @@
 import { useComenzi } from '@/hooks/useComenzi';
 import { useToast } from '@/hooks/use-toast';
 import { useFormValidation } from './FormValidation';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ItemComanda {
   produs_id: string;
@@ -41,7 +42,7 @@ export function useOrderSubmission({ produse, items, onSuccess }: UseOrderSubmis
     }
 
     try {
-      await createComanda(
+      const comanda = await createComanda(
         {
           distribuitor_id: distribuitorId,
           oras_livrare: data.oras_livrare,
@@ -58,9 +59,48 @@ export function useOrderSubmission({ produse, items, onSuccess }: UseOrderSubmis
         }))
       );
 
+      // Calculează totalul comenzii
+      const totalComanda = items.reduce((total, item) => total + (item.cantitate * item.pret_unitar), 0);
+
+      // Găsește distribuitor-ul pentru numele acestuia
+      const distribuitor = produse.find(p => p.distribuitor_id === distribuitorId);
+      const distribuitorNume = distribuitor?.distribuitor?.nume_companie || 'Necunoscut';
+
+      // Trimite emailul automat după crearea cu succes a comenzii
+      try {
+        const { error: emailError } = await supabase.functions.invoke('send-order-email', {
+          body: {
+            comandaId: comanda.id,
+            numarul_comanda: comanda.numar_comanda,
+            distribuitor: distribuitorNume,
+            oras_livrare: data.oras_livrare,
+            adresa_livrare: data.adresa_livrare,
+            telefon_livrare: data.telefon_livrare || '',
+            items: items.map(item => ({
+              nume_produs: item.nume_produs,
+              cantitate: item.cantitate,
+              pret_unitar: item.pret_unitar,
+              total_item: item.cantitate * item.pret_unitar
+            })),
+            total_comanda: totalComanda,
+            data_comanda: comanda.data_comanda || new Date().toISOString()
+          }
+        });
+
+        if (emailError) {
+          console.error('Error sending email:', emailError);
+          // Nu oprim procesul dacă emailul nu se trimite, doar logăm eroarea
+        } else {
+          console.log('Order email sent successfully');
+        }
+      } catch (emailError) {
+        console.error('Error invoking email function:', emailError);
+        // Nu oprim procesul dacă emailul nu se trimite
+      }
+
       toast({
         title: "Succes",
-        description: "Comanda a fost creată cu succes cu statusul 'In asteptare'"
+        description: "Comanda a fost creată cu succes și emailul de notificare a fost trimis"
       });
 
       onSuccess();
