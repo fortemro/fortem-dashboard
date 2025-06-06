@@ -9,13 +9,277 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      comenzi: {
+        Row: {
+          adresa_livrare: string
+          cod_postal_livrare: string | null
+          created_at: string
+          data_comanda: string
+          data_livrare_estimata: string | null
+          distribuitor_id: string
+          id: string
+          moneda: string | null
+          numar_comanda: string
+          observatii: string | null
+          oras_livrare: string
+          status: string | null
+          telefon_livrare: string | null
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          adresa_livrare: string
+          cod_postal_livrare?: string | null
+          created_at?: string
+          data_comanda?: string
+          data_livrare_estimata?: string | null
+          distribuitor_id: string
+          id?: string
+          moneda?: string | null
+          numar_comanda: string
+          observatii?: string | null
+          oras_livrare: string
+          status?: string | null
+          telefon_livrare?: string | null
+          total?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          adresa_livrare?: string
+          cod_postal_livrare?: string | null
+          created_at?: string
+          data_comanda?: string
+          data_livrare_estimata?: string | null
+          distribuitor_id?: string
+          id?: string
+          moneda?: string | null
+          numar_comanda?: string
+          observatii?: string | null
+          oras_livrare?: string
+          status?: string | null
+          telefon_livrare?: string | null
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comenzi_distribuitor_id_fkey"
+            columns: ["distribuitor_id"]
+            isOneToOne: false
+            referencedRelation: "distribuitori"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      distribuitori: {
+        Row: {
+          activ: boolean | null
+          adresa: string
+          cod_fiscal: string | null
+          cod_postal: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nume_companie: string
+          oras: string
+          persoana_contact: string | null
+          tara: string | null
+          telefon: string | null
+          updated_at: string
+        }
+        Insert: {
+          activ?: boolean | null
+          adresa: string
+          cod_fiscal?: string | null
+          cod_postal?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nume_companie: string
+          oras: string
+          persoana_contact?: string | null
+          tara?: string | null
+          telefon?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activ?: boolean | null
+          adresa?: string
+          cod_fiscal?: string | null
+          cod_postal?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nume_companie?: string
+          oras?: string
+          persoana_contact?: string | null
+          tara?: string | null
+          telefon?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      itemi_comanda: {
+        Row: {
+          cantitate: number
+          comanda_id: string
+          created_at: string
+          id: string
+          pret_unitar: number
+          produs_id: string
+          total_item: number
+        }
+        Insert: {
+          cantitate: number
+          comanda_id: string
+          created_at?: string
+          id?: string
+          pret_unitar: number
+          produs_id: string
+          total_item: number
+        }
+        Update: {
+          cantitate?: number
+          comanda_id?: string
+          created_at?: string
+          id?: string
+          pret_unitar?: number
+          produs_id?: string
+          total_item?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itemi_comanda_comanda_id_fkey"
+            columns: ["comanda_id"]
+            isOneToOne: false
+            referencedRelation: "comenzi"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemi_comanda_produs_id_fkey"
+            columns: ["produs_id"]
+            isOneToOne: false
+            referencedRelation: "produse"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      produse: {
+        Row: {
+          activ: boolean | null
+          categorie: string | null
+          cod_produs: string | null
+          created_at: string
+          descriere: string | null
+          distribuitor_id: string
+          id: string
+          imagine_url: string | null
+          moneda: string | null
+          nume: string
+          pret: number
+          stoc_disponibil: number | null
+          unitate_masura: string | null
+          updated_at: string
+        }
+        Insert: {
+          activ?: boolean | null
+          categorie?: string | null
+          cod_produs?: string | null
+          created_at?: string
+          descriere?: string | null
+          distribuitor_id: string
+          id?: string
+          imagine_url?: string | null
+          moneda?: string | null
+          nume: string
+          pret: number
+          stoc_disponibil?: number | null
+          unitate_masura?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activ?: boolean | null
+          categorie?: string | null
+          cod_produs?: string | null
+          created_at?: string
+          descriere?: string | null
+          distribuitor_id?: string
+          id?: string
+          imagine_url?: string | null
+          moneda?: string | null
+          nume?: string
+          pret?: number
+          stoc_disponibil?: number | null
+          unitate_masura?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produse_distribuitor_id_fkey"
+            columns: ["distribuitor_id"]
+            isOneToOne: false
+            referencedRelation: "distribuitori"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiluri_utilizatori: {
+        Row: {
+          adresa: string | null
+          cod_postal: string | null
+          created_at: string
+          data_nasterii: string | null
+          id: string
+          nume: string
+          oras: string | null
+          prenume: string
+          tara: string | null
+          telefon: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          adresa?: string | null
+          cod_postal?: string | null
+          created_at?: string
+          data_nasterii?: string | null
+          id?: string
+          nume: string
+          oras?: string | null
+          prenume: string
+          tara?: string | null
+          telefon?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          adresa?: string | null
+          cod_postal?: string | null
+          created_at?: string
+          data_nasterii?: string | null
+          id?: string
+          nume?: string
+          oras?: string | null
+          prenume?: string
+          tara?: string | null
+          telefon?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_order_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
