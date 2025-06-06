@@ -20,8 +20,13 @@ export function Header() {
     });
   };
 
-  // Nu afișa header-ul pe paginile de autentificare
-  if (location.pathname === '/auth' || location.pathname === '/') {
+  // Nu afișa header-ul doar pe pagina de autentificare
+  if (location.pathname === '/auth') {
+    return null;
+  }
+
+  // Nu afișa header-ul dacă utilizatorul nu este autentificat
+  if (!user) {
     return null;
   }
 
