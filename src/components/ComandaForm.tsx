@@ -81,6 +81,16 @@ export function ComandaForm() {
     console.log('Form submitted with data:', data);
     console.log('Items:', items);
 
+    // Validări de bază
+    if (!data.oras_livrare || !data.adresa_livrare) {
+      toast({
+        title: "Eroare",
+        description: "Orașul și adresa de livrare sunt obligatorii",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (items.length === 0) {
       toast({
         title: "Eroare",
@@ -140,9 +150,9 @@ export function ComandaForm() {
           distribuitor_id: distribuitorId, // Folosește distribuitor_id din produse
           oras_livrare: data.oras_livrare,
           adresa_livrare: data.adresa_livrare,
-          judet_livrare: data.judet_livrare,
-          telefon_livrare: data.telefon_livrare,
-          observatii: data.observatii,
+          judet_livrare: data.judet_livrare || '',
+          telefon_livrare: data.telefon_livrare || '',
+          observatii: data.observatii || '',
           numar_paleti: data.numar_paleti || 0
         },
         items.map(item => ({
@@ -154,7 +164,7 @@ export function ComandaForm() {
 
       toast({
         title: "Succes",
-        description: "Comanda a fost creată cu succes cu statusul 'Nouă'"
+        description: "Comanda a fost creată cu succes cu statusul 'In asteptare'"
       });
 
       // Reset form
@@ -165,7 +175,7 @@ export function ComandaForm() {
       console.error('Error creating comanda:', error);
       toast({
         title: "Eroare",
-        description: "A apărut o eroare la crearea comenzii",
+        description: error instanceof Error ? error.message : "A apărut o eroare la crearea comenzii",
         variant: "destructive"
       });
     }

@@ -49,6 +49,15 @@ export function useComenzi() {
       console.log('Creating comanda with data:', comandaData);
       console.log('Creating comanda with items:', items);
 
+      // Validare de bază
+      if (!comandaData.distribuitor_id) {
+        throw new Error('Distribuitor ID este obligatoriu');
+      }
+
+      if (!comandaData.oras_livrare || !comandaData.adresa_livrare) {
+        throw new Error('Orașul și adresa de livrare sunt obligatorii');
+      }
+
       // Găsește distribuitor-ul pentru a determina MZV-ul responsabil
       const { data: distribuitor, error: distributorError } = await supabase
         .from('distribuitori')
@@ -71,13 +80,19 @@ export function useComenzi() {
         console.log('No MZV allocated for distribuitor, using current user as MZV:', user.id);
       }
 
-      // Creează comanda cu statusul 'Nouă' și MZV-ul determinat
+      // Creează comanda cu statusul 'In asteptare' (pentru a evita constraint-ul)
       const insertData: any = {
         ...comandaData,
         user_id: user.id,
-        status: 'Nouă',
+        status: 'In asteptare', // Folosesc status acceptat de constraint
         mzv_emitent: mzvEmitent,
-        data_comanda: new Date().toISOString()
+        data_comanda: new Date().toISOString(),
+        oras_livrare: comandaData.oras_livrare,
+        adresa_livrare: comandaData.adresa_livrare,
+        judet_livrare: comandaData.judet_livrare || '',
+        telefon_livrare: comandaData.telefon_livrare || '',
+        observatii: comandaData.observatii || '',
+        numar_paleti: comandaData.numar_paleti || 0
       };
 
       console.log('Insert data for comanda:', insertData);
@@ -90,6 +105,7 @@ export function useComenzi() {
 
       if (comandaError) {
         console.error('Error creating comanda:', comandaError);
+        console.error('Insert data was:', insertData);
         throw comandaError;
       }
 
