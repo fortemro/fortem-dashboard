@@ -44,7 +44,7 @@ export function usePreturiOficiale() {
 
   const validatePrices = async () => {
     try {
-      // Query pentru a compara prețurile din comenzi cu cele oficiale
+      // Query pentru itemi_comanda cu comenzile asociate
       const { data: comenziCuPreturi, error } = await supabase
         .from('itemi_comanda')
         .select(`
@@ -52,30 +52,54 @@ export function usePreturiOficiale() {
           produse (
             nume,
             cod_produs
-          ),
-          comenzi (
-            numar_comanda,
-            data_comanda,
-            mzv_emitent,
-            profiluri_utilizatori!comenzi_mzv_emitent_fkey (
-              nume,
-              prenume
-            )
           )
         `);
 
       if (error) throw error;
 
+      // Fetch comenzi separate pentru a evita probleme de relații
+      const { data: comenzi, error: comenziError } = await supabase
+        .from('comenzi')
+        .select(`
+          id,
+          numar_comanda,
+          data_comanda,
+          mzv_emitent
+        `);
+
+      if (comenziError) throw comenziError;
+
+      // Fetch profiles pentru MZV names
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiluri_utilizatori')
+        .select('user_id, nume, prenume');
+
+      if (profilesError) throw profilesError;
+
+      // Create maps for quick lookup
+      const comenziMap = new Map();
+      comenzi?.forEach(comanda => {
+        comenziMap.set(comanda.id, comanda);
+      });
+
+      const profileMap = new Map();
+      profiles?.forEach(profile => {
+        profileMap.set(profile.user_id, profile);
+      });
+
       // Pentru fiecare item, căutăm prețul oficial corespunzător
       const validationResults = [];
       
       for (const item of comenziCuPreturi || []) {
+        const comanda = comenziMap.get(item.comanda_id);
+        if (!comanda) continue;
+
         const { data: pretOficial } = await supabase
           .from('preturi_oficiale')
           .select('pret_oficial')
           .eq('produs_id', item.produs_id)
-          .lte('data_valabilitate_start', item.comenzi?.data_comanda || new Date().toISOString())
-          .or('data_valabilitate_end.is.null,data_valabilitate_end.gte.' + (item.comenzi?.data_comanda || new Date().toISOString()))
+          .lte('data_valabilitate_start', comanda.data_comanda || new Date().toISOString())
+          .or('data_valabilitate_end.is.null,data_valabilitate_end.gte.' + (comanda.data_comanda || new Date().toISOString()))
           .single();
 
         if (pretOficial) {
@@ -83,8 +107,13 @@ export function usePreturiOficiale() {
           const procentDiferenta = (diferenta / pretOficial.pret_oficial) * 100;
 
           if (procentDiferenta > 5) { // Diferență mai mare de 5%
+            const profile = profileMap.get(comanda.mzv_emitent);
             validationResults.push({
               ...item,
+              comenzi: {
+                ...comanda,
+                profiluri_utilizatori: profile
+              },
               pret_oficial: pretOficial.pret_oficial,
               diferenta,
               procent_diferenta: procentDiferenta

@@ -54,12 +54,8 @@ export function useAdminStats(dateFrom?: string, dateTo?: string) {
               nume
             )
           ),
-          distribuitori (
+          distribuitori!comenzi_distribuitor_id_fkey (
             nume_companie
-          ),
-          profiluri_utilizatori!comenzi_mzv_emitent_fkey (
-            nume,
-            prenume
           )
         `);
 
@@ -74,6 +70,19 @@ export function useAdminStats(dateFrom?: string, dateTo?: string) {
 
       if (error) throw error;
 
+      // Fetch MZV profiles separately to avoid relationship issues
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiluri_utilizatori')
+        .select('user_id, nume, prenume');
+
+      if (profilesError) throw profilesError;
+
+      // Create a map for quick profile lookup
+      const profileMap = new Map();
+      profiles?.forEach(profile => {
+        profileMap.set(profile.user_id, `${profile.nume} ${profile.prenume}`);
+      });
+
       // Calculăm statisticile
       const totalOrders = comenzi?.length || 0;
       const totalValue = comenzi?.reduce((sum, comanda) => {
@@ -86,9 +95,7 @@ export function useAdminStats(dateFrom?: string, dateTo?: string) {
       const mzvMap = new Map();
       comenzi?.forEach(comanda => {
         const mzvId = comanda.mzv_emitent;
-        const mzvName = comanda.profiluri_utilizatori 
-          ? `${comanda.profiluri_utilizatori.nume} ${comanda.profiluri_utilizatori.prenume}`
-          : 'Necunoscut';
+        const mzvName = profileMap.get(mzvId) || 'Necunoscut';
         const comandaValue = comanda.itemi_comanda?.reduce((sum: number, item: any) => 
           sum + item.total_item, 0) || 0;
 
