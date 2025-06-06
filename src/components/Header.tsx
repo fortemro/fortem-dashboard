@@ -1,75 +1,144 @@
+import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Building2,
+  LogOut,
+  User,
+  Shield,
+  AlertTriangle,
+} from "lucide-react";
 
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { LogOut, User, Building2, Package, UserCircle, ShoppingCart } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { Link, useLocation } from 'react-router-dom';
-import { useProfile } from '@/hooks/useProfile';
-
-export function Header() {
+export default function Header() {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
-  const { toast } = useToast();
-  const location = useLocation();
 
   const handleSignOut = async () => {
     await signOut();
-    toast({
-      title: "Deconectare reușită",
-      description: "Ai fost deconectat cu succes.",
-    });
   };
 
-  // Nu afișa header-ul doar pe pagina de autentificare
-  if (location.pathname === '/auth') {
-    return null;
-  }
-
-  // Nu afișa header-ul dacă utilizatorul nu este autentificat
-  if (!user) {
-    return null;
-  }
-
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm shadow-sm border-b">
+    <header className="bg-white shadow-sm border-b fixed top-0 w-full z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <Building2 className="h-8 w-8 text-blue-600 mr-3" />
-            <Link to="/dashboard">
-              <h1 className="text-xl font-semibold text-gray-900 hover:text-blue-600 transition-colors">
-                Dashboard Fortem
-              </h1>
+            <Link to="/" className="flex items-center">
+              <Building2 className="h-8 w-8 text-blue-600" />
+              <span className="ml-2 text-xl font-bold text-gray-900">Fortem</span>
             </Link>
           </div>
-          <div className="flex items-center space-x-4">
-            <Link to="/profile">
-              <Button variant="outline" size="sm">
-                <UserCircle className="h-4 w-4 mr-2" />
-                Profil
-              </Button>
-            </Link>
-            <Link to="/produse">
-              <Button variant="outline" size="sm">
-                <Package className="h-4 w-4 mr-2" />
-                Produse
-              </Button>
-            </Link>
-            <Link to="/comanda">
-              <Button variant="outline" size="sm">
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                Comandă Nouă
-              </Button>
-            </Link>
-            <div className="flex items-center text-sm text-gray-700">
-              <User className="h-4 w-4 mr-2" />
-              {profile ? `${profile.nume} ${profile.prenume}` : user?.email}
+
+          {user ? (
+            <div className="flex items-center space-x-4">
+              <nav className="hidden md:flex space-x-4">
+                <Link
+                  to="/"
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  to="/produse"
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Produse
+                </Link>
+                <Link
+                  to="/comanda"
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Comandă Nouă
+                </Link>
+                {profile?.rol === 'Admin' && (
+                  <>
+                    <Link
+                      to="/admin-dashboard"
+                      className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      Admin Dashboard
+                    </Link>
+                    <Link
+                      to="/admin/validare-preturi"
+                      className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      Validare Prețuri
+                    </Link>
+                  </>
+                )}
+              </nav>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>
+                        {profile?.nume?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {profile?.nume_complet || 'Utilizator'}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                      </p>
+                      {profile?.rol && (
+                        <p className="text-xs leading-none text-muted-foreground">
+                          Rol: {profile.rol}
+                        </p>
+                      )}
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profil</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  {profile?.rol === 'Admin' && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin-dashboard">
+                          <Shield className="mr-2 h-4 w-4" />
+                          <span>Admin Dashboard</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin/validare-preturi">
+                          <AlertTriangle className="mr-2 h-4 w-4" />
+                          <span>Validare Prețuri</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Deconectare</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Deconectare
-            </Button>
-          </div>
+          ) : (
+            <Link to="/auth">
+              <Button>Autentificare</Button>
+            </Link>
+          )}
         </div>
       </div>
     </header>

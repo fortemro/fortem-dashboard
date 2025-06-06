@@ -185,6 +185,47 @@ export type Database = {
           },
         ]
       }
+      preturi_oficiale: {
+        Row: {
+          created_at: string
+          data_valabilitate_end: string | null
+          data_valabilitate_start: string
+          id: string
+          pret_oficial: number
+          produs_id: string
+          updated_at: string
+          zona: string
+        }
+        Insert: {
+          created_at?: string
+          data_valabilitate_end?: string | null
+          data_valabilitate_start?: string
+          id?: string
+          pret_oficial: number
+          produs_id: string
+          updated_at?: string
+          zona: string
+        }
+        Update: {
+          created_at?: string
+          data_valabilitate_end?: string | null
+          data_valabilitate_start?: string
+          id?: string
+          pret_oficial?: number
+          produs_id?: string
+          updated_at?: string
+          zona?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preturi_oficiale_produs_id_fkey"
+            columns: ["produs_id"]
+            isOneToOne: false
+            referencedRelation: "produse"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produse: {
         Row: {
           activ: boolean | null
