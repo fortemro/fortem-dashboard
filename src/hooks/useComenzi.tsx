@@ -5,9 +5,9 @@ import { useAuth } from './useAuth';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 
 type Comanda = Tables<'comenzi'>;
-type ComandaInsert = TablesInsert<'comenzi'>;
+type ComandaInsert = Omit<TablesInsert<'comenzi'>, 'user_id' | 'numar_comanda'>;
 type ItemComanda = Tables<'itemi_comanda'>;
-type ItemComandaInsert = TablesInsert<'itemi_comanda'>;
+type ItemComandaInsert = Omit<TablesInsert<'itemi_comanda'>, 'comanda_id'>;
 
 export function useComenzi() {
   const { user } = useAuth();
@@ -40,8 +40,8 @@ export function useComenzi() {
   };
 
   const createComanda = async (
-    comandaData: Omit<ComandaInsert, 'user_id' | 'numar_comanda'>,
-    items: Omit<ItemComandaInsert, 'comanda_id'>[]
+    comandaData: ComandaInsert,
+    items: ItemComandaInsert[]
   ) => {
     if (!user) throw new Error('Nu ești autentificat');
 
