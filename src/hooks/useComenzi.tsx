@@ -80,11 +80,11 @@ export function useComenzi() {
         console.log('No MZV allocated for distribuitor, using current user as MZV:', user.id);
       }
 
-      // Creează comanda cu statusul 'In asteptare' (pentru a evita constraint-ul)
+      // Creează comanda cu statusul corect pentru constraint-ul din baza de date
       const insertData: any = {
         ...comandaData,
         user_id: user.id,
-        status: 'In asteptare', // Folosesc status acceptat de constraint
+        status: 'in_asteptare', // Folosesc status-ul exact din constraint: 'in_asteptare'
         mzv_emitent: mzvEmitent,
         data_comanda: new Date().toISOString(),
         oras_livrare: comandaData.oras_livrare,
@@ -95,7 +95,7 @@ export function useComenzi() {
         numar_paleti: comandaData.numar_paleti || 0
       };
 
-      console.log('Insert data for comanda:', insertData);
+      console.log('Insert data for comanda (with correct status):', insertData);
 
       const { data: comanda, error: comandaError } = await supabase
         .from('comenzi')
@@ -106,6 +106,12 @@ export function useComenzi() {
       if (comandaError) {
         console.error('Error creating comanda:', comandaError);
         console.error('Insert data was:', insertData);
+        
+        // Afișez o eroare mai clară pentru utilizator
+        if (comandaError.code === '23514' && comandaError.message.includes('comenzi_status_check')) {
+          throw new Error('Valoarea status-ului nu este validă. Contactați administratorul.');
+        }
+        
         throw comandaError;
       }
 

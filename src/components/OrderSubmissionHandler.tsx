@@ -42,6 +42,8 @@ export function useOrderSubmission({ produse, items, onSuccess }: UseOrderSubmis
     }
 
     try {
+      console.log('Attempting to create comanda with distribuitor_id:', distribuitorId);
+      
       const comanda = await createComanda(
         {
           distribuitor_id: distribuitorId,
@@ -58,6 +60,8 @@ export function useOrderSubmission({ produse, items, onSuccess }: UseOrderSubmis
           pret_unitar: item.pret_unitar
         }))
       );
+
+      console.log('Comanda created successfully, proceeding with email send');
 
       // Calculează totalul comenzii
       const totalComanda = items.reduce((total, item) => total + (item.cantitate * item.pret_unitar), 0);
@@ -106,9 +110,18 @@ export function useOrderSubmission({ produse, items, onSuccess }: UseOrderSubmis
       onSuccess();
     } catch (error) {
       console.error('Error creating comanda:', error);
+      
+      let errorMessage = "A apărut o eroare la crearea comenzii";
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null && 'message' in error) {
+        errorMessage = String(error.message);
+      }
+      
       toast({
         title: "Eroare",
-        description: error instanceof Error ? error.message : "A apărut o eroare la crearea comenzii",
+        description: errorMessage,
         variant: "destructive"
       });
     }
