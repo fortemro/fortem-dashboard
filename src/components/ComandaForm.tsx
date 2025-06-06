@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { useProduse } from '@/hooks/useProduse';
+import { useDistribuitori } from '@/hooks/useDistribuitori';
 import { useComenzi } from '@/hooks/useComenzi';
 import { useToast } from '@/hooks/use-toast';
 import { Calculator } from 'lucide-react';
@@ -23,6 +25,7 @@ export function ComandaForm() {
   const { toast } = useToast();
   const [selectedDistribuitor, setSelectedDistribuitor] = useState<string>('');
   const [selectedDistributorData, setSelectedDistributorData] = useState<any>(null);
+  const { distribuitori } = useDistribuitori(true);
   const { produse, loading: loadingProduse } = useProduse(selectedDistribuitor);
   const [items, setItems] = useState<ItemComanda[]>([]);
 
@@ -167,7 +170,7 @@ export function ComandaForm() {
               <DistributorSelector
                 form={form}
                 onDistributorChange={handleDistributorChange}
-                selectedDistribuitor={selectedDistribuitor}
+                selectedDistributor={selectedDistribuitor}
                 selectedDistributorData={selectedDistributorData}
               />
 

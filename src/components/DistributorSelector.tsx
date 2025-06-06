@@ -56,7 +56,7 @@ export function DistributorSelector({
         )}
       />
 
-      {selectedDistribuitor && (
+      {selectedDistributor && (
         <div className="p-4 bg-green-50 rounded-lg border border-green-200">
           <p className="text-green-800 text-sm">
             ✓ Distribuitor selectat: <strong>{selectedDistributorData?.nume_companie}</strong>
