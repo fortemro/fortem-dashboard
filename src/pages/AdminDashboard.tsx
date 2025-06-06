@@ -63,6 +63,14 @@ export default function AdminDashboard() {
     }).format(amount);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-16 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -103,8 +111,10 @@ export default function AdminDashboard() {
                     <SelectValue placeholder="Selectează MZV" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Toți MZV-ii</SelectItem>
-                    {stats?.mzvPerformance.map((mzv) => (
+                    <SelectItem value="toate">Toți MZV-ii</SelectItem>
+                    {stats?.mzvPerformance
+                      ?.filter(mzv => mzv.mzv_id && mzv.mzv_id.trim() !== '')
+                      ?.map((mzv) => (
                       <SelectItem key={mzv.mzv_id} value={mzv.mzv_id}>
                         {mzv.mzv_name}
                       </SelectItem>
@@ -119,8 +129,10 @@ export default function AdminDashboard() {
                     <SelectValue placeholder="Selectează distribuitor" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Toți distribuitorii</SelectItem>
-                    {stats?.distributorStats.map((dist) => (
+                    <SelectItem value="toti">Toți distribuitorii</SelectItem>
+                    {stats?.distributorStats
+                      ?.filter(dist => dist.distribuitor_id && dist.distribuitor_id.trim() !== '')
+                      ?.map((dist) => (
                       <SelectItem key={dist.distribuitor_id} value={dist.distribuitor_id}>
                         {dist.distribuitor_name}
                       </SelectItem>
@@ -207,7 +219,6 @@ export default function AdminDashboard() {
                         <TableHead>MZV</TableHead>
                         <TableHead>Distribuitor</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Valoare</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -226,7 +237,6 @@ export default function AdminDashboard() {
                               {comanda.status}
                             </span>
                           </TableCell>
-                          <TableCell>-</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

@@ -41,120 +41,155 @@ export function useAdminStats(dateFrom?: string, dateTo?: string) {
     try {
       setLoading(true);
 
-      // Construim query-ul cu filtre de dată dacă sunt furnizate
-      let query = supabase
+      // Step 1: Fetch comenzi with basic info and distributors
+      let comenziQuery = supabase
         .from('comenzi')
         .select(`
-          *,
-          itemi_comanda (
-            cantitate,
-            pret_unitar,
-            total_item,
-            produse (
-              nume
-            )
-          ),
+          id,
+          data_comanda,
+          mzv_emitent,
+          distribuitor_id,
+          status,
           distribuitori!comenzi_distribuitor_id_fkey (
             nume_companie
           )
         `);
 
       if (dateFrom) {
-        query = query.gte('data_comanda', dateFrom);
+        comenziQuery = comenziQuery.gte('data_comanda', dateFrom);
       }
       if (dateTo) {
-        query = query.lte('data_comanda', dateTo);
+        comenziQuery = comenziQuery.lte('data_comanda', dateTo);
       }
 
-      const { data: comenzi, error } = await query;
+      const { data: comenzi, error: comenziError } = await comenziQuery;
+      if (comenziError) {
+        console.error('Error fetching comenzi:', comenziError);
+        throw comenziError;
+      }
 
-      if (error) throw error;
+      // Step 2: Fetch all itemi_comanda for the orders
+      const comenziIds = comenzi?.map(c => c.id) || [];
+      
+      let itemsData = [];
+      if (comenziIds.length > 0) {
+        const { data: items, error: itemsError } = await supabase
+          .from('itemi_comanda')
+          .select(`
+            comanda_id,
+            cantitate,
+            pret_unitar,
+            total_item,
+            produs_id,
+            produse (
+              nume
+            )
+          `)
+          .in('comanda_id', comenziIds);
 
-      // Fetch MZV profiles separately to avoid relationship issues
+        if (itemsError) {
+          console.error('Error fetching items:', itemsError);
+          throw itemsError;
+        }
+        itemsData = items || [];
+      }
+
+      // Step 3: Fetch MZV profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiluri_utilizatori')
         .select('user_id, nume, prenume');
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
 
-      // Create a map for quick profile lookup
+      // Create maps for quick lookup
       const profileMap = new Map();
       profiles?.forEach(profile => {
         profileMap.set(profile.user_id, `${profile.nume} ${profile.prenume}`);
       });
 
-      // Calculăm statisticile
-      const totalOrders = comenzi?.length || 0;
-      const totalValue = comenzi?.reduce((sum, comanda) => {
-        const comandaTotal = comanda.itemi_comanda?.reduce((itemSum: number, item: any) => 
-          itemSum + item.total_item, 0) || 0;
-        return sum + comandaTotal;
-      }, 0) || 0;
+      // Group items by comanda_id for easier lookup
+      const itemsByComanda = new Map();
+      itemsData.forEach(item => {
+        if (!itemsByComanda.has(item.comanda_id)) {
+          itemsByComanda.set(item.comanda_id, []);
+        }
+        itemsByComanda.get(item.comanda_id).push(item);
+      });
 
-      // Performanța MZV-ilor
+      // Calculate statistics
+      const totalOrders = comenzi?.length || 0;
+      
+      let totalValue = 0;
       const mzvMap = new Map();
+      const distributorMap = new Map();
+      const productMap = new Map();
+
       comenzi?.forEach(comanda => {
+        const comandaItems = itemsByComanda.get(comanda.id) || [];
+        const comandaValue = comandaItems.reduce((sum, item) => sum + (item.total_item || 0), 0);
+        totalValue += comandaValue;
+
+        // MZV Performance
         const mzvId = comanda.mzv_emitent;
         const mzvName = profileMap.get(mzvId) || 'Necunoscut';
-        const comandaValue = comanda.itemi_comanda?.reduce((sum: number, item: any) => 
-          sum + item.total_item, 0) || 0;
-
-        if (mzvMap.has(mzvId)) {
-          const existing = mzvMap.get(mzvId);
-          existing.orders_count++;
-          existing.total_value += comandaValue;
-        } else {
-          mzvMap.set(mzvId, {
-            mzv_id: mzvId,
-            mzv_name: mzvName,
-            orders_count: 1,
-            total_value: comandaValue
-          });
+        
+        if (mzvId) {
+          if (mzvMap.has(mzvId)) {
+            const existing = mzvMap.get(mzvId);
+            existing.orders_count++;
+            existing.total_value += comandaValue;
+          } else {
+            mzvMap.set(mzvId, {
+              mzv_id: mzvId,
+              mzv_name: mzvName,
+              orders_count: 1,
+              total_value: comandaValue
+            });
+          }
         }
-      });
 
-      // Statistici distribuitori
-      const distributorMap = new Map();
-      comenzi?.forEach(comanda => {
+        // Distribuitor Stats
         const distributorId = comanda.distribuitor_id;
         const distributorName = comanda.distribuitori?.nume_companie || 'Necunoscut';
-        const comandaValue = comanda.itemi_comanda?.reduce((sum: number, item: any) => 
-          sum + item.total_item, 0) || 0;
-
-        if (distributorMap.has(distributorId)) {
-          const existing = distributorMap.get(distributorId);
-          existing.orders_count++;
-          existing.total_value += comandaValue;
-        } else {
-          distributorMap.set(distributorId, {
-            distribuitor_id: distributorId,
-            distribuitor_name: distributorName,
-            orders_count: 1,
-            total_value: comandaValue
-          });
+        
+        if (distributorId) {
+          if (distributorMap.has(distributorId)) {
+            const existing = distributorMap.get(distributorId);
+            existing.orders_count++;
+            existing.total_value += comandaValue;
+          } else {
+            distributorMap.set(distributorId, {
+              distribuitor_id: distributorId,
+              distribuitor_name: distributorName,
+              orders_count: 1,
+              total_value: comandaValue
+            });
+          }
         }
-      });
 
-      // Statistici produse
-      const productMap = new Map();
-      comenzi?.forEach(comanda => {
-        comanda.itemi_comanda?.forEach((item: any) => {
+        // Product Stats
+        comandaItems.forEach(item => {
           const productId = item.produs_id;
           const productName = item.produse?.nume || 'Necunoscut';
-          const quantity = item.cantitate;
-          const value = item.total_item;
+          const quantity = item.cantitate || 0;
+          const value = item.total_item || 0;
 
-          if (productMap.has(productId)) {
-            const existing = productMap.get(productId);
-            existing.total_quantity += quantity;
-            existing.total_value += value;
-          } else {
-            productMap.set(productId, {
-              produs_id: productId,
-              produs_name: productName,
-              total_quantity: quantity,
-              total_value: value
-            });
+          if (productId) {
+            if (productMap.has(productId)) {
+              const existing = productMap.get(productId);
+              existing.total_quantity += quantity;
+              existing.total_value += value;
+            } else {
+              productMap.set(productId, {
+                produs_id: productId,
+                produs_name: productName,
+                total_quantity: quantity,
+                total_value: value
+              });
+            }
           }
         });
       });
