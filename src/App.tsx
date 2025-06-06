@@ -14,6 +14,7 @@ import Produse from '@/pages/Produse';
 import Comanda from '@/pages/Comanda';
 import AdminDashboard from '@/pages/AdminDashboard';
 import AdminValidarePreturi from '@/pages/AdminValidarePreturi';
+import CentralizatorComenzi from '@/pages/CentralizatorComenzi';
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Comanda />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/centralizator-comenzi"
+                element={
+                  <ProtectedRoute>
+                    <CentralizatorComenzi />
                   </ProtectedRoute>
                 }
               />
