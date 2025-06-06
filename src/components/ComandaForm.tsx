@@ -61,7 +61,7 @@ export function ComandaForm() {
     setItems(items.filter((_, i) => i !== index));
   };
 
-  const updateItem = (index: number, field: keyof ItemComanda, value: any) => {
+  const updateItem = (index: number, field: keyof ItemComanda, value: string | number) => {
     const newItems = [...items];
     const item = newItems[index];
     
@@ -78,16 +78,16 @@ export function ComandaForm() {
       }
     }
     
-    item[field] = value;
+    (item as any)[field] = value;
 
     // Calculări automate
     if (produs) {
       if (field === 'nr_paleti' && produs.bucati_per_palet) {
-        item.cantitate = value * produs.bucati_per_palet;
+        item.cantitate = Number(value) * produs.bucati_per_palet;
       }
       
       if (field === 'cantitate' && produs.bucati_per_palet) {
-        item.nr_paleti = Math.ceil(value / produs.bucati_per_palet);
+        item.nr_paleti = Math.ceil(Number(value) / produs.bucati_per_palet);
       }
       
       if (field === 'ml_comanda' && produs.dimensiuni) {
@@ -96,7 +96,7 @@ export function ComandaForm() {
         if (dimensiuni.length >= 3) {
           const lungime = parseFloat(dimensiuni[0]) || 0;
           if (lungime > 0) {
-            item.cantitate = Math.ceil(value / (lungime / 1000)); // conversie mm la m
+            item.cantitate = Math.ceil(Number(value) / (lungime / 1000)); // conversie mm la m
           }
         }
       }
