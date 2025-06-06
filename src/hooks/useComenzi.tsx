@@ -5,9 +5,9 @@ import { useAuth } from './useAuth';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 
 type Comanda = Tables<'comenzi'>;
-type ComandaInsert = Omit<TablesInsert<'comenzi'>, 'user_id' | 'numar_comanda'>;
+type ComandaInsert = Omit<TablesInsert<'comenzi'>, 'user_id' | 'numar_comanda' | 'id' | 'created_at' | 'updated_at'>;
 type ItemComanda = Tables<'itemi_comanda'>;
-type ItemComandaInsert = Omit<TablesInsert<'itemi_comanda'>, 'comanda_id'>;
+type ItemComandaInsert = Omit<TablesInsert<'itemi_comanda'>, 'comanda_id' | 'id' | 'created_at' | 'total_item'>;
 
 export function useComenzi() {
   const { user } = useAuth();
@@ -46,13 +46,15 @@ export function useComenzi() {
     if (!user) throw new Error('Nu ești autentificat');
 
     try {
-      // Creează comanda
+      // Creează comanda - nu includem numar_comanda pentru că va fi generat automat de trigger
+      const insertData: any = {
+        ...comandaData,
+        user_id: user.id
+      };
+
       const { data: comanda, error: comandaError } = await supabase
         .from('comenzi')
-        .insert({
-          ...comandaData,
-          user_id: user.id
-        })
+        .insert(insertData)
         .select()
         .single();
 
@@ -61,7 +63,8 @@ export function useComenzi() {
       // Adaugă itemii comenzii
       const itemsWithComandaId = items.map(item => ({
         ...item,
-        comanda_id: comanda.id
+        comanda_id: comanda.id,
+        total_item: item.cantitate * item.pret_unitar
       }));
 
       const { error: itemsError } = await supabase
