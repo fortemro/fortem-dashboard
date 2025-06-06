@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useProduse } from '@/hooks/useProduse';
-import { Package, Euro } from 'lucide-react';
+import { Package, Euro, Ruler, Weight, Truck } from 'lucide-react';
 
 interface ProduseGridProps {
   distributorId?: string;
@@ -53,7 +53,12 @@ export function ProduseGrid({ distributorId }: ProduseGridProps) {
           <CardHeader>
             <div className="flex justify-between items-start">
               <CardTitle className="text-lg">{produs.nume}</CardTitle>
-              <Badge variant="secondary">{produs.categorie}</Badge>
+              <div className="flex flex-col gap-1">
+                <Badge variant="secondary">{produs.categorie}</Badge>
+                {produs.tip_produs && (
+                  <Badge variant="outline" className="text-xs">{produs.tip_produs}</Badge>
+                )}
+              </div>
             </div>
             {produs.cod_produs && (
               <CardDescription>Cod: {produs.cod_produs}</CardDescription>
@@ -62,6 +67,72 @@ export function ProduseGrid({ distributorId }: ProduseGridProps) {
           <CardContent>
             {produs.descriere && (
               <p className="text-sm text-gray-600 mb-4">{produs.descriere}</p>
+            )}
+            
+            {/* Informații dimensiuni și greutate */}
+            {(produs.dimensiuni || produs.kg_per_buc || produs.densitate) && (
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <h4 className="text-sm font-semibold mb-2 flex items-center">
+                  <Ruler className="h-4 w-4 mr-1" />
+                  Specificații Tehnice
+                </h4>
+                <div className="space-y-1 text-xs">
+                  {produs.dimensiuni && (
+                    <div className="flex justify-between">
+                      <span>Dimensiuni:</span>
+                      <span className="font-medium">{produs.dimensiuni}</span>
+                    </div>
+                  )}
+                  {produs.kg_per_buc && (
+                    <div className="flex justify-between">
+                      <span>Greutate/buc:</span>
+                      <span className="font-medium">{produs.kg_per_buc} kg</span>
+                    </div>
+                  )}
+                  {produs.densitate && (
+                    <div className="flex justify-between">
+                      <span>Densitate:</span>
+                      <span className="font-medium">{produs.densitate}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Informații paletizare */}
+            {(produs.bucati_per_palet || produs.paleti_per_camion || produs.bucati_per_legatura) && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                <h4 className="text-sm font-semibold mb-2 flex items-center">
+                  <Truck className="h-4 w-4 mr-1" />
+                  Informații Paletizare
+                </h4>
+                <div className="space-y-1 text-xs">
+                  {produs.bucati_per_palet && (
+                    <div className="flex justify-between">
+                      <span>Bucăți/palet:</span>
+                      <span className="font-medium">{produs.bucati_per_palet}</span>
+                    </div>
+                  )}
+                  {produs.bucati_per_legatura && (
+                    <div className="flex justify-between">
+                      <span>Bucăți/legătură:</span>
+                      <span className="font-medium">{produs.bucati_per_legatura}</span>
+                    </div>
+                  )}
+                  {produs.paleti_per_camion && (
+                    <div className="flex justify-between">
+                      <span>Paleți/camion:</span>
+                      <span className="font-medium">{produs.paleti_per_camion}</span>
+                    </div>
+                  )}
+                  {produs.kg_per_camion && (
+                    <div className="flex justify-between">
+                      <span>Kg/camion:</span>
+                      <span className="font-medium">{produs.kg_per_camion} kg</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
             
             <div className="space-y-2">

@@ -167,49 +167,94 @@ export type Database = {
       produse: {
         Row: {
           activ: boolean | null
+          buc_comanda: number | null
+          bucati_per_legatura: number | null
+          bucati_per_palet: number | null
           categorie: string | null
           cod_produs: string | null
           created_at: string
+          densitate: number | null
           descriere: string | null
+          dimensiuni: string | null
           distribuitor_id: string
           id: string
           imagine_url: string | null
+          kg_per_buc: number | null
+          kg_per_cam: number | null
+          kg_per_camion: number | null
+          ml_comanda: number | null
           moneda: string | null
+          necesare_buc_ml: number | null
+          nr_bucati: number | null
+          nr_paleti: number | null
           nume: string
+          paleti_comandati: number | null
+          paleti_per_camion: number | null
           pret: number
           stoc_disponibil: number | null
+          tip_produs: string | null
           unitate_masura: string | null
           updated_at: string
         }
         Insert: {
           activ?: boolean | null
+          buc_comanda?: number | null
+          bucati_per_legatura?: number | null
+          bucati_per_palet?: number | null
           categorie?: string | null
           cod_produs?: string | null
           created_at?: string
+          densitate?: number | null
           descriere?: string | null
+          dimensiuni?: string | null
           distribuitor_id: string
           id?: string
           imagine_url?: string | null
+          kg_per_buc?: number | null
+          kg_per_cam?: number | null
+          kg_per_camion?: number | null
+          ml_comanda?: number | null
           moneda?: string | null
+          necesare_buc_ml?: number | null
+          nr_bucati?: number | null
+          nr_paleti?: number | null
           nume: string
+          paleti_comandati?: number | null
+          paleti_per_camion?: number | null
           pret: number
           stoc_disponibil?: number | null
+          tip_produs?: string | null
           unitate_masura?: string | null
           updated_at?: string
         }
         Update: {
           activ?: boolean | null
+          buc_comanda?: number | null
+          bucati_per_legatura?: number | null
+          bucati_per_palet?: number | null
           categorie?: string | null
           cod_produs?: string | null
           created_at?: string
+          densitate?: number | null
           descriere?: string | null
+          dimensiuni?: string | null
           distribuitor_id?: string
           id?: string
           imagine_url?: string | null
+          kg_per_buc?: number | null
+          kg_per_cam?: number | null
+          kg_per_camion?: number | null
+          ml_comanda?: number | null
           moneda?: string | null
+          necesare_buc_ml?: number | null
+          nr_bucati?: number | null
+          nr_paleti?: number | null
           nume?: string
+          paleti_comandati?: number | null
+          paleti_per_camion?: number | null
           pret?: number
           stoc_disponibil?: number | null
+          tip_produs?: string | null
           unitate_masura?: string | null
           updated_at?: string
         }
