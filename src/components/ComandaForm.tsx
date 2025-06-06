@@ -11,7 +11,7 @@ import { useDistribuitori } from '@/hooks/useDistribuitori';
 import { useProduse } from '@/hooks/useProduse';
 import { useComenzi } from '@/hooks/useComenzi';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Calculator } from 'lucide-react';
+import { Plus, Trash2, Calculator, Loader2 } from 'lucide-react';
 
 interface ItemComanda {
   produs_id: string;
@@ -21,13 +21,18 @@ interface ItemComanda {
 }
 
 export function ComandaForm() {
-  const { distribuitori } = useDistribuitori(true); // Filtrează doar distribuitorii alocați utilizatorului
+  const { distribuitori, loading: loadingDistribuitori } = useDistribuitori(true);
   const { createComanda } = useComenzi();
   const { toast } = useToast();
   const [selectedDistribuitor, setSelectedDistribuitor] = useState<string>('');
   const [selectedDistributorData, setSelectedDistributorData] = useState<any>(null);
-  const { produse } = useProduse(selectedDistribuitor);
+  const { produse, loading: loadingProduse } = useProduse(selectedDistribuitor);
   const [items, setItems] = useState<ItemComanda[]>([]);
+
+  console.log('ComandaForm - selectedDistribuitor:', selectedDistribuitor);
+  console.log('ComandaForm - produse:', produse);
+  console.log('ComandaForm - loadingProduse:', loadingProduse);
+  console.log('ComandaForm - distribuitori:', distribuitori);
 
   const form = useForm({
     defaultValues: {
@@ -43,10 +48,12 @@ export function ComandaForm() {
   });
 
   const handleDistributorChange = (distributorId: string) => {
+    console.log('handleDistributorChange called with:', distributorId);
     setSelectedDistribuitor(distributorId);
     const distributorData = distribuitori.find(d => d.id === distributorId);
     
     if (distributorData) {
+      console.log('Found distributor data:', distributorData);
       setSelectedDistributorData(distributorData);
       // Completează automat câmpurile de adresă și persoană contact
       form.setValue('adresa_livrare', distributorData.adresa);
@@ -63,6 +70,7 @@ export function ComandaForm() {
   };
 
   const adaugaItem = () => {
+    console.log('adaugaItem called');
     setItems([...items, {
       produs_id: '',
       nume_produs: '',
@@ -83,6 +91,7 @@ export function ComandaForm() {
       const selectedProdus = produse.find(p => p.id === value);
       if (selectedProdus) {
         item.nume_produs = selectedProdus.nume;
+        console.log('Updated item with product:', selectedProdus);
       }
     }
     
@@ -143,6 +152,8 @@ export function ComandaForm() {
     }
   };
 
+  const isAddProductDisabled = !selectedDistribuitor || loadingProduse;
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <Card>
@@ -165,10 +176,11 @@ export function ComandaForm() {
                         handleDistributorChange(value);
                       }}
                       value={field.value}
+                      disabled={loadingDistribuitori}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selectează distribuitorul alocat" />
+                          <SelectValue placeholder={loadingDistribuitori ? "Se încarcă distribuitorii..." : "Selectează distribuitorul alocat"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -183,6 +195,18 @@ export function ComandaForm() {
                   </FormItem>
                 )}
               />
+
+              {/* Pas următor - afișează doar după selectarea distribuitorului */}
+              {selectedDistribuitor && (
+                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <p className="text-green-800 text-sm">
+                    ✓ Distribuitor selectat: <strong>{selectedDistributorData?.nume_companie}</strong>
+                  </p>
+                  <p className="text-green-600 text-xs mt-1">
+                    Adresa și datele de contact au fost completate automat mai jos.
+                  </p>
+                </div>
+              )}
 
               {/* Informații MZV */}
               <FormField
@@ -296,10 +320,46 @@ export function ComandaForm() {
                 <CardHeader>
                   <div className="flex justify-between items-center">
                     <CardTitle>Produse</CardTitle>
-                    <Button type="button" onClick={adaugaItem} disabled={!selectedDistribuitor}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Adaugă Produs
-                    </Button>
+                    <div className="flex flex-col items-end space-y-2">
+                      <Button 
+                        type="button" 
+                        onClick={adaugaItem} 
+                        disabled={isAddProductDisabled}
+                        className="relative"
+                      >
+                        {loadingProduse ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Plus className="h-4 w-4 mr-2" />
+                        )}
+                        Adaugă Produs
+                      </Button>
+                      
+                      {/* Mesaj explicativ când butonul este dezactivat */}
+                      {!selectedDistribuitor && (
+                        <p className="text-xs text-gray-500 text-right max-w-48">
+                          Selectează mai întâi un distribuitor pentru a putea adăuga produse
+                        </p>
+                      )}
+                      
+                      {selectedDistribuitor && loadingProduse && (
+                        <p className="text-xs text-blue-600 text-right">
+                          Se încarcă produsele...
+                        </p>
+                      )}
+                      
+                      {selectedDistribuitor && !loadingProduse && produse.length === 0 && (
+                        <p className="text-xs text-orange-600 text-right">
+                          Nu există produse disponibile pentru acest distribuitor
+                        </p>
+                      )}
+                      
+                      {selectedDistribuitor && !loadingProduse && produse.length > 0 && (
+                        <p className="text-xs text-green-600 text-right">
+                          {produse.length} produse disponibile
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
