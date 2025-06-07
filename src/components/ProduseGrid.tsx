@@ -6,7 +6,8 @@ import { Package, Ruler, Weight, Truck } from 'lucide-react';
 import { ProductCartButton } from './ProductCartButton';
 
 export function ProduseGrid() {
-  const { produse, loading } = useProduse();
+  // Afișează toate produsele în pagina Produse (showAll = true)
+  const { produse, loading } = useProduse(undefined, true);
 
   if (loading) {
     return (

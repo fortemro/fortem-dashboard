@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
@@ -20,7 +21,8 @@ interface ItemComanda {
 
 export function ComandaForm() {
   const [selectedDistribuitorName, setSelectedDistribuitorName] = useState('');
-  const { produse, loading: loadingProduse } = useProduse(); // Remove distributor filtering
+  // Filtrează produsele după numele distribuitorului selectat
+  const { produse, loading: loadingProduse } = useProduse(selectedDistribuitorName);
   const { cartItems, clearCart } = useCart();
   const [items, setItems] = useState<ItemComanda[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
