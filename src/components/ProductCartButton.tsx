@@ -23,7 +23,7 @@ export function ProductCartButton({ produs }: ProductCartButtonProps) {
       addToCart(produs, cantitate);
       toast({
         title: "Produs adăugat",
-        description: `${produs.nume} x${cantitate} adăugat în coș`,
+        description: `${produs.nume} x${cantitate} ${cantitate === 1 ? 'palet' : 'paleti'} adăugat în coș`,
       });
       setCantitate(1); // Reset quantity after adding
     }
@@ -66,6 +66,10 @@ export function ProductCartButton({ produs }: ProductCartButtonProps) {
         >
           <Plus className="h-3 w-3" />
         </Button>
+      </div>
+      
+      <div className="text-center">
+        <span className="text-xs text-gray-600">Paleti</span>
       </div>
       
       <Button 

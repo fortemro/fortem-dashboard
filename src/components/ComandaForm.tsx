@@ -46,8 +46,8 @@ export function ComandaForm() {
       const cartToItems = cartItems.map(cartItem => ({
         produs_id: cartItem.produs.id,
         nume_produs: cartItem.produs.nume,
-        cantitate: cartItem.cantitate,
-        pret_unitar: 0 // User will need to set the price manually
+        cantitate: cartItem.cantitate, // Already in paleti from cart
+        pret_unitar: 0 // User will need to set the price manually per palet
       }));
       setItems(cartToItems);
     }
@@ -101,6 +101,10 @@ export function ComandaForm() {
     onSuccess: resetForm
   });
 
+  const getTotalPaleti = () => {
+    return items.reduce((total, item) => total + item.cantitate, 0);
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <Card>
@@ -108,7 +112,7 @@ export function ComandaForm() {
           <CardTitle>Comandă Nouă</CardTitle>
           {cartItems.length > 0 && (
             <p className="text-sm text-blue-600">
-              Produse adăugate din catalog: {cartItems.length} articole
+              Produse adăugate din catalog: {cartItems.length} articole • {cartItems.reduce((total, item) => total + item.cantitate, 0)} paleti
             </p>
           )}
         </CardHeader>
@@ -133,6 +137,17 @@ export function ComandaForm() {
                 onUpdateItem={updateItem}
                 onDeleteItem={stergeItem}
               />
+
+              {items.length > 0 && (
+                <Card className="bg-gray-50">
+                  <CardContent className="pt-4">
+                    <div className="flex justify-between items-center text-sm text-gray-600">
+                      <span>Total paleti comandați:</span>
+                      <span className="font-semibold">{getTotalPaleti()} {getTotalPaleti() === 1 ? 'palet' : 'paleti'}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               <OrderFormActions onReset={resetForm} />
             </form>

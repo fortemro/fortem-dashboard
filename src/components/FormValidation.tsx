@@ -42,23 +42,34 @@ export function useFormValidation() {
       return false;
     }
 
-    // Verifică că toate itemii au cantitate
+    // Verifică că toate itemii au cantitate în paleti
     const itemsWithoutQuantity = items.filter(item => !item.cantitate || item.cantitate <= 0);
     if (itemsWithoutQuantity.length > 0) {
       toast({
         title: "Eroare",
-        description: "Toate produsele trebuie să aibă o cantitate validă",
+        description: "Toate produsele trebuie să aibă o cantitate validă în paleti (minimum 1 palet)",
         variant: "destructive"
       });
       return false;
     }
 
-    // Verifică că toate itemii au preț manual introdus
+    // Verifică că cantitățile sunt numere întregi (nu se pot comanda fracții de paleti)
+    const itemsWithFractionalQuantity = items.filter(item => !Number.isInteger(item.cantitate));
+    if (itemsWithFractionalQuantity.length > 0) {
+      toast({
+        title: "Eroare",
+        description: "Cantitățile trebuie să fie numere întregi de paleti",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    // Verifică că toate itemii au preț manual introdus per palet
     const itemsWithoutPrice = items.filter(item => !item.pret_unitar || item.pret_unitar <= 0);
     if (itemsWithoutPrice.length > 0) {
       toast({
         title: "Eroare",
-        description: "Toate produsele trebuie să aibă un preț de vânzare manual introdus",
+        description: "Toate produsele trebuie să aibă un preț de vânzare manual introdus per palet",
         variant: "destructive"
       });
       return false;

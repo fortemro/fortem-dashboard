@@ -32,6 +32,10 @@ export function ProductItemForm({
   onUpdate, 
   onDelete 
 }: ProductItemFormProps) {
+  const selectedProduct = produse.find(p => p.id === item.produs_id);
+  const bucatiPerPalet = selectedProduct?.bucati_per_palet || 0;
+  const totalBucati = item.cantitate * bucatiPerPalet;
+
   return (
     <Card className="mb-4">
       <CardContent className="pt-4">
@@ -56,17 +60,23 @@ export function ProductItemForm({
           </div>
 
           <div>
-            <Label>Cantitate *</Label>
+            <Label>Cantitate (Paleti) *</Label>
             <Input
               type="number"
               value={item.cantitate}
               onChange={(e) => onUpdate(index, 'cantitate', parseInt(e.target.value) || 0)}
               placeholder="0"
+              min="1"
             />
+            {bucatiPerPalet > 0 && (
+              <p className="text-xs text-gray-500 mt-1">
+                = {totalBucati} bucăți
+              </p>
+            )}
           </div>
 
           <div>
-            <Label>Preț Vânzare Manual (RON) *</Label>
+            <Label>Preț/Palet (RON) *</Label>
             <Input
               type="number"
               step="0.01"
@@ -95,6 +105,12 @@ export function ProductItemForm({
                 {(item.cantitate * item.pret_unitar).toFixed(2)} RON
               </span>
             </div>
+            {bucatiPerPalet > 0 && (
+              <div className="flex justify-between text-xs text-gray-600">
+                <span>Cantitate totală:</span>
+                <span>{item.cantitate} paleti ({totalBucati} bucăți)</span>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
