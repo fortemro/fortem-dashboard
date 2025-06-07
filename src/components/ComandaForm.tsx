@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
@@ -10,7 +9,6 @@ import { OrderFormActions } from './OrderFormActions';
 import { OrderSuccessModal } from './OrderSuccessModal';
 import { useOrderSubmission } from './OrderSubmissionHandler';
 import { useProduse } from '@/hooks/useProduse';
-import { useDistribuitori } from '@/hooks/useDistribuitori';
 import { useCart } from '@/contexts/CartContext';
 
 interface ItemComanda {
@@ -21,9 +19,8 @@ interface ItemComanda {
 }
 
 export function ComandaForm() {
-  const { distribuitori, loading: loadingDistribuitori } = useDistribuitori();
-  const [selectedDistribuitorId, setSelectedDistribuitorId] = useState('');
-  const { produse, loading: loadingProduse } = useProduse(selectedDistribuitorId);
+  const [selectedDistribuitorName, setSelectedDistribuitorName] = useState('');
+  const { produse, loading: loadingProduse } = useProduse(); // Remove distributor filtering
   const { cartItems, clearCart } = useCart();
   const [items, setItems] = useState<ItemComanda[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -65,7 +62,7 @@ export function ComandaForm() {
         // Pre-fill form with duplicate data
         if (parsedData.distribuitor_id) {
           form.setValue('distribuitor_id', parsedData.distribuitor_id);
-          setSelectedDistribuitorId(parsedData.distribuitor_id);
+          setSelectedDistribuitorName(parsedData.distribuitor_id);
         }
         if (parsedData.oras_livrare) form.setValue('oras_livrare', parsedData.oras_livrare);
         if (parsedData.adresa_livrare) form.setValue('adresa_livrare', parsedData.adresa_livrare);
@@ -87,11 +84,11 @@ export function ComandaForm() {
 
   // Clear items when distributor changes
   useEffect(() => {
-    if (selectedDistribuitorId) {
+    if (selectedDistribuitorName) {
       // Clear existing items when distributor changes to avoid mixing products from different distributors
       setItems([]);
     }
-  }, [selectedDistribuitorId]);
+  }, [selectedDistribuitorName]);
 
   const handleSuccess = (successOrderData: any) => {
     setOrderData(successOrderData);
@@ -111,16 +108,14 @@ export function ComandaForm() {
     setOrderData(null);
   };
 
-  const handleDistributorChange = (distributorId: string) => {
-    console.log('Distributor changed to:', distributorId);
-    setSelectedDistribuitorId(distributorId);
-    form.setValue('distribuitor_id', distributorId);
+  const handleDistributorChange = (distributorName: string) => {
+    console.log('Distributor changed to:', distributorName);
+    setSelectedDistribuitorName(distributorName);
+    form.setValue('distribuitor_id', distributorName);
   };
 
-  const selectedDistributorData = distribuitori.find(d => d.id === selectedDistribuitorId);
-
   const handleAddItem = () => {
-    if (!selectedDistribuitorId) {
+    if (!selectedDistribuitorName) {
       // This will be handled by validation, but we can show a visual cue
       return;
     }
@@ -146,17 +141,17 @@ export function ComandaForm() {
   const handleReset = () => {
     form.reset();
     setItems([]);
-    setSelectedDistribuitorId('');
+    setSelectedDistribuitorName('');
   };
 
   const onSubmit = async (data: any) => {
     console.log('Form data on submit:', data);
-    console.log('Selected distribuitor ID:', selectedDistribuitorId);
+    console.log('Selected distribuitor name:', selectedDistribuitorName);
     
     // Ensure distribuitor_id is included in the data
     const submitData = {
       ...data,
-      distribuitor_id: selectedDistribuitorId || data.distribuitor_id
+      distribuitor_id: selectedDistribuitorName || data.distribuitor_id
     };
     
     await submitOrder(submitData);
@@ -168,8 +163,7 @@ export function ComandaForm() {
         <DistributorSelector
           form={form}
           onDistributorChange={handleDistributorChange}
-          selectedDistributor={selectedDistribuitorId}
-          selectedDistributorData={selectedDistributorData}
+          selectedDistributor={selectedDistribuitorName}
         />
         
         <DeliveryForm form={form} />
@@ -178,7 +172,7 @@ export function ComandaForm() {
           items={items}
           produse={produse}
           loadingProduse={loadingProduse}
-          selectedDistribuitor={selectedDistribuitorId}
+          selectedDistribuitor={selectedDistribuitorName}
           onAddItem={handleAddItem}
           onUpdateItem={handleUpdateItem}
           onDeleteItem={handleDeleteItem}

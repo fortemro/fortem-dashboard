@@ -13,10 +13,10 @@ export function useFormValidation() {
 
   const validateForm = (data: any, items: ItemComanda[]) => {
     // Validare distribuitor
-    if (!data.distribuitor_id) {
+    if (!data.distribuitor_id || data.distribuitor_id.trim() === '') {
       toast({
         title: "Eroare",
-        description: "Selectarea unui distribuitor este obligatorie",
+        description: "Introducerea numelui distribuitorului este obligatorie",
         variant: "destructive"
       });
       return false;

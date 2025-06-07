@@ -29,24 +29,24 @@ export function useOrderSubmission({ produse, items, onSuccess }: UseOrderSubmis
       return;
     }
 
-    // Folosește distribuitor_id din formular în loc de primul produs
-    const distribuitorId = data.distribuitor_id;
+    // Folosește distribuitor_id din formular (care este acum text)
+    const distribuitorName = data.distribuitor_id;
     
-    if (!distribuitorId) {
+    if (!distribuitorName || distribuitorName.trim() === '') {
       toast({
         title: "Eroare", 
-        description: "Distribuitor ID este obligatoriu pentru a crea comanda",
+        description: "Numele distribuitorului este obligatoriu pentru a crea comanda",
         variant: "destructive"
       });
       return;
     }
 
     try {
-      console.log('Attempting to create comanda with distribuitor_id:', distribuitorId);
+      console.log('Attempting to create comanda with distribuitor name:', distribuitorName);
       
       const comanda = await createComanda(
         {
-          distribuitor_id: distribuitorId,
+          distribuitor_id: distribuitorName.trim(), // Store the distributor name as text
           oras_livrare: data.oras_livrare,
           adresa_livrare: data.adresa_livrare,
           judet_livrare: data.judet_livrare || '',
@@ -66,15 +66,11 @@ export function useOrderSubmission({ produse, items, onSuccess }: UseOrderSubmis
       // Calculează totalul comenzii
       const totalComanda = items.reduce((total, item) => total + (item.cantitate * item.pret_unitar), 0);
 
-      // Găsește distribuitor-ul pentru numele acestuia
-      const distribuitor = produse.find(p => p.distribuitor_id === distribuitorId);
-      const distribuitorNume = distribuitor?.distribuitor?.nume_companie || 'Necunoscut';
-
       // Pregătește datele pentru modal-ul de succes
       const orderData = {
         id: comanda.id,
         numar_comanda: comanda.numar_comanda,
-        distribuitor_nume: distribuitorNume,
+        distribuitor_nume: distribuitorName.trim(),
         oras_livrare: data.oras_livrare,
         adresa_livrare: data.adresa_livrare,
         total_comanda: totalComanda,
