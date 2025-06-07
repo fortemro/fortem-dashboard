@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -12,7 +13,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  Building2,
   LogOut,
   User,
   Shield,
@@ -33,8 +33,11 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
-              <Building2 className="h-8 w-8 text-blue-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">Fortem</span>
+              <img 
+                src="/lovable-uploads/ac892f66-9d8d-428d-8556-7253923055ff.png" 
+                alt="Fortem Logo" 
+                className="h-8 w-auto"
+              />
             </Link>
           </div>
 
