@@ -17,11 +17,16 @@ export function useProduse(distributorId?: string) {
     try {
       let query = supabase
         .from('produse')
-        .select('*')
+        .select(`
+          *,
+          distribuitor:distribuitori(*)
+        `)
         .eq('activ', true);
 
-      // Nu mai filtrăm după distribuitor - încărcăm toate produsele
-      // Utilizatorul poate alege orice produs din lista completă
+      // Filtrează după distribuitor dacă este selectat
+      if (distributorId) {
+        query = query.eq('distribuitor_id', distributorId);
+      }
 
       const { data, error } = await query.order('nume');
 

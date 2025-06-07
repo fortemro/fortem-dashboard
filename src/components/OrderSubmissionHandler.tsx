@@ -2,7 +2,6 @@
 import { useComenzi } from '@/hooks/useComenzi';
 import { useToast } from '@/hooks/use-toast';
 import { useFormValidation } from './FormValidation';
-import { supabase } from '@/integrations/supabase/client';
 
 interface ItemComanda {
   produs_id: string;
@@ -30,12 +29,13 @@ export function useOrderSubmission({ produse, items, onSuccess }: UseOrderSubmis
       return;
     }
 
-    // Folosește distribuitor_id din primul produs pentru comandă (toate produsele sunt de la Fortem)
-    const distribuitorId = produse.length > 0 ? produse[0].distribuitor_id : null;
+    // Folosește distribuitor_id din formular în loc de primul produs
+    const distribuitorId = data.distribuitor_id;
+    
     if (!distribuitorId) {
       toast({
         title: "Eroare", 
-        description: "Nu s-a putut determina distribuitor_id pentru comandă",
+        description: "Distribuitor ID este obligatoriu pentru a crea comanda",
         variant: "destructive"
       });
       return;

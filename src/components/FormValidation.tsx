@@ -12,7 +12,17 @@ export function useFormValidation() {
   const { toast } = useToast();
 
   const validateForm = (data: any, items: ItemComanda[]) => {
-    // Validări de bază
+    // Validare distribuitor
+    if (!data.distribuitor_id) {
+      toast({
+        title: "Eroare",
+        description: "Selectarea unui distribuitor este obligatorie",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    // Validări de bază pentru livrare
     if (!data.oras_livrare || !data.adresa_livrare) {
       toast({
         title: "Eroare",

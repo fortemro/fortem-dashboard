@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
+import { DistributorSelector } from './DistributorSelector';
 import { DeliveryForm } from './DeliveryForm';
 import { ProductList } from './ProductList';
 import { OrderSummary } from './OrderSummary';
@@ -9,6 +10,7 @@ import { OrderFormActions } from './OrderFormActions';
 import { OrderSuccessModal } from './OrderSuccessModal';
 import { useOrderSubmission } from './OrderSubmissionHandler';
 import { useProduse } from '@/hooks/useProduse';
+import { useDistribuitori } from '@/hooks/useDistribuitori';
 import { useCart } from '@/contexts/CartContext';
 
 interface ItemComanda {
@@ -19,7 +21,9 @@ interface ItemComanda {
 }
 
 export function ComandaForm() {
-  const { produse, loading: loadingProduse } = useProduse();
+  const { distribuitori, loading: loadingDistribuitori } = useDistribuitori();
+  const [selectedDistribuitorId, setSelectedDistribuitorId] = useState('');
+  const { produse, loading: loadingProduse } = useProduse(selectedDistribuitorId);
   const { cartItems, clearCart } = useCart();
   const [items, setItems] = useState<ItemComanda[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -27,6 +31,7 @@ export function ComandaForm() {
 
   const form = useForm({
     defaultValues: {
+      distribuitor_id: '',
       oras_livrare: '',
       adresa_livrare: '',
       judet_livrare: '',
@@ -55,14 +60,38 @@ export function ComandaForm() {
     if (duplicateData) {
       try {
         const parsedData = JSON.parse(duplicateData);
-        // Pre-fill form with duplicate data
         console.log('Loading duplicate order data:', parsedData);
+        
+        // Pre-fill form with duplicate data
+        if (parsedData.distribuitor_id) {
+          form.setValue('distribuitor_id', parsedData.distribuitor_id);
+          setSelectedDistribuitorId(parsedData.distribuitor_id);
+        }
+        if (parsedData.oras_livrare) form.setValue('oras_livrare', parsedData.oras_livrare);
+        if (parsedData.adresa_livrare) form.setValue('adresa_livrare', parsedData.adresa_livrare);
+        if (parsedData.judet_livrare) form.setValue('judet_livrare', parsedData.judet_livrare);
+        if (parsedData.telefon_livrare) form.setValue('telefon_livrare', parsedData.telefon_livrare);
+        if (parsedData.observatii) form.setValue('observatii', parsedData.observatii);
+        
+        // Pre-fill items if available
+        if (parsedData.items && Array.isArray(parsedData.items)) {
+          setItems(parsedData.items);
+        }
+        
         localStorage.removeItem('duplicateOrderData');
       } catch (error) {
         console.error('Error parsing duplicate order data:', error);
       }
     }
-  }, []);
+  }, [form]);
+
+  // Clear items when distributor changes
+  useEffect(() => {
+    if (selectedDistribuitorId) {
+      // Clear existing items when distributor changes to avoid mixing products from different distributors
+      setItems([]);
+    }
+  }, [selectedDistribuitorId]);
 
   const handleSuccess = (successOrderData: any) => {
     setOrderData(successOrderData);
@@ -82,7 +111,20 @@ export function ComandaForm() {
     setOrderData(null);
   };
 
+  const handleDistributorChange = (distributorId: string) => {
+    console.log('Distributor changed to:', distributorId);
+    setSelectedDistribuitorId(distributorId);
+    form.setValue('distribuitor_id', distributorId);
+  };
+
+  const selectedDistributorData = distribuitori.find(d => d.id === selectedDistribuitorId);
+
   const handleAddItem = () => {
+    if (!selectedDistribuitorId) {
+      // This will be handled by validation, but we can show a visual cue
+      return;
+    }
+    
     setItems([...items, {
       produs_id: '',
       nume_produs: '',
@@ -104,26 +146,46 @@ export function ComandaForm() {
   const handleReset = () => {
     form.reset();
     setItems([]);
+    setSelectedDistribuitorId('');
   };
 
   const onSubmit = async (data: any) => {
-    await submitOrder(data);
+    console.log('Form data on submit:', data);
+    console.log('Selected distribuitor ID:', selectedDistribuitorId);
+    
+    // Ensure distribuitor_id is included in the data
+    const submitData = {
+      ...data,
+      distribuitor_id: selectedDistribuitorId || data.distribuitor_id
+    };
+    
+    await submitOrder(submitData);
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <DistributorSelector
+          form={form}
+          onDistributorChange={handleDistributorChange}
+          selectedDistributor={selectedDistribuitorId}
+          selectedDistributorData={selectedDistributorData}
+        />
+        
         <DeliveryForm form={form} />
+        
         <ProductList 
           items={items}
           produse={produse}
           loadingProduse={loadingProduse}
-          selectedDistribuitor=""
+          selectedDistribuitor={selectedDistribuitorId}
           onAddItem={handleAddItem}
           onUpdateItem={handleUpdateItem}
           onDeleteItem={handleDeleteItem}
         />
+        
         <OrderSummary items={items} />
+        
         <OrderFormActions onReset={handleReset} />
         
         {orderData && (
