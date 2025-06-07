@@ -38,34 +38,47 @@ export function useComenzi() {
 
       if (comenziError) throw comenziError;
 
-      // Fetch items for each comanda
+      // Fetch items for each comanda separately to avoid relationship ambiguity
       const comenziWithItems = await Promise.all(
         (comenziData || []).map(async (comanda) => {
-          const { data: items, error: itemsError } = await supabase
+          // First get the items
+          const { data: itemsData, error: itemsError } = await supabase
             .from('itemi_comanda')
-            .select(`
-              *,
-              produs:produse (
-                id,
-                nume,
-                dimensiuni,
-                bucati_per_palet
-              )
-            `)
+            .select('*')
             .eq('comanda_id', comanda.id);
 
           if (itemsError) {
             console.error('Error fetching items for comanda:', comanda.id, itemsError);
           }
 
+          // Then get product details for each item
+          const itemsWithProducts = await Promise.all(
+            (itemsData || []).map(async (item) => {
+              const { data: productData, error: productError } = await supabase
+                .from('produse')
+                .select('id, nume, dimensiuni, bucati_per_palet')
+                .eq('id', item.produs_id)
+                .single();
+
+              if (productError) {
+                console.error('Error fetching product for item:', item.id, productError);
+              }
+
+              return {
+                ...item,
+                produs: productData || undefined
+              };
+            })
+          );
+
           // Calculate total paleti from items
-          const calculatedPaleti = (items || []).reduce((total, item) => {
+          const calculatedPaleti = itemsWithProducts.reduce((total, item) => {
             return total + (item.cantitate || 0);
           }, 0);
 
           return {
             ...comanda,
-            items: items || [],
+            items: itemsWithProducts,
             calculated_paleti: calculatedPaleti
           };
         })
@@ -197,24 +210,37 @@ export function useComenzi() {
 
       if (comandaError) throw comandaError;
 
-      const { data: items, error: itemsError } = await supabase
+      // Get items separately
+      const { data: itemsData, error: itemsError } = await supabase
         .from('itemi_comanda')
-        .select(`
-          *,
-          produs:produse (
-            id,
-            nume,
-            dimensiuni,
-            bucati_per_palet
-          )
-        `)
+        .select('*')
         .eq('comanda_id', comandaId);
 
       if (itemsError) throw itemsError;
 
+      // Get product details for each item
+      const itemsWithProducts = await Promise.all(
+        (itemsData || []).map(async (item) => {
+          const { data: productData, error: productError } = await supabase
+            .from('produse')
+            .select('id, nume, dimensiuni, bucati_per_palet')
+            .eq('id', item.produs_id)
+            .single();
+
+          if (productError) {
+            console.error('Error fetching product for item:', item.id, productError);
+          }
+
+          return {
+            ...item,
+            produs: productData || undefined
+          };
+        })
+      );
+
       return {
         ...comanda,
-        items: items || []
+        items: itemsWithProducts || []
       };
     } catch (error) {
       console.error('Error fetching comanda by id:', error);

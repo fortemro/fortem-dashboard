@@ -85,11 +85,11 @@ export function ComandaForm() {
       
       setSelectedDistribuitorName(orderData.distribuitor_id || '');
 
-      // Pre-fill items
+      // Pre-fill items - safely handle product data
       if (orderData.items && Array.isArray(orderData.items)) {
         const orderItems = orderData.items.map(item => ({
-          produs_id: item.produs?.id || '',
-          nume_produs: item.produs?.nume || '',
+          produs_id: item.produs?.id || item.produs_id,
+          nume_produs: item.produs?.nume || 'Produs necunoscut',
           cantitate: item.cantitate || 0,
           pret_unitar: item.pret_unitar || 0
         }));

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +20,7 @@ interface ItemComanda {
   cantitate: number;
   pret_unitar: number;
   total_item: number;
+  produs_id: string;
   produs?: {
     id: string;
     nume: string;
@@ -45,27 +45,38 @@ export function OrderDetailsModal({ isOpen, onClose, comanda }: OrderDetailsModa
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // First get the items
+      const { data: itemsData, error: itemsError } = await supabase
         .from('itemi_comanda')
-        .select(`
-          id,
-          cantitate,
-          pret_unitar,
-          total_item,
-          produs:produse (
-            id,
-            nume,
-            dimensiuni
-          )
-        `)
+        .select('*')
         .eq('comanda_id', comanda.id);
 
-      if (error) {
-        console.error('Error fetching order items:', error);
-        throw error;
+      if (itemsError) {
+        console.error('Error fetching order items:', itemsError);
+        throw itemsError;
       }
 
-      setItems(data || []);
+      // Then get product details for each item
+      const itemsWithProducts = await Promise.all(
+        (itemsData || []).map(async (item) => {
+          const { data: productData, error: productError } = await supabase
+            .from('produse')
+            .select('id, nume, dimensiuni')
+            .eq('id', item.produs_id)
+            .single();
+
+          if (productError) {
+            console.error('Error fetching product for item:', item.id, productError);
+          }
+
+          return {
+            ...item,
+            produs: productData || undefined
+          };
+        })
+      );
+
+      setItems(itemsWithProducts);
     } catch (error) {
       console.error('Error loading order items:', error);
       toast({
