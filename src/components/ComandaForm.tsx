@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { Form } from '@/components/ui/form';
 import { DeliveryForm } from './DeliveryForm';
 import { ProductList } from './ProductList';
 import { OrderSummary } from './OrderSummary';
@@ -110,27 +111,29 @@ export function ComandaForm() {
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-      <DeliveryForm form={form} />
-      <ProductList 
-        items={items}
-        produse={produse}
-        loadingProduse={loadingProduse}
-        selectedDistribuitor=""
-        onAddItem={handleAddItem}
-        onUpdateItem={handleUpdateItem}
-        onDeleteItem={handleDeleteItem}
-      />
-      <OrderSummary items={items} />
-      <OrderFormActions onReset={handleReset} />
-      
-      {orderData && (
-        <OrderSuccessModal
-          isOpen={showSuccessModal}
-          onClose={handleCloseSuccessModal}
-          orderData={orderData}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <DeliveryForm form={form} />
+        <ProductList 
+          items={items}
+          produse={produse}
+          loadingProduse={loadingProduse}
+          selectedDistribuitor=""
+          onAddItem={handleAddItem}
+          onUpdateItem={handleUpdateItem}
+          onDeleteItem={handleDeleteItem}
         />
-      )}
-    </form>
+        <OrderSummary items={items} />
+        <OrderFormActions onReset={handleReset} />
+        
+        {orderData && (
+          <OrderSuccessModal
+            isOpen={showSuccessModal}
+            onClose={handleCloseSuccessModal}
+            orderData={orderData}
+          />
+        )}
+      </form>
+    </Form>
   );
 }
