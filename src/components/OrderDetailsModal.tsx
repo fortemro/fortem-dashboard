@@ -25,6 +25,7 @@ interface ItemComanda {
     id: string;
     nume: string;
     dimensiuni: string;
+    bucati_per_palet: number;
   };
 }
 
@@ -61,7 +62,7 @@ export function OrderDetailsModal({ isOpen, onClose, comanda }: OrderDetailsModa
         (itemsData || []).map(async (item) => {
           const { data: productData, error: productError } = await supabase
             .from('produse')
-            .select('id, nume, dimensiuni')
+            .select('id, nume, dimensiuni, bucati_per_palet')
             .eq('id', item.produs_id)
             .single();
 

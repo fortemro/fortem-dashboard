@@ -1,8 +1,15 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
+
+// Define a simplified product type for what we actually fetch
+type SimplifiedProduct = {
+  id: string;
+  nume: string;
+  dimensiuni: string;
+  bucati_per_palet: number;
+};
 
 type Comanda = Tables<'comenzi'> & {
   items?: ItemComanda[];
@@ -10,7 +17,7 @@ type Comanda = Tables<'comenzi'> & {
 };
 type ComandaInsert = Omit<TablesInsert<'comenzi'>, 'user_id' | 'numar_comanda' | 'id' | 'created_at' | 'updated_at' | 'data_comanda'>;
 type ItemComanda = Tables<'itemi_comanda'> & {
-  produs?: Tables<'produse'>;
+  produs?: SimplifiedProduct;
 };
 type ItemComandaInsert = Omit<TablesInsert<'itemi_comanda'>, 'comanda_id' | 'id' | 'created_at' | 'total_item'>;
 
