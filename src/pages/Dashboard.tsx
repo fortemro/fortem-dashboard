@@ -1,7 +1,7 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, BarChart3, Users, FileText, Package, UserCircle, ShoppingCart, Shield } from 'lucide-react';
+import { Building2, BarChart3, Users, FileText, Package, UserCircle, ShoppingCart, Shield, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useProfile } from '@/hooks/useProfile';
 import { useProduse } from '@/hooks/useProduse';
@@ -138,7 +138,15 @@ export default function Dashboard() {
         {profile?.rol === 'MZV' && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Comenzile Mele Recente</CardTitle>
+              <CardTitle className="flex justify-between items-center">
+                <span>Comenzile Mele Recente</span>
+                <Link to="/comenzile-mele">
+                  <Button variant="outline" size="sm">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Vezi Toate
+                  </Button>
+                </Link>
+              </CardTitle>
               <CardDescription>
                 Ultimele 5 comenzi plasate de tine
               </CardDescription>
@@ -217,6 +225,12 @@ export default function Dashboard() {
                   <Button variant="outline" className="w-full justify-start">
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     Creează comandă nouă
+                  </Button>
+                </Link>
+                <Link to="/comenzile-mele">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Comenzile mele
                   </Button>
                 </Link>
                 {profile?.rol === 'Admin' && (

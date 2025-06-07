@@ -1,15 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form } from '@/components/ui/form';
-import { useProduse } from '@/hooks/useProduse';
-import { useCart } from '@/contexts/CartContext';
-import { DistributorSelector } from './DistributorSelector';
 import { DeliveryForm } from './DeliveryForm';
 import { ProductList } from './ProductList';
+import { OrderSummary } from './OrderSummary';
 import { OrderFormActions } from './OrderFormActions';
+import { OrderSuccessModal } from './OrderSuccessModal';
 import { useOrderSubmission } from './OrderSubmissionHandler';
+import { useProduse } from '@/hooks/useProduse';
+import { useCart } from '@/contexts/CartContext';
 
 interface ItemComanda {
   produs_id: string;
@@ -19,141 +17,72 @@ interface ItemComanda {
 }
 
 export function ComandaForm() {
-  const [selectedDistribuitor, setSelectedDistribuitor] = useState<string>('');
-  const { produse, loading: loadingProduse } = useProduse();
-  const [items, setItems] = useState<ItemComanda[]>([]);
+  const { produse } = useProduse();
   const { cartItems, clearCart } = useCart();
+  const [items, setItems] = useState<ItemComanda[]>([]);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [orderData, setOrderData] = useState(null);
 
-  console.log('ComandaForm - selectedDistribuitor:', selectedDistribuitor);
-  console.log('ComandaForm - produse:', produse);
-  console.log('ComandaForm - loadingProduse:', loadingProduse);
-
-  const form = useForm({
-    defaultValues: {
-      distribuitor_id: '',
-      oras_livrare: '',
-      adresa_livrare: '',
-      judet_livrare: '',
-      telefon_livrare: '',
-      observatii: '',
-      numar_paleti: 0
-    }
-  });
-
-  // Pre-populate items from cart when component mounts
+  // Initialize items from cart
   useEffect(() => {
-    if (cartItems.length > 0 && items.length === 0) {
-      const cartToItems = cartItems.map(cartItem => ({
-        produs_id: cartItem.produs.id,
-        nume_produs: cartItem.produs.nume,
-        cantitate: cartItem.cantitate, // Already in paleti from cart
-        pret_unitar: 0 // User will need to set the price manually per palet
+    if (cartItems.length > 0) {
+      const cartBasedItems = cartItems.map(cartItem => ({
+        produs_id: cartItem.produs_id,
+        nume_produs: cartItem.nume_produs,
+        cantitate: cartItem.cantitate,
+        pret_unitar: 0 // Will be set manually
       }));
-      setItems(cartToItems);
+      setItems(cartBasedItems);
     }
-  }, [cartItems, items.length]);
+  }, [cartItems]);
 
-  const handleDistributorChange = (distributorName: string) => {
-    console.log('handleDistributorChange called with:', distributorName);
-    setSelectedDistribuitor(distributorName);
-  };
-
-  const adaugaItem = () => {
-    console.log('adaugaItem called');
-    setItems([...items, {
-      produs_id: '',
-      nume_produs: '',
-      cantitate: 0,
-      pret_unitar: 0
-    }]);
-  };
-
-  const stergeItem = (index: number) => {
-    setItems(items.filter((_, i) => i !== index));
-  };
-
-  const updateItem = (index: number, field: keyof ItemComanda, value: string | number) => {
-    const newItems = [...items];
-    const item = newItems[index];
-    
-    if (field === 'produs_id') {
-      const selectedProdus = produse.find(p => p.id === value);
-      if (selectedProdus) {
-        item.nume_produs = selectedProdus.nume;
-        console.log('Updated item with product:', selectedProdus);
+  // Check for duplicate order data on mount
+  useEffect(() => {
+    const duplicateData = localStorage.getItem('duplicateOrderData');
+    if (duplicateData) {
+      try {
+        const parsedData = JSON.parse(duplicateData);
+        // Pre-fill form with duplicate data
+        console.log('Loading duplicate order data:', parsedData);
+        localStorage.removeItem('duplicateOrderData');
+      } catch (error) {
+        console.error('Error parsing duplicate order data:', error);
       }
     }
-    
-    (item as any)[field] = value;
-    setItems(newItems);
-  };
+  }, []);
 
-  const resetForm = () => {
-    form.reset();
+  const handleSuccess = (successOrderData: any) => {
+    setOrderData(successOrderData);
+    setShowSuccessModal(true);
+    clearCart();
     setItems([]);
-    setSelectedDistribuitor('');
-    clearCart(); // Clear cart when order is successful
   };
 
   const { submitOrder } = useOrderSubmission({
     produse,
     items,
-    onSuccess: resetForm
+    onSuccess: handleSuccess
   });
 
-  const getTotalPaleti = () => {
-    return items.reduce((total, item) => total + item.cantitate, 0);
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false);
+    setOrderData(null);
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Comandă Nouă</CardTitle>
-          {cartItems.length > 0 && (
-            <p className="text-sm text-blue-600">
-              Produse adăugate din catalog: {cartItems.length} articole • {cartItems.reduce((total, item) => total + item.cantitate, 0)} paleti
-            </p>
-          )}
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(submitOrder)} className="space-y-6">
-              <DistributorSelector
-                form={form}
-                onDistributorChange={handleDistributorChange}
-                selectedDistributor={selectedDistribuitor}
-                selectedDistributorData={null}
-              />
-
-              <DeliveryForm form={form} />
-
-              <ProductList
-                items={items}
-                produse={produse}
-                loadingProduse={loadingProduse}
-                selectedDistribuitor={selectedDistribuitor}
-                onAddItem={adaugaItem}
-                onUpdateItem={updateItem}
-                onDeleteItem={stergeItem}
-              />
-
-              {items.length > 0 && (
-                <Card className="bg-gray-50">
-                  <CardContent className="pt-4">
-                    <div className="flex justify-between items-center text-sm text-gray-600">
-                      <span>Total paleti comandați:</span>
-                      <span className="font-semibold">{getTotalPaleti()} {getTotalPaleti() === 1 ? 'palet' : 'paleti'}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              <OrderFormActions onReset={resetForm} />
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      <DeliveryForm />
+      <ProductList items={items} setItems={setItems} />
+      <OrderSummary items={items} />
+      <OrderFormActions onSubmit={submitOrder} />
+      
+      {orderData && (
+        <OrderSuccessModal
+          isOpen={showSuccessModal}
+          onClose={handleCloseSuccessModal}
+          orderData={orderData}
+        />
+      )}
     </div>
   );
 }

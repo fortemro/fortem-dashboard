@@ -14,7 +14,7 @@ interface ItemComanda {
 interface UseOrderSubmissionProps {
   produse: any[];
   items: ItemComanda[];
-  onSuccess: () => void;
+  onSuccess: (orderData: any) => void;
 }
 
 export function useOrderSubmission({ produse, items, onSuccess }: UseOrderSubmissionProps) {
@@ -61,7 +61,7 @@ export function useOrderSubmission({ produse, items, onSuccess }: UseOrderSubmis
         }))
       );
 
-      console.log('Comanda created successfully, proceeding with email send');
+      console.log('Comanda created successfully, preparing success data');
 
       // Calculează totalul comenzii
       const totalComanda = items.reduce((total, item) => total + (item.cantitate * item.pret_unitar), 0);
@@ -70,44 +70,23 @@ export function useOrderSubmission({ produse, items, onSuccess }: UseOrderSubmis
       const distribuitor = produse.find(p => p.distribuitor_id === distribuitorId);
       const distribuitorNume = distribuitor?.distribuitor?.nume_companie || 'Necunoscut';
 
-      // Trimite emailul automat după crearea cu succes a comenzii
-      try {
-        const { error: emailError } = await supabase.functions.invoke('send-order-email', {
-          body: {
-            comandaId: comanda.id,
-            numarul_comanda: comanda.numar_comanda,
-            distribuitor: distribuitorNume,
-            oras_livrare: data.oras_livrare,
-            adresa_livrare: data.adresa_livrare,
-            telefon_livrare: data.telefon_livrare || '',
-            items: items.map(item => ({
-              nume_produs: item.nume_produs,
-              cantitate: item.cantitate,
-              pret_unitar: item.pret_unitar,
-              total_item: item.cantitate * item.pret_unitar
-            })),
-            total_comanda: totalComanda,
-            data_comanda: comanda.data_comanda || new Date().toISOString()
-          }
-        });
+      // Pregătește datele pentru modal-ul de succes
+      const orderData = {
+        id: comanda.id,
+        numar_comanda: comanda.numar_comanda,
+        distribuitor_nume: distribuitorNume,
+        oras_livrare: data.oras_livrare,
+        adresa_livrare: data.adresa_livrare,
+        total_comanda: totalComanda,
+        items: items.map(item => ({
+          nume_produs: item.nume_produs,
+          cantitate: item.cantitate,
+          pret_unitar: item.pret_unitar,
+          total_item: item.cantitate * item.pret_unitar
+        }))
+      };
 
-        if (emailError) {
-          console.error('Error sending email:', emailError);
-          // Nu oprim procesul dacă emailul nu se trimite, doar logăm eroarea
-        } else {
-          console.log('Order email sent successfully');
-        }
-      } catch (emailError) {
-        console.error('Error invoking email function:', emailError);
-        // Nu oprim procesul dacă emailul nu se trimite
-      }
-
-      toast({
-        title: "Succes",
-        description: "Comanda a fost creată cu succes și emailul de notificare a fost trimis"
-      });
-
-      onSuccess();
+      onSuccess(orderData);
     } catch (error) {
       console.error('Error creating comanda:', error);
       

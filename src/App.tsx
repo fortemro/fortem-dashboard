@@ -13,6 +13,7 @@ import Header from '@/components/Header';
 import { Toaster } from '@/components/ui/toaster';
 import Produse from '@/pages/Produse';
 import Comanda from '@/pages/Comanda';
+import ComenziMele from '@/pages/ComenziMele';
 import AdminDashboard from '@/pages/AdminDashboard';
 import AdminValidarePreturi from '@/pages/AdminValidarePreturi';
 import CentralizatorComenzi from '@/pages/CentralizatorComenzi';
@@ -51,6 +52,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Comanda />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/comenzile-mele"
+                  element={
+                    <ProtectedRoute>
+                      <ComenziMele />
                     </ProtectedRoute>
                   }
                 />
