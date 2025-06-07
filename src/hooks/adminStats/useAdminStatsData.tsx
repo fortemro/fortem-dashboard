@@ -45,10 +45,7 @@ export const useAdminStatsData = () => {
         cantitate,
         pret_unitar,
         total_item,
-        produs_id,
-        produse (
-          nume
-        )
+        produs_id
       `)
       .in('comanda_id', comenziIds);
 
@@ -56,7 +53,34 @@ export const useAdminStatsData = () => {
       console.error('Error fetching items:', error);
       throw error;
     }
-    return data as ItemComanda[];
+
+    // Fetch product names separately to avoid relationship issues
+    const productIds = [...new Set(data?.map(item => item.produs_id) || [])];
+    const { data: produse, error: produseError } = await supabase
+      .from('produse')
+      .select('id, nume')
+      .in('id', productIds);
+
+    if (produseError) {
+      console.error('Error fetching produse:', produseError);
+      throw produseError;
+    }
+
+    // Create a map of product id to product name
+    const produseMap = new Map();
+    produse?.forEach(produs => {
+      produseMap.set(produs.id, produs.nume);
+    });
+
+    // Combine the data
+    const itemsWithProducts = data?.map(item => ({
+      ...item,
+      produse: {
+        nume: produseMap.get(item.produs_id) || 'Necunoscut'
+      }
+    })) || [];
+
+    return itemsWithProducts as ItemComanda[];
   };
 
   const fetchProfiles = async () => {
