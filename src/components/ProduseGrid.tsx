@@ -2,7 +2,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useProduse } from '@/hooks/useProduse';
-import { Package, Euro, Ruler, Weight, Truck } from 'lucide-react';
+import { Package, Ruler, Weight, Truck } from 'lucide-react';
+import { ProductCartButton } from './ProductCartButton';
 
 export function ProduseGrid() {
   const { produse, loading } = useProduse();
@@ -128,24 +129,8 @@ export function ProduseGrid() {
               </div>
             )}
             
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-lg flex items-center">
-                  <Euro className="h-4 w-4 mr-1" />
-                  {produs.pret} {produs.moneda}
-                </span>
-                <span className="text-sm text-gray-500">
-                  /{produs.unitate_masura}
-                </span>
-              </div>
-              
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Stoc:</span>
-                <span className={produs.stoc_disponibil && produs.stoc_disponibil > 0 ? 'text-green-600' : 'text-red-600'}>
-                  {produs.stoc_disponibil || 0} {produs.unitate_masura}
-                </span>
-              </div>
-            </div>
+            {/* Product cart button - replaces price and stock section */}
+            <ProductCartButton produs={produs} />
           </CardContent>
         </Card>
       ))}

@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { useProduse } from '@/hooks/useProduse';
+import { useCart } from '@/contexts/CartContext';
 import { DistributorSelector } from './DistributorSelector';
 import { DeliveryForm } from './DeliveryForm';
 import { ProductList } from './ProductList';
@@ -21,6 +22,7 @@ export function ComandaForm() {
   const [selectedDistribuitor, setSelectedDistribuitor] = useState<string>('');
   const { produse, loading: loadingProduse } = useProduse();
   const [items, setItems] = useState<ItemComanda[]>([]);
+  const { cartItems, clearCart } = useCart();
 
   console.log('ComandaForm - selectedDistribuitor:', selectedDistribuitor);
   console.log('ComandaForm - produse:', produse);
@@ -37,6 +39,19 @@ export function ComandaForm() {
       numar_paleti: 0
     }
   });
+
+  // Pre-populate items from cart when component mounts
+  useEffect(() => {
+    if (cartItems.length > 0 && items.length === 0) {
+      const cartToItems = cartItems.map(cartItem => ({
+        produs_id: cartItem.produs.id,
+        nume_produs: cartItem.produs.nume,
+        cantitate: cartItem.cantitate,
+        pret_unitar: 0 // User will need to set the price manually
+      }));
+      setItems(cartToItems);
+    }
+  }, [cartItems, items.length]);
 
   const handleDistributorChange = (distributorName: string) => {
     console.log('handleDistributorChange called with:', distributorName);
@@ -77,6 +92,7 @@ export function ComandaForm() {
     form.reset();
     setItems([]);
     setSelectedDistribuitor('');
+    clearCart(); // Clear cart when order is successful
   };
 
   const { submitOrder } = useOrderSubmission({
@@ -90,6 +106,11 @@ export function ComandaForm() {
       <Card>
         <CardHeader>
           <CardTitle>Comandă Nouă</CardTitle>
+          {cartItems.length > 0 && (
+            <p className="text-sm text-blue-600">
+              Produse adăugate din catalog: {cartItems.length} articole
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           <Form {...form}>
