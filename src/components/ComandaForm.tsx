@@ -77,16 +77,17 @@ export function ComandaForm() {
       console.log('Loading order for editing:', orderData);
 
       // Pre-fill form with order data
-      form.setValue('distribuitor_id', orderData.distribuitor_id || '');
+      form.setValue('distribuitor_id', orderData.distribuitor?.nume_companie || orderData.distribuitor_id || '');
       form.setValue('oras_livrare', orderData.oras_livrare || '');
       form.setValue('adresa_livrare', orderData.adresa_livrare || '');
       form.setValue('judet_livrare', orderData.judet_livrare || '');
       form.setValue('telefon_livrare', orderData.telefon_livrare || '');
       form.setValue('observatii', orderData.observatii || '');
       
-      // Set distributor data properly
-      setSelectedDistributorId(orderData.distribuitor_id || '');
-      setSelectedDistributorName(orderData.distribuitor?.nume_companie || orderData.distribuitor_id || '');
+      // Set distributor data properly - use name not ID
+      const distributorName = orderData.distribuitor?.nume_companie || orderData.distribuitor_id || '';
+      setSelectedDistributorId(distributorName);
+      setSelectedDistributorName(distributorName);
 
       // Pre-fill items - safely handle product data
       if (orderData.items && Array.isArray(orderData.items)) {
@@ -118,11 +119,11 @@ export function ComandaForm() {
           const parsedData = JSON.parse(dataToLoad);
           console.log('Loading order data:', parsedData);
           
-          // Pre-fill form with order data
-          if (parsedData.distribuitor_id) {
-            form.setValue('distribuitor_id', parsedData.distribuitor_id);
-            setSelectedDistributorId(parsedData.distribuitor_id);
-            setSelectedDistributorName(parsedData.distribuitor_id);
+          // Pre-fill form with order data - for duplication, use distributor name
+          if (parsedData.distribuitor_name) {
+            form.setValue('distribuitor_id', parsedData.distribuitor_name);
+            setSelectedDistributorId(parsedData.distribuitor_name);
+            setSelectedDistributorName(parsedData.distribuitor_name);
           }
           if (parsedData.oras_livrare) form.setValue('oras_livrare', parsedData.oras_livrare);
           if (parsedData.adresa_livrare) form.setValue('adresa_livrare', parsedData.adresa_livrare);

@@ -142,32 +142,12 @@ export function useComenzi() {
       // Calculează numărul total de paleți din items
       const totalPaleti = items.reduce((sum, item) => sum + (item.cantitate || 0), 0);
 
-      let distributorId = comandaData.distribuitor_id;
-      let mzvEmitent = user.id;
-
-      // Verifică dacă distribuitor_id este un UUID valid (distribuitor existent)
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(comandaData.distribuitor_id);
-      
-      if (!isUUID) {
-        // Este un nume de distribuitor nou, trebuie să-l creăm
-        console.log('Creating new distribuitor:', comandaData.distribuitor_id);
-        const newDistribuitor = await findOrCreateDistribuitor(comandaData.distribuitor_id);
-        distributorId = newDistribuitor.id;
-        mzvEmitent = newDistribuitor.mzv_alocat || user.id;
-        console.log('Created/found distribuitor with ID:', distributorId);
-      } else {
-        // Este un UUID, verifică dacă distribuitor-ul există și ia MZV-ul alocat
-        const { data: existingDistributor } = await supabase
-          .from('distribuitori')
-          .select('id, nume_companie, mzv_alocat')
-          .eq('id', comandaData.distribuitor_id)
-          .single();
-
-        if (existingDistributor?.mzv_alocat) {
-          mzvEmitent = existingDistributor.mzv_alocat;
-          console.log('Using allocated MZV for distribuitor:', existingDistributor.nume_companie, 'MZV:', mzvEmitent);
-        }
-      }
+      // Întotdeauna găsește sau creează distribuitor-ul în baza de date
+      console.log('Finding or creating distributor:', comandaData.distribuitor_id);
+      const distribuitor = await findOrCreateDistribuitor(comandaData.distribuitor_id);
+      const distributorId = distribuitor.id;
+      const mzvEmitent = distribuitor.mzv_alocat || user.id;
+      console.log('Using distribuitor with ID:', distributorId, 'MZV:', mzvEmitent);
 
       // Creează comanda cu distributorId ca UUID
       const insertData: any = {
@@ -176,7 +156,7 @@ export function useComenzi() {
         status: 'in_asteptare',
         mzv_emitent: mzvEmitent,
         data_comanda: new Date().toISOString(),
-        distribuitor_id: distributorId, // Acum este UUID
+        distribuitor_id: distributorId,
         oras_livrare: comandaData.oras_livrare,
         adresa_livrare: comandaData.adresa_livrare,
         judet_livrare: comandaData.judet_livrare || '',
