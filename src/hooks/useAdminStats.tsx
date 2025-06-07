@@ -41,19 +41,10 @@ export function useAdminStats(dateFrom?: string, dateTo?: string) {
     try {
       setLoading(true);
 
-      // Step 1: Fetch comenzi with basic info and distributors
+      // Step 1: Fetch comenzi with basic info
       let comenziQuery = supabase
         .from('comenzi')
-        .select(`
-          id,
-          data_comanda,
-          mzv_emitent,
-          distribuitor_id,
-          status,
-          distribuitori!comenzi_distribuitor_id_fkey (
-            nume_companie
-          )
-        `);
+        .select('id, data_comanda, mzv_emitent, distribuitor_id, status');
 
       if (dateFrom) {
         comenziQuery = comenziQuery.gte('data_comanda', dateFrom);
@@ -68,7 +59,23 @@ export function useAdminStats(dateFrom?: string, dateTo?: string) {
         throw comenziError;
       }
 
-      // Step 2: Fetch all itemi_comanda for the orders
+      // Step 2: Fetch distribuitori separat
+      const { data: distribuitori, error: distributoriError } = await supabase
+        .from('distribuitori')
+        .select('nume_companie');
+
+      if (distributoriError) {
+        console.error('Error fetching distribuitori:', distributoriError);
+        throw distributoriError;
+      }
+
+      // Creează un map pentru distribuitori
+      const distributoriMap = new Map();
+      distribuitori?.forEach(dist => {
+        distributoriMap.set(dist.nume_companie, dist.nume_companie);
+      });
+
+      // Step 3: Fetch all itemi_comanda for the orders
       const comenziIds = comenzi?.map(c => c.id) || [];
       
       let itemsData = [];
@@ -94,7 +101,7 @@ export function useAdminStats(dateFrom?: string, dateTo?: string) {
         itemsData = items || [];
       }
 
-      // Step 3: Fetch MZV profiles
+      // Step 4: Fetch MZV profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiluri_utilizatori')
         .select('user_id, nume, prenume');
@@ -153,7 +160,7 @@ export function useAdminStats(dateFrom?: string, dateTo?: string) {
 
         // Distribuitor Stats
         const distributorId = comanda.distribuitor_id;
-        const distributorName = comanda.distribuitori?.nume_companie || 'Necunoscut';
+        const distributorName = distributoriMap.get(distributorId) || distributorId || 'Necunoscut';
         
         if (distributorId) {
           if (distributorMap.has(distributorId)) {

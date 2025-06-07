@@ -64,15 +64,15 @@ export function useComenzi() {
       // Verifică dacă există un distribuitor cu acest nume
       const { data: existingDistributor } = await supabase
         .from('distribuitori')
-        .select('id, nume_companie')
+        .select('id, nume_companie, mzv_alocat')
         .ilike('nume_companie', distributorName)
         .single();
 
       let mzvEmitent = user.id; // fallback la utilizatorul logat
       
-      if (existingDistribuitor?.mzv_alocat) {
-        mzvEmitent = existingDistribuitor.mzv_alocat;
-        console.log('Using allocated MZV for distribuitor:', existingDistribuitor.nume_companie, 'MZV:', mzvEmitent);
+      if (existingDistributor?.mzv_alocat) {
+        mzvEmitent = existingDistributor.mzv_alocat;
+        console.log('Using allocated MZV for distribuitor:', existingDistributor.nume_companie, 'MZV:', mzvEmitent);
       } else {
         console.log('No MZV allocated for distribuitor or distribuitor not found, using current user as MZV:', user.id);
       }
