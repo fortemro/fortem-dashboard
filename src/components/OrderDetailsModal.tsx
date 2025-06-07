@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,6 +33,8 @@ export function OrderDetailsModal({ isOpen, onClose, comanda }: OrderDetailsModa
   const [items, setItems] = useState<ItemComanda[]>([]);
   const [loading, setLoading] = useState(false);
   const [distributorName, setDistributorName] = useState('');
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -194,6 +195,189 @@ export function OrderDetailsModal({ isOpen, onClose, comanda }: OrderDetailsModa
     });
   };
 
+  const handleResendEmail = async () => {
+    setResendingEmail(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('resend-order-email', {
+        body: { comandaId: comanda.id }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.success) {
+        toast({
+          title: "Email retrimis cu succes",
+          description: `Email-ul pentru comanda ${comanda.numar_comanda} a fost retrimis.`
+        });
+      } else {
+        throw new Error(data.error || 'Eroare necunoscută');
+      }
+    } catch (error: any) {
+      console.error('Error resending email:', error);
+      toast({
+        title: "Eroare la retrimitererea email-ului",
+        description: error.message || "Nu s-a putut retrimite email-ul",
+        variant: "destructive"
+      });
+    } finally {
+      setResendingEmail(false);
+    }
+  };
+
+  const handleExportPdf = () => {
+    setExportingPdf(true);
+    try {
+      // Create a printable version
+      const printContent = `
+        <html>
+          <head>
+            <title>Comandă ${comanda.numar_comanda}</title>
+            <style>
+              body { 
+                font-family: Arial, sans-serif; 
+                margin: 20px; 
+                color: #333;
+              }
+              .header { 
+                text-align: center; 
+                border-bottom: 2px solid #2c5aa0; 
+                padding-bottom: 20px; 
+                margin-bottom: 30px;
+              }
+              .order-info { 
+                display: grid; 
+                grid-template-columns: 1fr 1fr; 
+                gap: 20px; 
+                margin-bottom: 30px;
+              }
+              .section { 
+                border: 1px solid #ddd; 
+                padding: 15px; 
+                border-radius: 5px;
+              }
+              .section h3 { 
+                margin-top: 0; 
+                color: #2c5aa0;
+              }
+              table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                margin: 20px 0;
+              }
+              th, td { 
+                border: 1px solid #ddd; 
+                padding: 10px; 
+                text-align: left;
+              }
+              th { 
+                background-color: #f2f2f2; 
+                font-weight: bold;
+              }
+              .total { 
+                background-color: #f9f9f9; 
+                border-left: 4px solid #2c5aa0; 
+                padding: 15px; 
+                margin-top: 20px; 
+                text-align: right;
+              }
+              @media print {
+                body { margin: 0; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>COMANDĂ #${comanda.numar_comanda}</h1>
+              <p>Data: ${new Date(comanda.data_comanda).toLocaleDateString('ro-RO')}</p>
+            </div>
+            
+            <div class="order-info">
+              <div class="section">
+                <h3>Informații Comandă</h3>
+                <p><strong>Număr:</strong> ${comanda.numar_comanda}</p>
+                <p><strong>Data:</strong> ${new Date(comanda.data_comanda).toLocaleDateString('ro-RO')}</p>
+                <p><strong>Status:</strong> ${comanda.status}</p>
+                <p><strong>Distribuitor:</strong> ${distributorName || comanda.distribuitor_id}</p>
+                <p><strong>Paleti Total:</strong> ${comanda.calculated_paleti || comanda.numar_paleti}</p>
+              </div>
+              
+              <div class="section">
+                <h3>Detalii Livrare</h3>
+                <p><strong>Oraș:</strong> ${comanda.oras_livrare}</p>
+                <p><strong>Adresă:</strong> ${comanda.adresa_livrare}</p>
+                ${comanda.judet_livrare ? `<p><strong>Județ:</strong> ${comanda.judet_livrare}</p>` : ''}
+                ${comanda.telefon_livrare ? `<p><strong>Telefon:</strong> ${comanda.telefon_livrare}</p>` : ''}
+              </div>
+            </div>
+
+            <div class="section">
+              <h3>Produse Comandate</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Produs</th>
+                    <th>Dimensiuni</th>
+                    <th>Cantitate (Paleti)</th>
+                    <th>Preț/Palet</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${items.map(item => `
+                    <tr>
+                      <td>${item.produs?.nume || 'N/A'}</td>
+                      <td>${item.produs?.dimensiuni || 'N/A'}</td>
+                      <td style="text-align: right;">${item.cantitate}</td>
+                      <td style="text-align: right;">${item.pret_unitar.toFixed(2)} RON</td>
+                      <td style="text-align: right;">${item.total_item.toFixed(2)} RON</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="total">
+              <h2>Total Comandă: ${items.reduce((sum, item) => sum + item.total_item, 0).toFixed(2)} RON</h2>
+            </div>
+
+            ${comanda.observatii ? `
+              <div class="section">
+                <h3>Observații</h3>
+                <p>${comanda.observatii}</p>
+              </div>
+            ` : ''}
+          </body>
+        </html>
+      `;
+
+      // Open print dialog
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+      }
+
+      toast({
+        title: "Export PDF",
+        description: "Dialogul de printare a fost deschis pentru a salva comanda ca PDF"
+      });
+    } catch (error: any) {
+      console.error('Error exporting PDF:', error);
+      toast({
+        title: "Eroare la export PDF",
+        description: "Nu s-a putut deschide dialogul de printare",
+        variant: "destructive"
+      });
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   const totalComanda = items.reduce((sum, item) => sum + item.total_item, 0);
 
   return (
@@ -351,13 +535,21 @@ export function OrderDetailsModal({ isOpen, onClose, comanda }: OrderDetailsModa
             </div>
             
             <div className="flex gap-2">
-              <Button variant="outline" disabled>
+              <Button 
+                variant="outline" 
+                onClick={handleResendEmail}
+                disabled={resendingEmail}
+              >
                 <Mail className="h-4 w-4 mr-2" />
-                Retrimite Email
+                {resendingEmail ? 'Se retrimite...' : 'Retrimite Email'}
               </Button>
-              <Button variant="outline" disabled>
+              <Button 
+                variant="outline" 
+                onClick={handleExportPdf}
+                disabled={exportingPdf}
+              >
                 <Download className="h-4 w-4 mr-2" />
-                Export PDF
+                {exportingPdf ? 'Se exportă...' : 'Export PDF'}
               </Button>
             </div>
           </div>

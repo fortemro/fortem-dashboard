@@ -40,18 +40,15 @@ export function FormInitializer({
     }
   }, [cartItems, isEditMode]);
 
-  // Check for duplicate/edit order data on mount
+  // Check for duplicate order data on mount - only process when NOT in edit mode
   useEffect(() => {
     if (!isEditMode) {
       const duplicateData = localStorage.getItem('duplicateOrderData');
-      const editData = localStorage.getItem('editOrderData');
       
-      const dataToLoad = duplicateData || editData;
-      
-      if (dataToLoad) {
+      if (duplicateData) {
         try {
-          const parsedData = JSON.parse(dataToLoad);
-          console.log('Loading order data:', parsedData);
+          const parsedData = JSON.parse(duplicateData);
+          console.log('Loading duplicate order data:', parsedData);
           
           // Pre-fill form with order data - for duplication, use distributor name
           if (parsedData.distribuitor_name) {
@@ -71,9 +68,8 @@ export function FormInitializer({
           }
           
           localStorage.removeItem('duplicateOrderData');
-          localStorage.removeItem('editOrderData');
         } catch (error) {
-          console.error('Error parsing order data:', error);
+          console.error('Error parsing duplicate order data:', error);
         }
       }
     }
