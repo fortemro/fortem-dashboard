@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useDistribuitori } from './useDistribuitori';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 
 // Define a simplified product type for what we actually fetch
@@ -14,6 +16,7 @@ type SimplifiedProduct = {
 type Comanda = Tables<'comenzi'> & {
   items?: ItemComanda[];
   calculated_paleti?: number;
+  distribuitor?: Tables<'distribuitori'>;
 };
 type ComandaInsert = Omit<TablesInsert<'comenzi'>, 'user_id' | 'numar_comanda' | 'id' | 'created_at' | 'updated_at' | 'data_comanda'>;
 type ItemComanda = Tables<'itemi_comanda'> & {
@@ -23,6 +26,7 @@ type ItemComandaInsert = Omit<TablesInsert<'itemi_comanda'>, 'comanda_id' | 'id'
 
 export function useComenzi() {
   const { user } = useAuth();
+  const { findOrCreateDistribuitor } = useDistribuitori();
   const [comenzi, setComenzi] = useState<Comanda[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -78,6 +82,22 @@ export function useComenzi() {
             })
           );
 
+          // Get distribuitor details if distribuitor_id is a UUID
+          let distributorDetails = null;
+          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(comanda.distribuitor_id);
+          
+          if (isUUID) {
+            const { data: distributorData, error: distributorError } = await supabase
+              .from('distribuitori')
+              .select('*')
+              .eq('id', comanda.distribuitor_id)
+              .single();
+
+            if (!distributorError && distributorData) {
+              distributorDetails = distributorData;
+            }
+          }
+
           // Calculate total paleti from items
           const calculatedPaleti = itemsWithProducts.reduce((total, item) => {
             return total + (item.cantitate || 0);
@@ -86,7 +106,8 @@ export function useComenzi() {
           return {
             ...comanda,
             items: itemsWithProducts,
-            calculated_paleti: calculatedPaleti
+            calculated_paleti: calculatedPaleti,
+            distribuitor: distributorDetails
           };
         })
       );
@@ -121,33 +142,41 @@ export function useComenzi() {
       // Calculează numărul total de paleți din items
       const totalPaleti = items.reduce((sum, item) => sum + (item.cantitate || 0), 0);
 
-      // Opțional: verifică dacă distribuitor-ul există, dacă nu îl creează
-      const distributorName = comandaData.distribuitor_id.trim();
-      
-      // Verifică dacă există un distribuitor cu acest nume
-      const { data: existingDistributor } = await supabase
-        .from('distribuitori')
-        .select('id, nume_companie, mzv_alocat')
-        .ilike('nume_companie', distributorName)
-        .single();
+      let distributorId = comandaData.distribuitor_id;
+      let mzvEmitent = user.id;
 
-      let mzvEmitent = user.id; // fallback la utilizatorul logat
+      // Verifică dacă distribuitor_id este un UUID valid (distribuitor existent)
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(comandaData.distribuitor_id);
       
-      if (existingDistributor?.mzv_alocat) {
-        mzvEmitent = existingDistributor.mzv_alocat;
-        console.log('Using allocated MZV for distribuitor:', existingDistributor.nume_companie, 'MZV:', mzvEmitent);
+      if (!isUUID) {
+        // Este un nume de distribuitor nou, trebuie să-l creăm
+        console.log('Creating new distribuitor:', comandaData.distribuitor_id);
+        const newDistribuitor = await findOrCreateDistribuitor(comandaData.distribuitor_id);
+        distributorId = newDistribuitor.id;
+        mzvEmitent = newDistribuitor.mzv_alocat || user.id;
+        console.log('Created/found distribuitor with ID:', distributorId);
       } else {
-        console.log('No MZV allocated for distribuitor or distribuitor not found, using current user as MZV:', user.id);
+        // Este un UUID, verifică dacă distribuitor-ul există și ia MZV-ul alocat
+        const { data: existingDistributor } = await supabase
+          .from('distribuitori')
+          .select('id, nume_companie, mzv_alocat')
+          .eq('id', comandaData.distribuitor_id)
+          .single();
+
+        if (existingDistribuitor?.mzv_alocat) {
+          mzvEmitent = existingDistribuitor.mzv_alocat;
+          console.log('Using allocated MZV for distribuitor:', existingDistribuitor.nume_companie, 'MZV:', mzvEmitent);
+        }
       }
 
-      // Creează comanda cu statusul corect pentru constraint-ul din baza de date
+      // Creează comanda cu distributorId ca UUID
       const insertData: any = {
         ...comandaData,
         user_id: user.id,
         status: 'in_asteptare',
         mzv_emitent: mzvEmitent,
         data_comanda: new Date().toISOString(),
-        distribuitor_id: distributorName, // Salvăm numele ca text
+        distribuitor_id: distributorId, // Acum este UUID
         oras_livrare: comandaData.oras_livrare,
         adresa_livrare: comandaData.adresa_livrare,
         judet_livrare: comandaData.judet_livrare || '',
@@ -217,6 +246,22 @@ export function useComenzi() {
 
       if (comandaError) throw comandaError;
 
+      // Get distribuitor details if available
+      let distributorDetails = null;
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(comanda.distribuitor_id);
+      
+      if (isUUID) {
+        const { data: distributorData, error: distributorError } = await supabase
+          .from('distribuitori')
+          .select('*')
+          .eq('id', comanda.distribuitor_id)
+          .single();
+
+        if (!distributorError && distributorData) {
+          distributorDetails = distributorData;
+        }
+      }
+
       // Get items separately
       const { data: itemsData, error: itemsError } = await supabase
         .from('itemi_comanda')
@@ -247,7 +292,8 @@ export function useComenzi() {
 
       return {
         ...comanda,
-        items: itemsWithProducts || []
+        items: itemsWithProducts || [],
+        distribuitor: distributorDetails
       };
     } catch (error) {
       console.error('Error fetching comanda by id:', error);

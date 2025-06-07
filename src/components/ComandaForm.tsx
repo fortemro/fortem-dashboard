@@ -26,7 +26,8 @@ export function ComandaForm() {
   const editId = searchParams.get('edit');
   const isEditMode = !!editId;
   
-  const [selectedDistribuitorName, setSelectedDistribuitorName] = useState('');
+  const [selectedDistributorId, setSelectedDistributorId] = useState('');
+  const [selectedDistributorName, setSelectedDistributorName] = useState('');
   const { produse, loading: loadingProduse } = useProduse();
   const { cartItems, clearCart } = useCart();
   const { getComandaById } = useComenzi();
@@ -83,7 +84,9 @@ export function ComandaForm() {
       form.setValue('telefon_livrare', orderData.telefon_livrare || '');
       form.setValue('observatii', orderData.observatii || '');
       
-      setSelectedDistribuitorName(orderData.distribuitor_id || '');
+      // Set distributor data properly
+      setSelectedDistributorId(orderData.distribuitor_id || '');
+      setSelectedDistributorName(orderData.distribuitor?.nume_companie || orderData.distribuitor_id || '');
 
       // Pre-fill items - safely handle product data
       if (orderData.items && Array.isArray(orderData.items)) {
@@ -118,7 +121,8 @@ export function ComandaForm() {
           // Pre-fill form with order data
           if (parsedData.distribuitor_id) {
             form.setValue('distribuitor_id', parsedData.distribuitor_id);
-            setSelectedDistribuitorName(parsedData.distribuitor_id);
+            setSelectedDistributorId(parsedData.distribuitor_id);
+            setSelectedDistributorName(parsedData.distribuitor_id);
           }
           if (parsedData.oras_livrare) form.setValue('oras_livrare', parsedData.oras_livrare);
           if (parsedData.adresa_livrare) form.setValue('adresa_livrare', parsedData.adresa_livrare);
@@ -158,10 +162,11 @@ export function ComandaForm() {
     setOrderData(null);
   };
 
-  const handleDistributorChange = (distributorName: string) => {
-    console.log('Distributor changed to:', distributorName);
-    setSelectedDistribuitorName(distributorName);
-    form.setValue('distribuitor_id', distributorName);
+  const handleDistributorChange = (distributorId: string, distributorName: string) => {
+    console.log('Distributor changed to:', distributorId, distributorName);
+    setSelectedDistributorId(distributorId);
+    setSelectedDistributorName(distributorName);
+    form.setValue('distribuitor_id', distributorId);
   };
 
   const handleAddItem = () => {
@@ -186,17 +191,19 @@ export function ComandaForm() {
   const handleReset = () => {
     form.reset();
     setItems([]);
-    setSelectedDistribuitorName('');
+    setSelectedDistributorId('');
+    setSelectedDistributorName('');
   };
 
   const onSubmit = async (data: any) => {
     console.log('Form data on submit:', data);
-    console.log('Selected distribuitor name:', selectedDistribuitorName);
+    console.log('Selected distributor ID:', selectedDistributorId);
+    console.log('Selected distributor name:', selectedDistributorName);
     
     // Ensure distribuitor_id is included in the data
     const submitData = {
       ...data,
-      distribuitor_id: selectedDistribuitorName || data.distribuitor_id
+      distribuitor_id: selectedDistributorId || data.distribuitor_id
     };
     
     await submitOrder(submitData);
@@ -228,7 +235,7 @@ export function ComandaForm() {
         <DistributorSelector
           form={form}
           onDistributorChange={handleDistributorChange}
-          selectedDistributor={selectedDistribuitorName}
+          selectedDistributor={selectedDistributorId}
         />
         
         <DeliveryForm form={form} />
@@ -237,7 +244,7 @@ export function ComandaForm() {
           items={items}
           produse={produse}
           loadingProduse={loadingProduse}
-          selectedDistribuitor={selectedDistribuitorName}
+          selectedDistribuitor={selectedDistributorName}
           onAddItem={handleAddItem}
           onUpdateItem={handleUpdateItem}
           onDeleteItem={handleDeleteItem}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,14 +33,45 @@ interface ItemComanda {
 export function OrderDetailsModal({ isOpen, onClose, comanda }: OrderDetailsModalProps) {
   const [items, setItems] = useState<ItemComanda[]>([]);
   const [loading, setLoading] = useState(false);
+  const [distributorName, setDistributorName] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen && comanda?.id) {
       fetchOrderItems();
+      loadDistributorName();
     }
   }, [isOpen, comanda?.id]);
+
+  const loadDistributorName = async () => {
+    if (!comanda?.distribuitor_id) return;
+
+    // Check if distribuitor_id is a UUID (new format) or text (old format)
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(comanda.distribuitor_id);
+    
+    if (isUUID) {
+      try {
+        const { data: distributorData, error } = await supabase
+          .from('distribuitori')
+          .select('nume_companie')
+          .eq('id', comanda.distribuitor_id)
+          .single();
+
+        if (!error && distributorData) {
+          setDistributorName(distributorData.nume_companie);
+        } else {
+          setDistributorName(comanda.distribuitor_id);
+        }
+      } catch (error) {
+        console.error('Error loading distributor name:', error);
+        setDistributorName(comanda.distribuitor_id);
+      }
+    } else {
+      // Old format - distribuitor_id is already the name
+      setDistributorName(comanda.distribuitor_id);
+    }
+  };
 
   const fetchOrderItems = async () => {
     if (!comanda?.id) return;
@@ -198,7 +230,7 @@ export function OrderDetailsModal({ isOpen, onClose, comanda }: OrderDetailsModa
                   <span>{getStatusBadge(comanda.status)}</span>
                   
                   <span className="font-medium">Distribuitor:</span>
-                  <span className="font-medium">{comanda.distribuitor_id}</span>
+                  <span className="font-medium">{distributorName || comanda.distribuitor_id}</span>
                   
                   <span className="font-medium">Paleti Total:</span>
                   <span>{comanda.calculated_paleti || comanda.numar_paleti}</span>
