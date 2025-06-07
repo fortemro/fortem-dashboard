@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Loader2, AlertTriangle } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { ProductItemForm } from './ProductItemForm';
 import { OrderSummary } from './OrderSummary';
 import type { Tables } from '@/integrations/supabase/types';
@@ -35,10 +35,7 @@ export function ProductList({
   onUpdateItem,
   onDeleteItem
 }: ProductListProps) {
-  const isAddProductDisabled = loadingProduse || !selectedDistribuitor;
-
-  console.log('ProductList - selectedDistribuitor:', selectedDistribuitor);
-  console.log('ProductList - produse:', produse);
+  console.log('ProductList - produse count:', produse.length);
   console.log('ProductList - loadingProduse:', loadingProduse);
 
   return (
@@ -50,7 +47,7 @@ export function ProductList({
             <Button 
               type="button" 
               onClick={onAddItem} 
-              disabled={isAddProductDisabled}
+              disabled={loadingProduse}
               className="relative"
             >
               {loadingProduse ? (
@@ -61,45 +58,28 @@ export function ProductList({
               Adaugă Produs
             </Button>
             
-            {!selectedDistribuitor && (
-              <div className="flex items-center space-x-1 text-xs text-orange-600">
-                <AlertTriangle className="h-3 w-3" />
-                <span>Selectați mai întâi un distribuitor</span>
-              </div>
-            )}
-            
-            {selectedDistribuitor && loadingProduse && (
+            {loadingProduse && (
               <p className="text-xs text-blue-600 text-right">
                 Se încarcă produsele...
               </p>
             )}
             
-            {selectedDistribuitor && !loadingProduse && produse.length === 0 && (
+            {!loadingProduse && produse.length === 0 && (
               <p className="text-xs text-orange-600 text-right">
-                Nu există produse pentru distribuitorul selectat
+                Nu există produse în catalog
               </p>
             )}
             
-            {selectedDistribuitor && !loadingProduse && produse.length > 0 && (
+            {!loadingProduse && produse.length > 0 && (
               <p className="text-xs text-green-600 text-right">
-                {produse.length} produse disponibile
+                {produse.length} produse disponibile în catalog
               </p>
             )}
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        {!selectedDistribuitor && (
-          <div className="p-6 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-            <AlertTriangle className="h-8 w-8 text-orange-500 mx-auto mb-2" />
-            <p className="text-gray-600 font-medium">Selectați un distribuitor</p>
-            <p className="text-gray-500 text-sm">
-              Pentru a adăuga produse, trebuie să selectați mai întâi un distribuitor din secțiunea de mai sus.
-            </p>
-          </div>
-        )}
-
-        {selectedDistribuitor && items.map((item, index) => (
+        {items.map((item, index) => (
           <ProductItemForm
             key={index}
             item={item}
@@ -110,7 +90,7 @@ export function ProductList({
           />
         ))}
 
-        {selectedDistribuitor && items.length > 0 && <OrderSummary items={items} />}
+        {items.length > 0 && <OrderSummary items={items} />}
       </CardContent>
     </Card>
   );

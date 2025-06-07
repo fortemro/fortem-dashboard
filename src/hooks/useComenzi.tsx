@@ -51,42 +51,40 @@ export function useComenzi() {
 
       // Validare de bază
       if (!comandaData.distribuitor_id) {
-        throw new Error('Distribuitor ID este obligatoriu');
+        throw new Error('Numele distribuitorului este obligatoriu');
       }
 
       if (!comandaData.oras_livrare || !comandaData.adresa_livrare) {
         throw new Error('Orașul și adresa de livrare sunt obligatorii');
       }
 
-      // Găsește distribuitor-ul pentru a determina MZV-ul responsabil
-      const { data: distribuitor, error: distributorError } = await supabase
+      // Opțional: verifică dacă distribuitor-ul există, dacă nu îl creează
+      const distributorName = comandaData.distribuitor_id.trim();
+      
+      // Verifică dacă există un distribuitor cu acest nume
+      const { data: existingDistributor } = await supabase
         .from('distribuitori')
-        .select('mzv_alocat, nume_companie')
-        .eq('id', comandaData.distribuitor_id)
+        .select('id, nume_companie')
+        .ilike('nume_companie', distributorName)
         .single();
 
-      if (distributorError) {
-        console.error('Error fetching distribuitor:', distributorError);
-        throw new Error('Nu s-a putut găsi distribuitor-ul');
-      }
-
-      // Determină MZV-ul pentru comandă
       let mzvEmitent = user.id; // fallback la utilizatorul logat
       
-      if (distribuitor?.mzv_alocat) {
-        mzvEmitent = distribuitor.mzv_alocat;
-        console.log('Using allocated MZV for distribuitor:', distribuitor.nume_companie, 'MZV:', mzvEmitent);
+      if (existingDistribuitor?.mzv_alocat) {
+        mzvEmitent = existingDistribuitor.mzv_alocat;
+        console.log('Using allocated MZV for distribuitor:', existingDistribuitor.nume_companie, 'MZV:', mzvEmitent);
       } else {
-        console.log('No MZV allocated for distribuitor, using current user as MZV:', user.id);
+        console.log('No MZV allocated for distribuitor or distribuitor not found, using current user as MZV:', user.id);
       }
 
       // Creează comanda cu statusul corect pentru constraint-ul din baza de date
       const insertData: any = {
         ...comandaData,
         user_id: user.id,
-        status: 'in_asteptare', // Folosesc status-ul exact din constraint: 'in_asteptare'
+        status: 'in_asteptare',
         mzv_emitent: mzvEmitent,
         data_comanda: new Date().toISOString(),
+        distribuitor_id: distributorName, // Salvăm numele ca text
         oras_livrare: comandaData.oras_livrare,
         adresa_livrare: comandaData.adresa_livrare,
         judet_livrare: comandaData.judet_livrare || '',
@@ -95,7 +93,7 @@ export function useComenzi() {
         numar_paleti: comandaData.numar_paleti || 0
       };
 
-      console.log('Insert data for comanda (with correct status):', insertData);
+      console.log('Insert data for comanda:', insertData);
 
       const { data: comanda, error: comandaError } = await supabase
         .from('comenzi')
@@ -107,7 +105,6 @@ export function useComenzi() {
         console.error('Error creating comanda:', comandaError);
         console.error('Insert data was:', insertData);
         
-        // Afișez o eroare mai clară pentru utilizator
         if (comandaError.code === '23514' && comandaError.message.includes('comenzi_status_check')) {
           throw new Error('Valoarea status-ului nu este validă. Contactați administratorul.');
         }
@@ -117,12 +114,12 @@ export function useComenzi() {
 
       console.log('Comanda created successfully:', comanda);
 
-      // Adaugă itemii comenzii - salvează cantitatea și prețul din pret_vanzare_manual
+      // Adaugă itemii comenzii
       const itemsWithComandaId = items.map(item => ({
         comanda_id: comanda.id,
         produs_id: item.produs_id,
         cantitate: item.cantitate,
-        pret_unitar: item.pret_unitar, // acest câmp vine din pret_vanzare_manual din formular
+        pret_unitar: item.pret_unitar,
         total_item: item.cantitate * item.pret_unitar
       }));
 

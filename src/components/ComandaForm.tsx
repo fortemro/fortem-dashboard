@@ -21,8 +21,8 @@ interface ItemComanda {
 
 export function ComandaForm() {
   const [selectedDistribuitorName, setSelectedDistribuitorName] = useState('');
-  // Filtrează produsele după numele distribuitorului selectat
-  const { produse, loading: loadingProduse } = useProduse(selectedDistribuitorName);
+  // Toate produsele sunt disponibile pentru toți - nu mai filtrăm după distribuitor
+  const { produse, loading: loadingProduse } = useProduse();
   const { cartItems, clearCart } = useCart();
   const [items, setItems] = useState<ItemComanda[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -84,14 +84,6 @@ export function ComandaForm() {
     }
   }, [form]);
 
-  // Clear items when distributor changes
-  useEffect(() => {
-    if (selectedDistribuitorName) {
-      // Clear existing items when distributor changes to avoid mixing products from different distributors
-      setItems([]);
-    }
-  }, [selectedDistribuitorName]);
-
   const handleSuccess = (successOrderData: any) => {
     setOrderData(successOrderData);
     setShowSuccessModal(true);
@@ -117,11 +109,6 @@ export function ComandaForm() {
   };
 
   const handleAddItem = () => {
-    if (!selectedDistribuitorName) {
-      // This will be handled by validation, but we can show a visual cue
-      return;
-    }
-    
     setItems([...items, {
       produs_id: '',
       nume_produs: '',
