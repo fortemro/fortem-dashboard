@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { DeliveryForm } from './DeliveryForm';
 import { ProductList } from './ProductList';
 import { OrderSummary } from './OrderSummary';
@@ -17,18 +18,29 @@ interface ItemComanda {
 }
 
 export function ComandaForm() {
-  const { produse } = useProduse();
+  const { produse, loading: loadingProduse } = useProduse();
   const { cartItems, clearCart } = useCart();
   const [items, setItems] = useState<ItemComanda[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [orderData, setOrderData] = useState(null);
 
+  const form = useForm({
+    defaultValues: {
+      oras_livrare: '',
+      adresa_livrare: '',
+      judet_livrare: '',
+      telefon_livrare: '',
+      observatii: '',
+      numar_paleti: 0
+    }
+  });
+
   // Initialize items from cart
   useEffect(() => {
     if (cartItems.length > 0) {
       const cartBasedItems = cartItems.map(cartItem => ({
-        produs_id: cartItem.produs_id,
-        nume_produs: cartItem.nume_produs,
+        produs_id: cartItem.produs.id,
+        nume_produs: cartItem.produs.nume,
         cantitate: cartItem.cantitate,
         pret_unitar: 0 // Will be set manually
       }));
@@ -69,12 +81,48 @@ export function ComandaForm() {
     setOrderData(null);
   };
 
+  const handleAddItem = () => {
+    setItems([...items, {
+      produs_id: '',
+      nume_produs: '',
+      cantitate: 1,
+      pret_unitar: 0
+    }]);
+  };
+
+  const handleUpdateItem = (index: number, field: keyof ItemComanda, value: string | number) => {
+    const newItems = [...items];
+    newItems[index] = { ...newItems[index], [field]: value };
+    setItems(newItems);
+  };
+
+  const handleDeleteItem = (index: number) => {
+    setItems(items.filter((_, i) => i !== index));
+  };
+
+  const handleReset = () => {
+    form.reset();
+    setItems([]);
+  };
+
+  const onSubmit = async (data: any) => {
+    await submitOrder(data);
+  };
+
   return (
-    <div className="space-y-6">
-      <DeliveryForm />
-      <ProductList items={items} setItems={setItems} />
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <DeliveryForm form={form} />
+      <ProductList 
+        items={items}
+        produse={produse}
+        loadingProduse={loadingProduse}
+        selectedDistribuitor=""
+        onAddItem={handleAddItem}
+        onUpdateItem={handleUpdateItem}
+        onDeleteItem={handleDeleteItem}
+      />
       <OrderSummary items={items} />
-      <OrderFormActions onSubmit={submitOrder} />
+      <OrderFormActions onReset={handleReset} />
       
       {orderData && (
         <OrderSuccessModal
@@ -83,6 +131,6 @@ export function ComandaForm() {
           orderData={orderData}
         />
       )}
-    </div>
+    </form>
   );
 }
