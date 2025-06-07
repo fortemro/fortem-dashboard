@@ -30,7 +30,8 @@ export default function ComenziMele() {
   const filteredComenzi = useMemo(() => {
     return comenzi.filter(comanda => {
       if (searchTerm && !comanda.numar_comanda.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !comanda.oras_livrare.toLowerCase().includes(searchTerm.toLowerCase())) {
+          !comanda.oras_livrare.toLowerCase().includes(searchTerm.toLowerCase()) &&
+          !comanda.distribuitor_id.toLowerCase().includes(searchTerm.toLowerCase())) {
         return false;
       }
       if (statusFilter !== 'toate' && comanda.status !== statusFilter) return false;
@@ -45,20 +46,41 @@ export default function ComenziMele() {
     setShowDetailsModal(true);
   };
 
+  const handleEditOrder = (comanda) => {
+    // Store order data for editing
+    localStorage.setItem('editOrderData', JSON.stringify({
+      id: comanda.id,
+      distribuitor_id: comanda.distribuitor_id,
+      oras_livrare: comanda.oras_livrare,
+      adresa_livrare: comanda.adresa_livrare,
+      judet_livrare: comanda.judet_livrare,
+      telefon_livrare: comanda.telefon_livrare,
+      observatii: comanda.observatii
+    }));
+    
+    navigate(`/comanda?edit=${comanda.id}`);
+    toast({
+      title: "Editare comandă",
+      description: "Formularul a fost încărcat pentru editare"
+    });
+  };
+
   const handleDuplicateOrder = (comanda) => {
-    // Store order data for duplication
+    // Store order data for duplication including items
     localStorage.setItem('duplicateOrderData', JSON.stringify({
       distribuitor_id: comanda.distribuitor_id,
       oras_livrare: comanda.oras_livrare,
       adresa_livrare: comanda.adresa_livrare,
       judet_livrare: comanda.judet_livrare,
-      telefon_livrare: comanda.telefon_livrare
+      telefon_livrare: comanda.telefon_livrare,
+      observatii: comanda.observatii,
+      items: comanda.items || []
     }));
     
     navigate('/comanda');
     toast({
       title: "Template creat",
-      description: "Formularul a fost pre-completat cu datele comenzii"
+      description: "Formularul a fost pre-completat cu datele și produsele comenzii"
     });
   };
 
@@ -113,7 +135,7 @@ export default function ComenziMele() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <Input
-                  placeholder="Caută după numărul comenzii sau oraș..."
+                  placeholder="Caută după numărul comenzii, distribuitor sau oraș..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full"
@@ -161,6 +183,7 @@ export default function ComenziMele() {
                     <TableRow>
                       <TableHead>Număr Comandă</TableHead>
                       <TableHead>Data</TableHead>
+                      <TableHead>Distribuitor</TableHead>
                       <TableHead>Orașul Livrare</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Paleti</TableHead>
@@ -176,17 +199,23 @@ export default function ComenziMele() {
                         <TableCell>
                           {new Date(comanda.data_comanda).toLocaleDateString('ro-RO')}
                         </TableCell>
+                        <TableCell className="font-medium">
+                          {comanda.distribuitor_id || 'N/A'}
+                        </TableCell>
                         <TableCell>{comanda.oras_livrare}</TableCell>
                         <TableCell>
                           {getStatusBadge(comanda.status)}
                         </TableCell>
-                        <TableCell>{comanda.numar_paleti}</TableCell>
+                        <TableCell className="font-medium">
+                          {comanda.calculated_paleti || comanda.numar_paleti || 0}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleViewOrder(comanda)}
+                              title="Vezi detalii"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -194,11 +223,17 @@ export default function ComenziMele() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDuplicateOrder(comanda)}
+                              title="Duplică comandă"
                             >
                               <Copy className="h-4 w-4" />
                             </Button>
                             {comanda.status === 'in_asteptare' && (
-                              <Button variant="ghost" size="sm">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleEditOrder(comanda)}
+                                title="Editează comandă"
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
                             )}

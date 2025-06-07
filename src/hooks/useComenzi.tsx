@@ -4,9 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 
-type Comanda = Tables<'comenzi'>;
+type Comanda = Tables<'comenzi'> & {
+  items?: ItemComanda[];
+  calculated_paleti?: number;
+};
 type ComandaInsert = Omit<TablesInsert<'comenzi'>, 'user_id' | 'numar_comanda' | 'id' | 'created_at' | 'updated_at' | 'data_comanda'>;
-type ItemComanda = Tables<'itemi_comanda'>;
+type ItemComanda = Tables<'itemi_comanda'> & {
+  produs?: Tables<'produse'>;
+};
 type ItemComandaInsert = Omit<TablesInsert<'itemi_comanda'>, 'comanda_id' | 'id' | 'created_at' | 'total_item'>;
 
 export function useComenzi() {
@@ -24,14 +29,49 @@ export function useComenzi() {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      // Fetch comenzi
+      const { data: comenziData, error: comenziError } = await supabase
         .from('comenzi')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setComenzi(data || []);
+      if (comenziError) throw comenziError;
+
+      // Fetch items for each comanda
+      const comenziWithItems = await Promise.all(
+        (comenziData || []).map(async (comanda) => {
+          const { data: items, error: itemsError } = await supabase
+            .from('itemi_comanda')
+            .select(`
+              *,
+              produs:produse (
+                id,
+                nume,
+                dimensiuni,
+                bucati_per_palet
+              )
+            `)
+            .eq('comanda_id', comanda.id);
+
+          if (itemsError) {
+            console.error('Error fetching items for comanda:', comanda.id, itemsError);
+          }
+
+          // Calculate total paleti from items
+          const calculatedPaleti = (items || []).reduce((total, item) => {
+            return total + (item.cantitate || 0);
+          }, 0);
+
+          return {
+            ...comanda,
+            items: items || [],
+            calculated_paleti: calculatedPaleti
+          };
+        })
+      );
+
+      setComenzi(comenziWithItems);
     } catch (error) {
       console.error('Error fetching comenzi:', error);
     } finally {
@@ -57,6 +97,9 @@ export function useComenzi() {
       if (!comandaData.oras_livrare || !comandaData.adresa_livrare) {
         throw new Error('Orașul și adresa de livrare sunt obligatorii');
       }
+
+      // Calculează numărul total de paleți din items
+      const totalPaleti = items.reduce((sum, item) => sum + (item.cantitate || 0), 0);
 
       // Opțional: verifică dacă distribuitor-ul există, dacă nu îl creează
       const distributorName = comandaData.distribuitor_id.trim();
@@ -90,7 +133,7 @@ export function useComenzi() {
         judet_livrare: comandaData.judet_livrare || '',
         telefon_livrare: comandaData.telefon_livrare || '',
         observatii: comandaData.observatii || '',
-        numar_paleti: comandaData.numar_paleti || 0
+        numar_paleti: totalPaleti
       };
 
       console.log('Insert data for comanda:', insertData);
@@ -144,10 +187,46 @@ export function useComenzi() {
     }
   };
 
+  const getComandaById = async (comandaId: string) => {
+    try {
+      const { data: comanda, error: comandaError } = await supabase
+        .from('comenzi')
+        .select('*')
+        .eq('id', comandaId)
+        .single();
+
+      if (comandaError) throw comandaError;
+
+      const { data: items, error: itemsError } = await supabase
+        .from('itemi_comanda')
+        .select(`
+          *,
+          produs:produse (
+            id,
+            nume,
+            dimensiuni,
+            bucati_per_palet
+          )
+        `)
+        .eq('comanda_id', comandaId);
+
+      if (itemsError) throw itemsError;
+
+      return {
+        ...comanda,
+        items: items || []
+      };
+    } catch (error) {
+      console.error('Error fetching comanda by id:', error);
+      throw error;
+    }
+  };
+
   return {
     comenzi,
     loading,
     createComanda,
-    refreshComenzi: fetchComenzi
+    refreshComenzi: fetchComenzi,
+    getComandaById
   };
 }
