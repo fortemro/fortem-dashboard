@@ -163,9 +163,9 @@ export function useComenzi() {
           .eq('id', comandaData.distribuitor_id)
           .single();
 
-        if (existingDistribuitor?.mzv_alocat) {
-          mzvEmitent = existingDistribuitor.mzv_alocat;
-          console.log('Using allocated MZV for distribuitor:', existingDistribuitor.nume_companie, 'MZV:', mzvEmitent);
+        if (existingDistributor?.mzv_alocat) {
+          mzvEmitent = existingDistributor.mzv_alocat;
+          console.log('Using allocated MZV for distribuitor:', existingDistributor.nume_companie, 'MZV:', mzvEmitent);
         }
       }
 
