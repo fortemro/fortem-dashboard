@@ -1,103 +1,70 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../useAuth';
 import { useDistribuitori } from '../useDistribuitori';
-import type { ComandaInsert, ItemComandaInsert } from '@/types/comanda';
+import { Comanda, ItemComanda } from '@/data-types'; // Folosim tipurile centrale
 
 export function useComandaCreate() {
   const { user } = useAuth();
-  const { findOrCreateDistribuitor } = useDistribuitori();
+  // Preluăm întreaga listă de distribuitori pentru a găsi obiectul complet
+  const { distribuitori, findOrCreateDistribuitor } = useDistribuitori();
 
   const createComanda = async (
-    comandaData: ComandaInsert,
-    items: ItemComandaInsert[]
+    comandaData: Partial<Comanda>,
+    items: Partial<ItemComanda>[]
   ) => {
     if (!user) throw new Error('Nu ești autentificat');
 
+    // Numele distribuitorului vine din formular în câmpul `distribuitor_id`
+    const distributorName = comandaData.distribuitor_id as unknown as string;
+    if (!distributorName) throw new Error('Numele distribuitorului este obligatoriu');
+
     try {
-      console.log('Creating comanda with data:', comandaData);
-      console.log('Creating comanda with items:', items);
-
-      // Validare de bază
-      if (!comandaData.distribuitor_id) {
-        throw new Error('Numele distribuitorului este obligatoriu');
+      // 1. Găsește sau creează distribuitorul și obține ID-ul (un string)
+      const distributorId = await findOrCreateDistribuitor(distributorName);
+      if (!distributorId) {
+        throw new Error(`Distribuitorul "${distributorName}" nu a putut fi procesat.`);
       }
 
-      if (!comandaData.oras_livrare || !comandaData.adresa_livrare) {
-        throw new Error('Orașul și adresa de livrare sunt obligatorii');
-      }
+      // 2. REZOLVARE: Caută obiectul complet al distribuitorului în listă pentru a-i accesa proprietățile
+      const distribuitorObject = distribuitori.find(d => d.id === distributorId);
+      const mzvEmitent = distribuitorObject?.mzv_alocat || user.id;
 
-      // Calculează numărul total de paleți din items
-      const totalPaleti = items.reduce((sum, item) => sum + (item.cantitate || 0), 0);
-
-      // Întotdeauna găsește sau creează distribuitor-ul în baza de date
-      console.log('Finding or creating distributor:', comandaData.distribuitor_id);
-      const distribuitor = await findOrCreateDistribuitor(comandaData.distribuitor_id);
-      const distributorId = distribuitor.id;
-      const mzvEmitent = distribuitor.mzv_alocat || user.id;
-      console.log('Using distribuitor with ID:', distributorId, 'MZV:', mzvEmitent);
-
-      // Creează comanda cu distributorId ca UUID
-      const insertData: any = {
+      // 3. Pregătește datele pentru inserare
+      const insertData = {
         ...comandaData,
+        distribuitor_id: distributorId, // Folosim ID-ul corect (UUID)
         user_id: user.id,
-        status: 'in_asteptare',
         mzv_emitent: mzvEmitent,
+        status: 'in_asteptare',
         data_comanda: new Date().toISOString(),
-        distribuitor_id: distributorId,
-        oras_livrare: comandaData.oras_livrare,
-        adresa_livrare: comandaData.adresa_livrare,
-        judet_livrare: comandaData.judet_livrare || '',
-        telefon_livrare: comandaData.telefon_livrare || '',
-        observatii: comandaData.observatii || '',
-        numar_paleti: totalPaleti
+        numar_comanda: `CMD-${Date.now().toString().slice(-6)}`,
+        numar_paleti: items.reduce((sum, item) => sum + (item.cantitate || 0), 0),
       };
 
-      console.log('Insert data for comanda:', insertData);
-
+      // 4. Inserează comanda principală
       const { data: comanda, error: comandaError } = await supabase
         .from('comenzi')
         .insert(insertData)
         .select()
         .single();
 
-      if (comandaError) {
-        console.error('Error creating comanda:', comandaError);
-        console.error('Insert data was:', insertData);
-        
-        if (comandaError.code === '23514' && comandaError.message.includes('comenzi_status_check')) {
-          throw new Error('Valoarea status-ului nu este validă. Contactați administratorul.');
-        }
-        
-        throw comandaError;
-      }
+      if (comandaError) throw comandaError;
 
-      console.log('Comanda created successfully:', comanda);
-
-      // Adaugă itemii comenzii
+      // 5. Inserează itemii comenzii
       const itemsWithComandaId = items.map(item => ({
         comanda_id: comanda.id,
-        produs_id: item.produs_id,
-        cantitate: item.cantitate,
-        pret_unitar: item.pret_unitar,
-        total_item: item.cantitate * item.pret_unitar
+        produs_id: item.produs_id!,
+        cantitate: item.cantitate!,
+        pret_unitar: item.pret_unitar!,
+        total_item: (item.cantitate || 0) * (item.pret_unitar || 0),
       }));
 
-      console.log('Items to insert:', itemsWithComandaId);
+      const { error: itemsError } = await supabase.from('itemi_comanda').insert(itemsWithComandaId);
+      if (itemsError) throw itemsError;
 
-      const { error: itemsError } = await supabase
-        .from('itemi_comanda')
-        .insert(itemsWithComandaId);
-
-      if (itemsError) {
-        console.error('Error creating items:', itemsError);
-        throw itemsError;
-      }
-
-      console.log('Items created successfully');
       return comanda;
     } catch (error) {
-      console.error('Error creating comanda:', error);
+      console.error('Eroare în hook-ul createComanda:', error);
       throw error;
     }
   };
