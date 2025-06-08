@@ -1,9 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+// Interfață completă pe baza erorilor de tip
 export interface Distribuitor {
   id: string;
-  name: string;
+  nume_companie: string;
+  adresa: string;
+  oras: string;
+  judet?: string;
+  cod_fiscal?: string;
+  email?: string;
+  telefon?: string;
+  persoana_contact?: string;
+  mzv_alocat?: string;
+  activ?: boolean;
 }
 
 export function useDistribuitori() {
@@ -13,10 +23,11 @@ export function useDistribuitori() {
   const fetchDistribuitori = useCallback(async () => {
     setLoading(true);
     try {
+      // Am corectat `name` în `nume_companie`
       const { data, error } = await supabase
         .from('distribuitori')
-        .select('id, name')
-        .order('name', { ascending: true });
+        .select('*')
+        .order('nume_companie', { ascending: true });
 
       if (error) {
         console.error('Eroare la preluarea distribuitorilor:', error.message);
@@ -37,33 +48,25 @@ export function useDistribuitori() {
   }, [fetchDistribuitori]);
 
   const findOrCreateDistribuitor = useCallback(async (distributorName: string): Promise<string | null> => {
-    if (!distributorName.trim()) {
-        console.error("Numele distribuitorului nu poate fi gol.");
-        return null;
-    }
+     if (!distributorName.trim()) return null;
     
     try {
-        const { data: existing, error: searchError } = await supabase
+        const { data: existing } = await supabase
           .from('distribuitori')
           .select('id')
-          .eq('name', distributorName)
+          .eq('nume_companie', distributorName)
           .single();
 
-        if (existing) {
-          return existing.id;
-        }
-
-        if (searchError && searchError.code !== 'PGRST116') { // PGRST116 = rândul nu a fost găsit
-          throw searchError;
-        }
+        if (existing) return existing.id;
         
-        const { data: created, error: createError } = await supabase
+        // La creare, adăugăm câmpurile obligatorii cu valori goale
+        const { data: created, error } = await supabase
           .from('distribuitori')
-          .insert({ name: distributorName })
+          .insert({ nume_companie: distributorName, adresa: 'N/A', oras: 'N/A' })
           .select('id')
           .single();
 
-        if (createError) throw createError;
+        if (error) throw error;
         
         await fetchDistribuitori();
         return created!.id;
