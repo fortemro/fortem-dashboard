@@ -1,6 +1,18 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Produs } from '@/types/comanda'; // Reutilizăm tipul dacă există, altfel definim unul local
+
+export interface Produs {
+    id: string;
+    nume: string;
+    descriere?: string;
+    imagine_url?: string;
+    categorie?: string;
+    greutate_per_bucata?: number;
+    bucati_per_bax?: number;
+    baxuri_per_palet?: number;
+    greutate_bax?: number;
+    greutate_palet?: number;
+}
 
 export function useProduse() {
   const [produse, setProduse] = useState<Produs[]>([]);
@@ -10,7 +22,6 @@ export function useProduse() {
     const fetchProduse = async () => {
       setLoading(true);
       try {
-        // Presupunem că tabelul se numește 'produse'
         const { data, error } = await supabase
           .from('produse')
           .select('*')
@@ -18,20 +29,20 @@ export function useProduse() {
 
         if (error) {
           console.error('Eroare la preluarea produselor:', error);
-          setProduse([]); // Important: returnează o listă goală în caz de eroare
+          setProduse([]);
         } else {
-          setProduse(data || []); // Asigură-te că nu este null
+          setProduse(data as Produs[] || []);
         }
       } catch (e) {
         console.error('O excepție a avut loc la preluarea produselor:', e);
-        setProduse([]); // Asigură stabilitatea
+        setProduse([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchProduse();
-  }, []); // Se execută o singură dată
+  }, []);
 
   return { produse, loading };
 }
