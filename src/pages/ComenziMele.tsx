@@ -176,6 +176,7 @@ export default function ComenziMele() {
                         <TableCell>
                           {new Date(comanda.data_comanda).toLocaleDateString('ro-RO')}
                         </TableCell>
+                        <TableCell>{comanda.distribuitor?.nume_companie || comanda.distribuitor_id}</TableCell>
                         <TableCell>{comanda.oras_livrare}</TableCell>
                         <TableCell>
                           {getStatusBadge(comanda.status)}

@@ -26,7 +26,13 @@ export function useComenzi() {
     try {
       const { data, error } = await supabase
         .from('comenzi')
-        .select('*')
+        .select(`
+          *,
+          distribuitor:distribuitor_id (
+            id,
+            nume_companie
+          )
+        `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -37,6 +43,39 @@ export function useComenzi() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Generate unique order number in format CMD-YYYY-DDD-NNNN
+  const generateOrderNumber = async (): Promise<string> => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const start = new Date(year, 0, 0);
+    const diff = now.getTime() - start.getTime();
+    const oneDay = 1000 * 60 * 60 * 24;
+    const dayOfYear = Math.floor(diff / oneDay);
+
+    // Fetch existing order numbers for today to find max sequence
+    const prefix = `CMD-${year}-${dayOfYear.toString().padStart(3, '0')}-`;
+    const { data, error } = await supabase
+      .from('comenzi')
+      .select('numar_comanda')
+      .ilike('numar_comanda', `${prefix}%`);
+
+    if (error) {
+      console.error('Error fetching existing order numbers:', error);
+      throw error;
+    }
+
+    // Extract sequence numbers from existing order numbers
+    const sequences = data?.map(c => {
+      const parts = c.numar_comanda.split('-');
+      return parseInt(parts[3], 10) || 0;
+    }) || [];
+
+    const maxSequence = sequences.length > 0 ? Math.max(...sequences) : 0;
+    const nextSequence = (maxSequence + 1).toString().padStart(4, '0');
+
+    return `${prefix}${nextSequence}`;
   };
 
   const createComanda = async (
@@ -61,13 +100,18 @@ export function useComenzi() {
       // Găsește distribuitor-ul pentru a determina MZV-ul responsabil
       const { data: distribuitor, error: distributorError } = await supabase
         .from('distribuitori')
-        .select('mzv_alocat, nume_companie')
+        .select('mzv_alocat, nume_companie, oras, adresa, judet, telefon')
         .eq('id', comandaData.distribuitor_id)
         .single();
 
       if (distributorError) {
         console.error('Error fetching distribuitor:', distributorError);
         throw new Error('Nu s-a putut găsi distribuitor-ul');
+      }
+
+      // Validate distributor completeness
+      if (!distribuitor.nume_companie || !distribuitor.oras || !distribuitor.adresa) {
+        throw new Error('Distribuitorul selectat nu are date complete. Vă rugăm să completați datele distribuitorului înainte de a crea comanda.');
       }
 
       // Determină MZV-ul pentru comandă
@@ -79,6 +123,9 @@ export function useComenzi() {
       } else {
         console.log('No MZV allocated for distribuitor, using current user as MZV:', user.id);
       }
+
+      // Generate unique order number
+      const numarComanda = await generateOrderNumber();
 
       // Creează comanda cu statusul corect pentru constraint-ul din baza de date
       const insertData: any = {
@@ -92,10 +139,11 @@ export function useComenzi() {
         judet_livrare: comandaData.judet_livrare || '',
         telefon_livrare: comandaData.telefon_livrare || '',
         observatii: comandaData.observatii || '',
-        numar_paleti: comandaData.numar_paleti || 0
+        numar_paleti: comandaData.numar_paleti || 0,
+        numar_comanda: numarComanda
       };
 
-      console.log('Insert data for comanda (with correct status):', insertData);
+      console.log('Insert data for comanda (with correct status and order number):', insertData);
 
       const { data: comanda, error: comandaError } = await supabase
         .from('comenzi')
