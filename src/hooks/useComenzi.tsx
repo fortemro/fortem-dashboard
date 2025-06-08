@@ -16,9 +16,12 @@ export function useComenzi() {
     }
     setLoading(true);
     try {
+      // --- AICI ESTE MODIFICAREA CHEIE ---
+      // Am înlocuit .select('*') cu o interogare specifică care face "join"
+      // și aduce numele companiei din tabelul relaționat 'distribuitori'.
       const { data, error } = await supabase
         .from('comenzi')
-        .select('*')
+        .select('*, distribuitori ( nume_companie )')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
