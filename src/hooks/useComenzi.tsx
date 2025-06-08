@@ -1,89 +1,105 @@
-import { useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-
-// Presupunând că ai definit tipurile comenzii undeva centralizat,
-// de ex. în src/types/comanda.ts. Dacă nu, acest tip de bază va funcționa.
-interface Comanda {
-  id: string;
-  // Adaugă aici și alte câmpuri ale comenzii dacă este necesar
-}
+import { Comanda } from '@/types/comanda'; // Asigură-te că acest tip este corect definit
 
 export function useComenzi() {
   const { user } = useAuth();
+  // variabilele de stare pe care le-am omis anterior
+  const [comenzi, setComenzi] = useState<Comanda[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  /**
-   * Prelucrează o singură comandă după ID.
-   * Folosește .maybeSingle() pentru a evita erorile în cazul în care nu se găsește nicio înregistrare.
-   * Returnează fie datele comenzii, fie null.
-   */
-  const getComandaById = useCallback(async (id: string): Promise<Comanda | null> => {
-    // Verificăm să nu rulăm funcția fără un ID valid.
-    if (!id) {
-      console.warn('getComandaById a fost apelat fără un ID.');
-      return null;
+  // Funcția care încarcă lista de comenzi
+  const fetchComenzi = useCallback(async () => {
+    if (!user) {
+      setComenzi([]);
+      setLoading(false);
+      return;
     }
 
+    setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('comenzi')
-        .select(`
-          *,
-          distribuitori ( nume ),
-          comenzi_items ( *, produse ( nume ) )
-        `)
-        .eq('id', id)
-        .maybeSingle(); // Cheia soluției: returnează un singur rând sau null, fără a arunca eroare.
-
-      if (error) {
-        // În loc să aruncăm o eroare care blochează tot, o înregistrăm în consolă.
-        console.error('Eroare la preluarea comenzii după ID:', error);
-        return null;
-      }
-      
-      return data as Comanda | null;
-
-    } catch (e) {
-      console.error('O excepție neașteptată a avut loc în getComandaById:', e);
-      return null;
-    }
-  }, []);
-
-
-  /**
-   * Prelucrează toate comenzile pentru utilizatorul curent.
-   */
-  const getComenzileMele = useCallback(async () => {
-    if (!user) return [];
-
-    try {
+      // Am scos coloana 'total_general' care producea eroarea
       const { data, error } = await supabase
         .from('comenzi')
         .select(`
           id,
           created_at,
           status,
-          total_general,
           distribuitori ( nume )
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Eroare la preluarea comenzilor utilizatorului:', error);
-        return [];
+        console.error('Eroare la preluarea comenzilor:', error);
+        setComenzi([]);
+      } else {
+        setComenzi(data || []);
       }
-
-      return data;
     } catch (e) {
-      console.error('O excepție neașteptată a avut loc în getComenzileMele:', e);
-      return [];
+      console.error('Exceptie la preluarea comenzilor:', e);
+      setComenzi([]);
+    } finally {
+      setLoading(false);
     }
   }, [user]);
 
-  // Exportăm funcțiile pentru a fi folosite în alte părți ale aplicației.
+  // Hook ce rulează o singură dată pentru a încărca comenzile
+  useEffect(() => {
+    fetchComenzi();
+  }, [fetchComenzi]);
+
+  // Funcția de creare a comenzii, pe care am omis-o
+  const createComanda = useCallback(async (comandaData: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('comenzi')
+        .insert([comandaData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Eroare la crearea comenzii:', error);
+        throw error;
+      }
+      
+      // Reîncarcă lista de comenzi după crearea uneia noi
+      await fetchComenzi();
+      return data;
+    } catch (e) {
+      console.error('Excepție la crearea comenzii:', e);
+      throw e;
+    }
+  }, [fetchComenzi]);
+
+  // Funcția de citire a unei comenzi (versiunea sigură de data trecută)
+  const getComandaById = useCallback(async (id: string): Promise<Comanda | null> => {
+    if (!id) return null;
+    try {
+      const { data, error } = await supabase
+        .from('comenzi')
+        .select(`*, distribuitori(nume), comenzi_items(*, produse(nume))`)
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Eroare la preluarea comenzii după ID:', error);
+        return null;
+      }
+      return data as Comanda | null;
+    } catch (e) {
+      console.error('Excepție la preluarea comenzii după ID:', e);
+      return null;
+    }
+  }, []);
+
+  // Returnăm tot ce este necesar pentru restul aplicației
   return {
+    comenzi,
+    loading,
+    fetchComenzi,
+    createComanda,
     getComandaById,
-    getComenzileMele,
   };
 }
