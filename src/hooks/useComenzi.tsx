@@ -29,11 +29,14 @@ export function useComenzi() {
     async function fetchComenzi() {
       setLoading(true);
       try {
-        // Replace with actual API call or data fetching logic
-        // For example, fetch from /api/comenzi?userId=user.id
         const response = await fetch(`/api/comenzi?userId=${user.id}`);
         if (!response.ok) {
-          throw new Error('Failed to fetch comenzi');
+          throw new Error(`Failed to fetch comenzi: ${response.status} ${response.statusText}`);
+        }
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          throw new Error(`Expected JSON but got: ${text}`);
         }
         const data: Comanda[] = await response.json();
         setComenzi(data);
@@ -48,5 +51,46 @@ export function useComenzi() {
     fetchComenzi();
   }, [user]);
 
-  return { comenzi, loading };
+  async function createComanda(
+    comandaData: {
+      distribuitor_id: string;
+      oras_livrare: string;
+      adresa_livrare?: string;
+      judet_livrare?: string;
+      telefon_livrare?: string;
+      observatii?: string;
+      numar_paleti?: number;
+    },
+    items: {
+      produs_id: string;
+      cantitate: number;
+      pret_unitar: number;
+    }[]
+  ) {
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    const response = await fetch('/api/comenzi', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        userId: user.id,
+        comanda: comandaData,
+        items: items
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to create comanda: ${errorText}`);
+    }
+
+    const createdComanda = await response.json();
+    return createdComanda;
+  }
+
+  return { comenzi, loading, createComanda };
 }
