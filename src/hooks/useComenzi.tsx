@@ -1,102 +1,89 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
 
+// Presupunând că ai definit tipurile comenzii undeva centralizat,
+// de ex. în src/types/comanda.ts. Dacă nu, acest tip de bază va funcționa.
 interface Comanda {
   id: string;
-  numar_comanda: string;
-  distribuitor_id: string;
-  data_comanda: string;
-  oras_livrare: string;
-  status: string;
-  numar_paleti: number;
-  adresa_livrare?: string;
-  judet_livrare?: string;
-  telefon_livrare?: string;
+  // Adaugă aici și alte câmpuri ale comenzii dacă este necesar
 }
 
 export function useComenzi() {
   const { user } = useAuth();
-  const [comenzi, setComenzi] = useState<Comanda[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    if (!user) {
-      setComenzi([]);
-      setLoading(false);
-      return;
+  /**
+   * Prelucrează o singură comandă după ID.
+   * Folosește .maybeSingle() pentru a evita erorile în cazul în care nu se găsește nicio înregistrare.
+   * Returnează fie datele comenzii, fie null.
+   */
+  const getComandaById = useCallback(async (id: string): Promise<Comanda | null> => {
+    // Verificăm să nu rulăm funcția fără un ID valid.
+    if (!id) {
+      console.warn('getComandaById a fost apelat fără un ID.');
+      return null;
     }
 
-    async function fetchComenzi() {
-      setLoading(true);
-      try {
-        const response = await fetch(`/api/comenzi?userId=${user.id}`);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch comenzi: ${response.status} ${response.statusText}`);
-        }
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text();
-          throw new Error(`Expected JSON but got: ${text}`);
-        }
-        const data: Comanda[] = await response.json();
-        setComenzi(data);
-      } catch (error) {
-        console.error('Error fetching comenzi:', error);
-        setComenzi([]);
-      } finally {
-        setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from('comenzi')
+        .select(`
+          *,
+          distribuitori ( nume ),
+          comenzi_items ( *, produse ( nume ) )
+        `)
+        .eq('id', id)
+        .maybeSingle(); // Cheia soluției: returnează un singur rând sau null, fără a arunca eroare.
+
+      if (error) {
+        // În loc să aruncăm o eroare care blochează tot, o înregistrăm în consolă.
+        console.error('Eroare la preluarea comenzii după ID:', error);
+        return null;
       }
-    }
+      
+      return data as Comanda | null;
 
-    fetchComenzi();
+    } catch (e) {
+      console.error('O excepție neașteptată a avut loc în getComandaById:', e);
+      return null;
+    }
+  }, []);
+
+
+  /**
+   * Prelucrează toate comenzile pentru utilizatorul curent.
+   */
+  const getComenzileMele = useCallback(async () => {
+    if (!user) return [];
+
+    try {
+      const { data, error } = await supabase
+        .from('comenzi')
+        .select(`
+          id,
+          created_at,
+          status,
+          total_general,
+          distribuitori ( nume )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Eroare la preluarea comenzilor utilizatorului:', error);
+        return [];
+      }
+
+      return data;
+    } catch (e) {
+      console.error('O excepție neașteptată a avut loc în getComenzileMele:', e);
+      return [];
+    }
   }, [user]);
 
-  async function createComanda(
-    comandaData: {
-      distribuitor_id: string;
-      oras_livrare: string;
-      adresa_livrare?: string;
-      judet_livrare?: string;
-      telefon_livrare?: string;
-      observatii?: string;
-      numar_paleti?: number;
-    },
-    items: {
-      produs_id: string;
-      cantitate: number;
-      pret_unitar: number;
-    }[]
-  ) {
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    const response = await fetch('/api/comenzi', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        userId: user.id,
-        comanda: comandaData,
-        items: items
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to create comanda: ${errorText}`);
-    }
-
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      throw new Error(`Expected JSON but got: ${text}`);
-    }
-
-    const createdComanda = await response.json();
-    return createdComanda;
-  }
-
-  return { comenzi, loading, createComanda };
+  // Exportăm funcțiile pentru a fi folosite în alte părți ale aplicației.
+  return {
+    getComandaById,
+    getComenzileMele,
+  };
 }
