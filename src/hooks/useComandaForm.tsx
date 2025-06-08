@@ -36,8 +36,7 @@ export function useComandaForm() {
       judet_livrare: '',
       telefon_livrare: '',
       observatii: '',
-      numar_paleti: 0,
-      pret_per_palet: 0, // Adaugă această linie
+      numar_paleti: 0
     }
   });
 
