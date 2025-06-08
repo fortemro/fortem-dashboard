@@ -1,26 +1,54 @@
 // src/data-types/index.ts
 
-// Tip simplificat, dar cu toate câmpurile așteptate de UI ca opționale
+export interface Distribuitor {
+    id: string;
+    nume_companie: string;
+    adresa: string;
+    oras: string;
+    // ...alte câmpuri opționale
+}
+
 export interface Produs {
     id: string;
     nume: string;
     descriere?: string;
     imagine_url?: string;
     categorie?: string;
-    // Păstrăm toate câmpurile ca opționale pentru a satisface compilatorul
-    pret_unitar?: number;
+    // --- Câmpuri adăugate pentru compatibilitate maximă cu UI ---
+    // Le marcăm pe toate ca opționale pentru a nu bloca logica nouă.
     activ?: boolean;
-    cod_produs?: string;
-    greutate_per_bucata?: number;
+    buc_comanda?: number;
+    bucati_per_legatura?: number;
     bucati_per_bax?: number;
-    // etc... adaugă orice alt câmp specific pe care l-ai putea avea în DB
+    bucati_per_palet?: number;
+    cod_produs?: string;
+    created_at?: string;
+    densitate?: number;
+    dimensiuni?: string;
+    greutate_bax?: number;
+    greutate_palet?: number;
+    greutate_per_bucata?: number;
+    kg_per_buc?: number;
+    kg_per_cam?: number;
+    kg_per_camion?: number;
+    ml_comanda?: number;
+    moneda?: string;
+    necesare_buc_ml?: number;
+    nr_bucati?: number;
+    paleti_per_camion?: number;
+    pret_unitar?: number;
+    tip_produs?: string;
+    updated_at?: string;
 }
 
 export interface ItemComanda {
     id?: string;
     comanda_id: string;
     produs_id: string;
-    cantitate: number; // Cantitatea per produs selectat
+    cantitate: number;
+    pret_unitar: number;
+    total_item: number;
+    produse?: Produs;
 }
 
 export interface Comanda {
@@ -36,15 +64,12 @@ export interface Comanda {
     judet_livrare: string;
     telefon_livrare: string;
     observatii?: string;
-    // Câmpurile cheie pentru noul model de calcul
     numar_paleti: number;
-    pret_per_palet: number; // Adăugăm acest câmp
+    pret_per_palet?: number; // Câmp specific pentru noul model
     total_comanda: number;
-    // Câmpuri standard
     mzv_emitent: string;
     awb?: string;
     document_url?: string;
-    // Relații
-    distribuitori?: any;
+    distribuitori?: any; // Tip any pentru a evita erorile de join
     itemi_comanda?: ItemComanda[];
 }
