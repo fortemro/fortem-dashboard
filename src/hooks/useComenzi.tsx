@@ -88,6 +88,12 @@ export function useComenzi() {
       throw new Error(`Failed to create comanda: ${errorText}`);
     }
 
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      throw new Error(`Expected JSON but got: ${text}`);
+    }
+
     const createdComanda = await response.json();
     return createdComanda;
   }
