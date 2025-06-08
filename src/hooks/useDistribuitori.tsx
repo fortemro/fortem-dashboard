@@ -1,20 +1,7 @@
+// src/hooks/useDistribuitori.tsx
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-
-// Interfață completă pe baza erorilor de tip
-export interface Distribuitor {
-  id: string;
-  nume_companie: string;
-  adresa: string;
-  oras: string;
-  judet?: string;
-  cod_fiscal?: string;
-  email?: string;
-  telefon?: string;
-  persoana_contact?: string;
-  mzv_alocat?: string;
-  activ?: boolean;
-}
+import { Distribuitor } from '@/data-types'; // Folosim tipul central
 
 export function useDistribuitori() {
   const [distribuitori, setDistribuitori] = useState<Distribuitor[]>([]);
@@ -23,7 +10,6 @@ export function useDistribuitori() {
   const fetchDistribuitori = useCallback(async () => {
     setLoading(true);
     try {
-      // Am corectat `name` în `nume_companie`
       const { data, error } = await supabase
         .from('distribuitori')
         .select('*')
@@ -47,33 +33,54 @@ export function useDistribuitori() {
     fetchDistribuitori();
   }, [fetchDistribuitori]);
 
-  const findOrCreateDistribuitor = useCallback(async (distributorName: string): Promise<string | null> => {
-     if (!distributorName.trim()) return null;
+  const findOrCreateDistribuitor = useCallback(async (numeCompanie: string): Promise<string | null> => {
+     if (!numeCompanie || !numeCompanie.trim()) {
+        console.error("Numele companiei nu poate fi gol.");
+        return null;
+     }
     
     try {
         const { data: existing } = await supabase
           .from('distribuitori')
           .select('id')
-          .eq('nume_companie', distributorName)
+          .eq('nume_companie', numeCompanie.trim())
           .single();
 
-        if (existing) return existing.id;
-        
-        // La creare, adăugăm câmpurile obligatorii cu valori goale
+        if (existing) {
+          return existing.id;
+        }
+
         const { data: created, error } = await supabase
           .from('distribuitori')
-          .insert({ nume_companie: distributorName, adresa: 'N/A', oras: 'N/A' })
+          .insert({ nume_companie: numeCompanie.trim(), adresa: 'N/A', oras: 'N/A' })
           .select('id')
           .single();
 
         if (error) throw error;
         
-        await fetchDistribuitori();
+        await fetchDistribuitori(); // Reîmprospătăm lista după adăugare
         return created!.id;
 
-    } catch(error) {
-        console.error("Eroare în findOrCreateDistribuitor:", error);
-        return null;
+    } catch(error: any) {
+        // Ignorăm eroarea 'PGRST116' care înseamnă 'not found' și este normală în acest flux
+        if (error.code !== 'PGRST116') {
+            console.error("Eroare în findOrCreateDistribuitor:", error);
+            return null;
+        }
+        // Dacă eroarea este 'not found', continuăm cu crearea
+        const { data: created, error: createError } = await supabase
+          .from('distribuitori')
+          .insert({ nume_companie: numeCompanie.trim(), adresa: 'N/A', oras: 'N/A' })
+          .select('id')
+          .single();
+        
+        if (createError) {
+            console.error("Eroare la crearea distribuitorului nou:", createError);
+            return null;
+        }
+        
+        await fetchDistribuitori();
+        return created!.id;
     }
   }, [fetchDistribuitori]);
 
