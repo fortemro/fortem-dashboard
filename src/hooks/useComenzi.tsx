@@ -1,15 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { Comanda } from '@/types/comanda'; // Asigură-te că acest tip este corect definit
+import { Comanda } from '@/types/comanda';
 
 export function useComenzi() {
   const { user } = useAuth();
-  // variabilele de stare pe care le-am omis anterior
   const [comenzi, setComenzi] = useState<Comanda[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Funcția care încarcă lista de comenzi
   const fetchComenzi = useCallback(async () => {
     if (!user) {
       setComenzi([]);
@@ -19,20 +17,14 @@ export function useComenzi() {
 
     setLoading(true);
     try {
-      // Am scos coloana 'total_general' care producea eroarea
       const { data, error } = await supabase
         .from('comenzi')
-        .select(`
-          id,
-          created_at,
-          status,
-          distribuitori ( nume )
-        `)
+        .select('*') // Selectăm tot pentru a se potrivi cu tipul Comanda
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Eroare la preluarea comenzilor:', error);
+        console.error('Eroare la preluarea comenzilor:', error.message);
         setComenzi([]);
       } else {
         setComenzi(data || []);
@@ -45,46 +37,57 @@ export function useComenzi() {
     }
   }, [user]);
 
-  // Hook ce rulează o singură dată pentru a încărca comenzile
   useEffect(() => {
     fetchComenzi();
   }, [fetchComenzi]);
 
-  // Funcția de creare a comenzii, pe care am omis-o
-  const createComanda = useCallback(async (comandaData: any) => {
+  const createComanda = useCallback(async (comandaData: Omit<Comanda, 'id' | 'created_at'>, items: any[]) => {
     try {
-      const { data, error } = await supabase
+      // 1. Creează comanda principală
+      const { data: comandaNoua, error: comandaError } = await supabase
         .from('comenzi')
-        .insert([comandaData])
+        .insert(comandaData)
         .select()
         .single();
-
-      if (error) {
-        console.error('Eroare la crearea comenzii:', error);
-        throw error;
-      }
       
-      // Reîncarcă lista de comenzi după crearea uneia noi
-      await fetchComenzi();
-      return data;
-    } catch (e) {
-      console.error('Excepție la crearea comenzii:', e);
-      throw e;
+      if (comandaError) throw comandaError;
+      if (!comandaNoua) throw new Error("Comanda nu a putut fi creată.");
+
+      // 2. Adaugă itemii la comandă
+      const itemiData = items.map(item => ({
+        comanda_id: comandaNoua.id,
+        produs_id: item.produs_id,
+        cantitate: item.cantitate,
+        pret_unitar: item.pret_unitar,
+        total_linie: item.cantitate * item.pret_unitar,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('itemi_comanda')
+        .insert(itemiData);
+
+      if (itemsError) throw itemsError;
+
+      await fetchComenzi(); // Reîncarcă lista de comenzi
+      return comandaNoua;
+
+    } catch (error) {
+      console.error('Eroare complexă la crearea comenzii cu itemi:', error);
+      throw error;
     }
   }, [fetchComenzi]);
 
-  // Funcția de citire a unei comenzi (versiunea sigură de data trecută)
   const getComandaById = useCallback(async (id: string): Promise<Comanda | null> => {
     if (!id) return null;
     try {
       const { data, error } = await supabase
         .from('comenzi')
-        .select(`*, distribuitori(nume), comenzi_items(*, produse(nume))`)
+        .select('*, itemi_comanda(*, produse(*))') // Join cu itemi și produse
         .eq('id', id)
         .maybeSingle();
 
       if (error) {
-        console.error('Eroare la preluarea comenzii după ID:', error);
+        console.error('Eroare la preluarea comenzii după ID:', error.message);
         return null;
       }
       return data as Comanda | null;
@@ -94,7 +97,6 @@ export function useComenzi() {
     }
   }, []);
 
-  // Returnăm tot ce este necesar pentru restul aplicației
   return {
     comenzi,
     loading,
