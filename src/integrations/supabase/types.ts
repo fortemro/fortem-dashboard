@@ -61,22 +61,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "comenzi_distribuitor_id_fkey"
-            columns: ["distribuitor_id"]
-            isOneToOne: false
-            referencedRelation: "distribuitori"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_comenzi_distribuitor"
-            columns: ["distribuitor_id"]
-            isOneToOne: false
-            referencedRelation: "distribuitori"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       distribuitori: {
         Row: {
@@ -238,7 +223,6 @@ export type Database = {
           densitate: number | null
           descriere: string | null
           dimensiuni: string | null
-          distribuitor_id: string
           id: string
           imagine_url: string | null
           kg_per_buc: number | null
@@ -269,7 +253,6 @@ export type Database = {
           densitate?: number | null
           descriere?: string | null
           dimensiuni?: string | null
-          distribuitor_id: string
           id?: string
           imagine_url?: string | null
           kg_per_buc?: number | null
@@ -300,7 +283,6 @@ export type Database = {
           densitate?: number | null
           descriere?: string | null
           dimensiuni?: string | null
-          distribuitor_id?: string
           id?: string
           imagine_url?: string | null
           kg_per_buc?: number | null
@@ -320,22 +302,7 @@ export type Database = {
           unitate_masura?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_produse_distribuitor"
-            columns: ["distribuitor_id"]
-            isOneToOne: false
-            referencedRelation: "distribuitori"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "produse_distribuitor_id_fkey"
-            columns: ["distribuitor_id"]
-            isOneToOne: false
-            referencedRelation: "distribuitori"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiluri_utilizatori: {
         Row: {

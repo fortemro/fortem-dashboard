@@ -6,8 +6,7 @@ import { Package, Ruler, Weight, Truck } from 'lucide-react';
 import { ProductCartButton } from './ProductCartButton';
 
 export function ProduseGrid() {
-  // Afișează toate produsele în pagina Produse (showAll = true)
-  const { produse, loading } = useProduse(undefined, true);
+  const { produse, loading } = useProduse();
 
   if (loading) {
     return (
@@ -130,7 +129,6 @@ export function ProduseGrid() {
               </div>
             )}
             
-            {/* Product cart button - replaces price and stock section */}
             <ProductCartButton produs={produs} />
           </CardContent>
         </Card>

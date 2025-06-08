@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useComenzi } from '@/hooks/useComenzi';
@@ -160,6 +159,7 @@ export default function ComenziMele() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Număr Comandă</TableHead>
+                      <TableHead>Distribuitor</TableHead>
                       <TableHead>Data</TableHead>
                       <TableHead>Orașul Livrare</TableHead>
                       <TableHead>Status</TableHead>
@@ -173,10 +173,10 @@ export default function ComenziMele() {
                         <TableCell className="font-medium font-mono">
                           {comanda.numar_comanda}
                         </TableCell>
+                        <TableCell>{comanda.distribuitor_id}</TableCell>
                         <TableCell>
                           {new Date(comanda.data_comanda).toLocaleDateString('ro-RO')}
                         </TableCell>
-                        <TableCell>{comanda.distribuitor?.nume_companie || comanda.distribuitor_id}</TableCell>
                         <TableCell>{comanda.oras_livrare}</TableCell>
                         <TableCell>
                           {getStatusBadge(comanda.status)}

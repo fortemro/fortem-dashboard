@@ -17,29 +17,10 @@ export function useCentralizatorData() {
     try {
       setLoading(true);
       
-      // Fetch comenzi cu toate detaliile
+      // Fetch comenzi cu informații de bază
       let query = supabase
         .from('comenzi')
-        .select(`
-          id,
-          numar_comanda,
-          data_comanda,
-          status,
-          oras_livrare,
-          adresa_livrare,
-          judet_livrare,
-          telefon_livrare,
-          observatii,
-          numar_paleti,
-          mzv_emitent,
-          distribuitori!distribuitor_id (
-            nume_companie,
-            oras,
-            judet,
-            persoana_contact,
-            telefon
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       // Dacă nu este Admin, filtrează doar comenzile utilizatorului sau MZV-ului
@@ -53,6 +34,22 @@ export function useCentralizatorData() {
         console.error('Error fetching comenzi:', comenziError);
         throw comenziError;
       }
+
+      // Fetch distribuitori separat pentru a obține informațiile complete
+      const { data: distributoriData, error: distributoriError } = await supabase
+        .from('distribuitori')
+        .select('nume_companie, oras, judet, persoana_contact, telefon');
+
+      if (distributoriError) {
+        console.error('Error fetching distribuitori:', distributoriError);
+        throw distributoriError;
+      }
+
+      // Creează un map pentru distribuitori
+      const distributoriMap = new Map();
+      distributoriData?.forEach(dist => {
+        distributoriMap.set(dist.nume_companie, dist);
+      });
 
       // Fetch items pentru fiecare comandă
       const comenziIds = comenziData?.map(c => c.id) || [];
@@ -82,14 +79,23 @@ export function useCentralizatorData() {
         itemsData = items || [];
       }
 
-      // Construiește obiectele detaliate cu mapping corect
+      // Construiește obiectele detaliate
       const comenziDetaliate: ComandaDetaliata[] = comenziData?.map(comanda => {
         const comandaItems = itemsData.filter(item => item.comanda_id === comanda.id);
         const totalComanda = comandaItems.reduce((sum, item) => sum + (item.total_item || 0), 0);
 
+        // Găsește distribuitor-ul corespunzător sau creează unul implicit
+        const distributorInfo = distributoriMap.get(comanda.distribuitor_id) || {
+          nume_companie: comanda.distribuitor_id || 'Necunoscut',
+          oras: '',
+          judet: '',
+          persoana_contact: '',
+          telefon: ''
+        };
+
         return {
           ...comanda,
-          distribuitor: comanda.distribuitori, // Map distribuitori to distribuitor
+          distribuitor: distributorInfo,
           items: comandaItems.map(item => ({
             id: item.id,
             cantitate: item.cantitate,

@@ -7,7 +7,7 @@ import { UseFormReturn } from 'react-hook-form';
 
 interface DistributorSelectorProps {
   form: UseFormReturn<any>;
-  onDistributorChange: (distributorName: string) => void;
+  onDistributorChange: (distributorId: string, distributorName: string) => void;
   selectedDistributor: string;
 }
 
@@ -16,8 +16,11 @@ export function DistributorSelector({
   onDistributorChange,
   selectedDistributor
 }: DistributorSelectorProps) {
-  
-  console.log('DistributorSelector - selectedDistributor:', selectedDistributor);
+
+  const handleDistributorNameChange = (name: string) => {
+    form.setValue('distribuitor_id', name);
+    onDistributorChange(name, name);
+  };
 
   return (
     <Card>
@@ -36,10 +39,7 @@ export function DistributorSelector({
                   <Input
                     placeholder="Introduceți numele distribuitorului"
                     value={field.value}
-                    onChange={(e) => {
-                      field.onChange(e.target.value);
-                      onDistributorChange(e.target.value);
-                    }}
+                    onChange={(e) => handleDistributorNameChange(e.target.value)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -50,7 +50,7 @@ export function DistributorSelector({
           {selectedDistributor && (
             <div className="p-4 bg-green-50 rounded-lg border border-green-200">
               <p className="text-green-800 text-sm font-medium">
-                ✓ Distribuitor introdus: <strong>{selectedDistributor}</strong>
+                ✓ Distribuitor: <strong>{selectedDistributor}</strong>
               </p>
               <p className="text-green-600 text-xs mt-2">
                 Puteți continua să completați restul formularului.
