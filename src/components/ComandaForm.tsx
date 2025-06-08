@@ -135,5 +135,21 @@ export function ComandaForm() {
         </form>
       </Form>
     </>
+<FormField
+    control={form.control}
+    name="pret_per_palet"
+    render={({ field }) => (
+        <FormItem>
+            <FormLabel>Preț / Palet (RON)</FormLabel>
+            <FormControl>
+                <Input type="text" placeholder="ex: 1500.50" {...field}
+                    onChange={e => {
+                        if (/^\d*\.?\d*$/.test(e.target.value)) field.onChange(e.target.value);
+                    }}
+                />
+            </FormControl>
+        </FormItem>
+    )}
+/>
   );
 }
