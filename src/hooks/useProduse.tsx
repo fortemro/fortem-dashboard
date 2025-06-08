@@ -1,30 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-
-// Interfață completă pe baza erorilor de tip din componente
-export interface Produs {
-    id: string;
-    nume: string;
-    descriere?: string;
-    imagine_url?: string;
-    categorie?: string;
-    greutate_per_bucata?: number;
-    bucati_per_bax?: number;
-    baxuri_per_palet?: number;
-    greutate_bax?: number;
-    greutate_palet?: number;
-    // Câmpuri adăugate pe baza erorilor
-    activ?: boolean;
-    buc_comanda?: number;
-    bucati_per_legatura?: number;
-    cod_produs?: string;
-    densitate?: number;
-    dimensiuni?: string;
-    kg_per_buc?: number;
-    tip_produs?: string;
-    paleti_per_camion?: number;
-    kg_per_camion?: number;
-}
+// Importăm tipul din fișierul central
+import { Produs } from '@/data-types';
 
 export function useProduse() {
   const [produse, setProduse] = useState<Produs[]>([]);
@@ -43,7 +20,12 @@ export function useProduse() {
           console.error('Eroare la preluarea produselor:', error);
           setProduse([]);
         } else {
-          setProduse(data as Produs[] || []);
+          // Adăugăm proprietatea lipsă 'bucati_per_palet' manual pentru compatibilitate
+          const produseCompatibile = (data || []).map(p => ({
+            ...p,
+            bucati_per_palet: p.baxuri_per_palet && p.bucati_per_bax ? p.baxuri_per_palet * p.bucati_per_bax : 0
+          }));
+          setProduse(produseCompatibile as Produs[]);
         }
       } catch (e) {
         console.error('O excepție a avut loc la preluarea produselor:', e);
