@@ -8,6 +8,7 @@ export interface Distribuitor {
     mzv_alocat?: string;
 }
 
+// Înlocuiește doar interfața Produs din src/data-types/index.ts
 export interface Produs {
     id: string;
     nume: string;
