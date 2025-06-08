@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-// Importăm tipul din fișierul central
 import { Comanda } from '@/data-types';
 
 export function useComenzi() {
@@ -19,7 +18,7 @@ export function useComenzi() {
     try {
       const { data, error } = await supabase
         .from('comenzi')
-        .select('*, distribuitori(nume_companie)')
+        .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -27,7 +26,8 @@ export function useComenzi() {
         console.error('Eroare la preluarea comenzilor:', error.message);
         setComenzi([]);
       } else {
-        setComenzi(data || []);
+        // Facem o conversie de tip explicită pentru a satisface compilatorul
+        setComenzi((data as any[]) || []);
       }
     } catch (e) {
       console.error('Exceptie la preluarea comenzilor:', e);
@@ -39,9 +39,6 @@ export function useComenzi() {
 
   useEffect(() => { fetchComenzi(); }, [fetchComenzi]);
   
-  // Am scos funcția 'createComanda' de aici, deoarece logica ei este în altă parte (useComandaCreate.tsx)
-  // și provoca conflicte.
-
   const getComandaById = useCallback(async (id: string): Promise<Comanda | null> => {
     if (!id) return null;
     try {
@@ -55,13 +52,13 @@ export function useComenzi() {
         console.error('Eroare la preluarea comenzii după ID:', error.message);
         return null;
       }
-      return data as Comanda | null;
+      // Facem o conversie de tip explicită pentru a satisface compilatorul
+      return data as unknown as Comanda | null;
     } catch (e) {
       console.error('Excepție la preluarea comenzii după ID:', e);
       return null;
     }
   }, []);
 
-  // Returnăm un set simplificat de funcții, pentru a evita conflictele
   return { comenzi, loading, fetchComenzi, getComandaById };
 }
