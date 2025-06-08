@@ -1,6 +1,6 @@
 import React from 'react';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'; // Am adăugat importurile necesare
+import { Input } from '@/components/ui/input'; // Am adăugat importul necesar
 import { DistributorSelector } from './DistributorSelector';
 import { DeliveryForm } from './DeliveryForm';
 import { ProductList } from './ProductList';
@@ -46,6 +46,7 @@ export function ComandaForm() {
   });
 
   const onSubmit = async (data: any) => {
+    // Trimitem un singur obiect care conține și itemii
     await submitOrder({ ...data, items });
   };
 
@@ -71,20 +72,17 @@ export function ComandaForm() {
         getComandaById={getComandaById}
       />
       
-      {/* AM REINTRODUS PROPRIETĂȚILE LIPSĂ AICI */}
-      <FormInitializer
-        form={form}
-        isEditMode={isEditMode}
-        cartItems={cartItems}
-        setItems={setItems}
-        setSelectedDistributorId={setSelectedDistributorId}
-        setSelectedDistributorName={setSelectedDistributorName}
-      />
+      <FormInitializer form={form} />
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          {/* ... restul formularului ... */}
-
+          {isEditMode && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h2 className="text-lg font-semibold text-blue-800">Editare Comandă</h2>
+              <p className="text-blue-600 mt-1">Modificați detaliile și apăsați "Salvează Modificările".</p>
+            </div>
+          )}
+          
           <DistributorSelector
             form={form}
             onDistributorChange={handleDistributorChange}
@@ -93,18 +91,39 @@ export function ComandaForm() {
           
           <DeliveryForm form={form} />
 
+          {/* === BLOCUL DE COD PENTRU PRET/PALET INSERAT CORECT AICI === */}
           <div className="p-4 border rounded-lg bg-slate-50">
               <h3 className="text-lg font-medium mb-4">Detalii Paleți & Preț</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                       control={form.control}
                       name="numar_paleti"
-                      render={({ field }) => ( <FormItem> ... </FormItem> )}
+                      render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Număr Paleți</FormLabel>
+                              <FormControl>
+                                  <Input type="number" placeholder="ex: 3" {...field} onChange={e => field.onChange(parseInt(e.target.value) || 0)} />
+                              </FormControl>
+                              <FormMessage />
+                          </FormItem>
+                      )}
                   />
                   <FormField
                       control={form.control}
                       name="pret_per_palet"
-                      render={({ field }) => ( <FormItem> ... </FormItem> )}
+                      render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Preț / Palet (RON)</FormLabel>
+                              <FormControl>
+                                  <Input type="text" placeholder="ex: 1500.50" {...field}
+                                      onChange={e => {
+                                          if (/^\d*\.?\d*$/.test(e.target.value)) field.onChange(e.target.value);
+                                      }}
+                                  />
+                              </FormControl>
+                              <FormMessage />
+                          </FormItem>
+                      )}
                   />
               </div>
           </div>
@@ -112,7 +131,11 @@ export function ComandaForm() {
           <ProductList 
             items={items}
             produse={produse}
-            // ... restul proprietăților
+            loadingProduse={loadingProduse}
+            selectedDistribuitor={selectedDistributorName}
+            onAddItem={handleAddItem}
+            onUpdateItem={handleUpdateItem}
+            onDeleteItem={handleDeleteItem}
           />
           
           <OrderSummary items={items} />
