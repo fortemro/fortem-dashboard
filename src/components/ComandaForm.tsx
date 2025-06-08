@@ -40,11 +40,10 @@ export function ComandaForm() {
     getComandaById
   } = useComandaForm();
 
-  const { submitOrder } = useOrderSubmission({
-    produse,
-    items,
-    onSuccess: handleSuccess
-  });
+   const { submitOrder } = useOrderSubmission({
+    items,
+    onSuccess: handleSuccess
+  });
 
   const onSubmit = async (data: any) => {
     console.log('Form data on submit:', data);
