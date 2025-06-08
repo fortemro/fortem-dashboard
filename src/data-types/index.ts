@@ -1,21 +1,15 @@
 // src/data-types/index.ts
 
-export interface Distribuitor {
-    id: string;
-    nume_companie: string;
-    adresa: string;
-    oras: string;
-    // ...alte câmpuri opționale
-}
-
+// --- TIPUL PRODUS (MASTER) ---
+// Conține toate proprietățile cerute de componentele vechi, marcate ca opționale.
 export interface Produs {
     id: string;
     nume: string;
     descriere?: string;
     imagine_url?: string;
     categorie?: string;
-    // --- Câmpuri adăugate pentru compatibilitate maximă cu UI ---
-    // Le marcăm pe toate ca opționale pentru a nu bloca logica nouă.
+    
+    // Câmpuri obligatorii pentru compatibilitate TypeScript
     activ?: boolean;
     buc_comanda?: number;
     bucati_per_legatura?: number;
@@ -35,9 +29,14 @@ export interface Produs {
     moneda?: string;
     necesare_buc_ml?: number;
     nr_bucati?: number;
+    nr_paleti?: number; // Adăugat din ultima eroare
+    paleti_comandati?: number; // Adăugat din ultima eroare
     paleti_per_camion?: number;
+    pret?: number; // Adăugat din ultima eroare
     pret_unitar?: number;
+    stoc_disponibil?: number; // Adăugat din ultima eroare
     tip_produs?: string;
+    unitate_masura?: string; // Adăugat din ultima eroare
     updated_at?: string;
 }
 
@@ -65,11 +64,11 @@ export interface Comanda {
     telefon_livrare: string;
     observatii?: string;
     numar_paleti: number;
-    pret_per_palet?: number; // Câmp specific pentru noul model
+    pret_per_palet?: number;
     total_comanda: number;
     mzv_emitent: string;
     awb?: string;
     document_url?: string;
-    distribuitori?: any; // Tip any pentru a evita erorile de join
+    distribuitori?: any;
     itemi_comanda?: ItemComanda[];
 }
