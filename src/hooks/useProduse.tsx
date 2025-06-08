@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+// Interfață completă pe baza erorilor de tip din componente
 export interface Produs {
     id: string;
     nume: string;
@@ -12,6 +13,17 @@ export interface Produs {
     baxuri_per_palet?: number;
     greutate_bax?: number;
     greutate_palet?: number;
+    // Câmpuri adăugate pe baza erorilor
+    activ?: boolean;
+    buc_comanda?: number;
+    bucati_per_legatura?: number;
+    cod_produs?: string;
+    densitate?: number;
+    dimensiuni?: string;
+    kg_per_buc?: number;
+    tip_produs?: string;
+    paleti_per_camion?: number;
+    kg_per_camion?: number;
 }
 
 export function useProduse() {
