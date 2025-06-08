@@ -1,12 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { Comanda } from '@/types/comanda';
-
-// Omit<Type, Keys> creează un tip nou omițând anumite proprietăți
-type ComandaCreateData = Omit<Comanda, 'id' | 'created_at' | 'numar_comanda' | 'status' | 'user_id'> & {
-    items: any[];
-};
+// Importăm tipul din fișierul central
+import { Comanda } from '@/data-types';
 
 export function useComenzi() {
   const { user } = useAuth();
@@ -21,7 +17,12 @@ export function useComenzi() {
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('comenzi').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('comenzi')
+        .select('*, distribuitori(nume_companie)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
       if (error) {
         console.error('Eroare la preluarea comenzilor:', error.message);
         setComenzi([]);
@@ -37,57 +38,19 @@ export function useComenzi() {
   }, [user]);
 
   useEffect(() => { fetchComenzi(); }, [fetchComenzi]);
-
-  const createComanda = useCallback(async (formData: any) => {
-    if (!user) throw new Error("Utilizatorul nu este autentificat.");
-
-    const { items, ...comandaDetails } = formData;
-
-    const comandaDataToInsert = {
-      ...comandaDetails,
-      user_id: user.id,
-      status: 'plasata',
-      data_comanda: new Date().toISOString(),
-      numar_comanda: `CMD-${Math.floor(Math.random() * 100000)}`,
-      mzv_emitent: 'N/A', // Valoare implicită
-      awb: '',
-      document_url: ''
-    };
-
-    try {
-      const { data: comandaNoua, error: comandaError } = await supabase
-        .from('comenzi')
-        .insert(comandaDataToInsert)
-        .select()
-        .single();
-      
-      if (comandaError) throw comandaError;
-      if (!comandaNoua) throw new Error("Comanda nu a putut fi creată.");
-
-      const itemiData = items.map((item: any) => ({
-        comanda_id: comandaNoua.id,
-        produs_id: item.produs_id,
-        cantitate: item.cantitate,
-        pret_unitar: item.pret_unitar,
-        total_item: item.cantitate * item.pret_unitar, // Am corectat 'total_linie' în 'total_item'
-      }));
-
-      const { error: itemsError } = await supabase.from('itemi_comanda').insert(itemiData);
-      if (itemsError) throw itemsError;
-
-      await fetchComenzi();
-      return comandaNoua;
-
-    } catch (error) {
-      console.error('Eroare la crearea comenzii cu itemi:', error);
-      throw error;
-    }
-  }, [user, fetchComenzi]);
+  
+  // Am scos funcția 'createComanda' de aici, deoarece logica ei este în altă parte (useComandaCreate.tsx)
+  // și provoca conflicte.
 
   const getComandaById = useCallback(async (id: string): Promise<Comanda | null> => {
     if (!id) return null;
     try {
-      const { data, error } = await supabase.from('comenzi').select('*, itemi_comanda(*, produse(*))').eq('id', id).maybeSingle();
+      const { data, error } = await supabase
+        .from('comenzi')
+        .select('*, itemi_comanda(*, produse(*)), distribuitori(*)')
+        .eq('id', id)
+        .maybeSingle();
+
       if (error) {
         console.error('Eroare la preluarea comenzii după ID:', error.message);
         return null;
@@ -99,5 +62,6 @@ export function useComenzi() {
     }
   }, []);
 
-  return { comenzi, loading, fetchComenzi, createComanda, getComandaById };
+  // Returnăm un set simplificat de funcții, pentru a evita conflictele
+  return { comenzi, loading, fetchComenzi, getComandaById };
 }
