@@ -1,6 +1,6 @@
-
 import React from 'react';
-import { Form } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'; // Am adăugat importurile necesare
+import { Input } from '@/components/ui/input'; // Am adăugat importul necesar
 import { DistributorSelector } from './DistributorSelector';
 import { DeliveryForm } from './DeliveryForm';
 import { ProductList } from './ProductList';
@@ -40,23 +40,14 @@ export function ComandaForm() {
     getComandaById
   } = useComandaForm();
 
-   const { submitOrder } = useOrderSubmission({
-    items,
-    onSuccess: handleSuccess
-  });
+  const { submitOrder } = useOrderSubmission({
+    items,
+    onSuccess: handleSuccess
+  });
 
   const onSubmit = async (data: any) => {
-    console.log('Form data on submit:', data);
-    console.log('Selected distributor ID:', selectedDistributorId);
-    console.log('Selected distributor name:', selectedDistributorName);
-    
-    // Ensure distribuitor_id is included in the data
-    const submitData = {
-      ...data,
-      distribuitor_id: selectedDistributorId || data.distribuitor_id
-    };
-    
-    await submitOrder(submitData);
+    // Trimitem un singur obiect care conține și itemii
+    await submitOrder({ ...data, items });
   };
 
   if (loadingOrder) {
@@ -81,25 +72,14 @@ export function ComandaForm() {
         getComandaById={getComandaById}
       />
       
-      <FormInitializer
-        isEditMode={isEditMode}
-        cartItems={cartItems}
-        form={form}
-        setItems={setItems}
-        setSelectedDistributorId={setSelectedDistributorId}
-        setSelectedDistributorName={setSelectedDistributorName}
-      />
+      <FormInitializer form={form} />
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           {isEditMode && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <h2 className="text-lg font-semibold text-blue-800 mb-2">
-                Editare Comandă
-              </h2>
-              <p className="text-blue-600">
-                Modificați detaliile comenzii și apăsați "Salvează Modificările" pentru a actualiza comanda.
-              </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h2 className="text-lg font-semibold text-blue-800">Editare Comandă</h2>
+              <p className="text-blue-600 mt-1">Modificați detaliile și apăsați "Salvează Modificările".</p>
             </div>
           )}
           
@@ -110,6 +90,43 @@ export function ComandaForm() {
           />
           
           <DeliveryForm form={form} />
+
+          {/* === BLOCUL DE COD PENTRU PRET/PALET INSERAT CORECT AICI === */}
+          <div className="p-4 border rounded-lg bg-slate-50">
+              <h3 className="text-lg font-medium mb-4">Detalii Paleți & Preț</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                      control={form.control}
+                      name="numar_paleti"
+                      render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Număr Paleți</FormLabel>
+                              <FormControl>
+                                  <Input type="number" placeholder="ex: 3" {...field} onChange={e => field.onChange(parseInt(e.target.value) || 0)} />
+                              </FormControl>
+                              <FormMessage />
+                          </FormItem>
+                      )}
+                  />
+                  <FormField
+                      control={form.control}
+                      name="pret_per_palet"
+                      render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Preț / Palet (RON)</FormLabel>
+                              <FormControl>
+                                  <Input type="text" placeholder="ex: 1500.50" {...field}
+                                      onChange={e => {
+                                          if (/^\d*\.?\d*$/.test(e.target.value)) field.onChange(e.target.value);
+                                      }}
+                                  />
+                              </FormControl>
+                              <FormMessage />
+                          </FormItem>
+                      )}
+                  />
+              </div>
+          </div>
           
           <ProductList 
             items={items}
@@ -135,21 +152,5 @@ export function ComandaForm() {
         </form>
       </Form>
     </>
-<FormField
-    control={form.control}
-    name="pret_per_palet"
-    render={({ field }) => (
-        <FormItem>
-            <FormLabel>Preț / Palet (RON)</FormLabel>
-            <FormControl>
-                <Input type="text" placeholder="ex: 1500.50" {...field}
-                    onChange={e => {
-                        if (/^\d*\.?\d*$/.test(e.target.value)) field.onChange(e.target.value);
-                    }}
-                />
-            </FormControl>
-        </FormItem>
-    )}
-/>
   );
 }
