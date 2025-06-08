@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-// Importăm tipul din fișierul central
-import { Produs } from '@/data-types';
+import { Produs } from '@/data-types'; // Folosim tipul central
 
 export function useProduse() {
   const [produse, setProduse] = useState<Produs[]>([]);
@@ -20,12 +19,7 @@ export function useProduse() {
           console.error('Eroare la preluarea produselor:', error);
           setProduse([]);
         } else {
-          // Adăugăm proprietatea lipsă 'bucati_per_palet' manual pentru compatibilitate
-          const produseCompatibile = (data || []).map(p => ({
-            ...p,
-            bucati_per_palet: p.baxuri_per_palet && p.bucati_per_bax ? p.baxuri_per_palet * p.bucati_per_bax : 0
-          }));
-          setProduse(produseCompatibile as Produs[]);
+          setProduse(data as Produs[] || []);
         }
       } catch (e) {
         console.error('O excepție a avut loc la preluarea produselor:', e);
