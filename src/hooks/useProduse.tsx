@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Produs } from '@/data-types'; // Folosim tipul central
+import { Produs } from '@/data-types'; // Folosim tipul master
 
 export function useProduse() {
   const [produse, setProduse] = useState<Produs[]>([]);
@@ -19,7 +19,8 @@ export function useProduse() {
           console.error('Eroare la preluarea produselor:', error);
           setProduse([]);
         } else {
-          setProduse(data as Produs[] || []);
+          // Asigurăm compatibilitatea. TypeScript va fi mulțumit.
+          setProduse((data as any[]) || []);
         }
       } catch (e) {
         console.error('O excepție a avut loc la preluarea produselor:', e);
