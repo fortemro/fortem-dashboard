@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useComenzi } from '@/hooks/useComenzi';
@@ -72,6 +73,14 @@ export default function ComenziMele() {
     
     const config = statusConfig[status] || { label: status, variant: 'secondary' };
     return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  // Funcție pentru a obține numele distribuitorului
+  const getDistributorName = (comanda) => {
+    if (comanda.distribuitori && comanda.distribuitori.nume_companie) {
+      return comanda.distribuitori.nume_companie;
+    }
+    return comanda.distribuitor_id; // fallback la ID dacă nu există numele
   };
 
   if (loading) {
@@ -164,6 +173,7 @@ export default function ComenziMele() {
                       <TableHead>Orașul Livrare</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Paleti</TableHead>
+                      <TableHead>Total (RON)</TableHead>
                       <TableHead>Acțiuni</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -173,7 +183,7 @@ export default function ComenziMele() {
                         <TableCell className="font-medium font-mono">
                           {comanda.numar_comanda}
                         </TableCell>
-                        <TableCell>{comanda.distribuitor_id}</TableCell>
+                        <TableCell>{getDistributorName(comanda)}</TableCell>
                         <TableCell>
                           {new Date(comanda.data_comanda).toLocaleDateString('ro-RO')}
                         </TableCell>
@@ -182,6 +192,9 @@ export default function ComenziMele() {
                           {getStatusBadge(comanda.status)}
                         </TableCell>
                         <TableCell>{comanda.numar_paleti}</TableCell>
+                        <TableCell className="font-semibold">
+                          {(comanda.total_comanda || 0).toFixed(2)}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Button

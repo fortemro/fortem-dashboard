@@ -1,3 +1,4 @@
+
 // src/hooks/comenzi/useComandaCreate.tsx
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../useAuth';
@@ -18,6 +19,40 @@ export function useComandaCreate() {
       const distributorId = await findOrCreateDistribuitor(distributorName);
       if (!distributorId) throw new Error(`Distribuitorul "${distributorName}" nu a putut fi procesat.`);
 
+      // Pregătesc itemii cu prețurile reale din baza de date
+      const itemsWithPrices = await Promise.all(
+        items.map(async (item) => {
+          if (!item.produs_id) throw new Error('Produs ID lipsește pentru unul dintre itemii comenzii');
+          
+          // Preiau prețul produsului din baza de date
+          const { data: produs, error: produsError } = await supabase
+            .from('produse')
+            .select('pret')
+            .eq('id', item.produs_id)
+            .single();
+
+          if (produsError || !produs) {
+            console.error('Eroare la preluarea prețului produsului:', produsError);
+            throw new Error(`Nu s-a putut prelua prețul pentru produsul ${item.produs_id}`);
+          }
+
+          const pretUnitar = produs.pret || 0;
+          const cantitate = item.cantitate || 0;
+          const totalItem = pretUnitar * cantitate;
+
+          return {
+            produs_id: item.produs_id,
+            cantitate: cantitate,
+            pret_unitar: pretUnitar,
+            total_item: totalItem,
+          };
+        })
+      );
+
+      // Calculez totalul comenzii
+      const totalComanda = itemsWithPrices.reduce((sum, item) => sum + item.total_item, 0);
+      const totalPaleti = itemsWithPrices.reduce((sum, item) => sum + item.cantitate, 0);
+
       const comandaPentruInserare = {
         ...restOfFormData,
         distribuitor_id: distributorId,
@@ -26,20 +61,23 @@ export function useComandaCreate() {
         data_comanda: new Date().toISOString(),
         numar_comanda: `CMD-${Date.now().toString().slice(-6)}`,
         mzv_emitent: user.id,
-        total_comanda: (Number(formData.numar_paleti) || 0) * (Number(formData.pret_per_palet) || 0),
+        numar_paleti: totalPaleti,
+        total_comanda: totalComanda,
       };
 
       const { data: comanda, error: comandaError } = await supabase.from('comenzi').insert(comandaPentruInserare).select().single();
       if (comandaError) throw comandaError;
 
-      const itemsData = items.map(item => ({
+      const itemsData = itemsWithPrices.map(item => ({
         comanda_id: comanda.id,
         produs_id: item.produs_id!,
         cantitate: item.cantitate!,
-        pret_unitar: 0,
-        total_item: 0,
+        pret_unitar: item.pret_unitar!,
+        total_item: item.total_item!,
       }));
-      await supabase.from('itemi_comanda').insert(itemsData);
+      
+      const { error: itemsError } = await supabase.from('itemi_comanda').insert(itemsData);
+      if (itemsError) throw itemsError;
 
       return comanda;
     } catch (error) {

@@ -1,23 +1,10 @@
-// src/data-types/index.ts
-export interface Distribuitor {
-    id: string;
-    nume_companie: string;
-    adresa: string;
-    oras: string;
-    judet?: string;
-    mzv_alocat?: string;
-}
 
-export interface Produs {
-    id: string;
-    nume: string;
-    // Alte câmpuri de bază din DB
-    descriere?: string;
-    categorie?: string;
-    // Câmpuri opționale pentru compatibilitate cu UI
-    pret_unitar?: number;
-    [key: string]: any; // Permite orice altă proprietate
-}
+// src/data-types/index.ts
+import type { Tables } from '@/integrations/supabase/types';
+
+// Folosim tipurile Supabase pentru consistență
+export type Distribuitor = Tables<'distribuitori'>;
+export type Produs = Tables<'produse'>;
 
 export interface ItemComanda {
     id?: string;

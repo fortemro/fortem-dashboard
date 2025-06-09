@@ -15,6 +15,7 @@ export type Database = {
           created_at: string
           data_comanda: string
           distribuitor_id: string
+          distribuitor_uuid: string | null
           id: string
           judet_livrare: string | null
           mzv_emitent: string | null
@@ -24,6 +25,7 @@ export type Database = {
           oras_livrare: string
           status: string | null
           telefon_livrare: string | null
+          total_comanda: number | null
           updated_at: string
           user_id: string
         }
@@ -32,6 +34,7 @@ export type Database = {
           created_at?: string
           data_comanda?: string
           distribuitor_id: string
+          distribuitor_uuid?: string | null
           id?: string
           judet_livrare?: string | null
           mzv_emitent?: string | null
@@ -41,6 +44,7 @@ export type Database = {
           oras_livrare: string
           status?: string | null
           telefon_livrare?: string | null
+          total_comanda?: number | null
           updated_at?: string
           user_id: string
         }
@@ -49,6 +53,7 @@ export type Database = {
           created_at?: string
           data_comanda?: string
           distribuitor_id?: string
+          distribuitor_uuid?: string | null
           id?: string
           judet_livrare?: string | null
           mzv_emitent?: string | null
@@ -58,6 +63,7 @@ export type Database = {
           oras_livrare?: string
           status?: string | null
           telefon_livrare?: string | null
+          total_comanda?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -67,7 +73,6 @@ export type Database = {
         Row: {
           activ: boolean | null
           adresa: string
-          cod_fiscal: string | null
           created_at: string
           email: string | null
           id: string
@@ -82,7 +87,6 @@ export type Database = {
         Insert: {
           activ?: boolean | null
           adresa: string
-          cod_fiscal?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -97,7 +101,6 @@ export type Database = {
         Update: {
           activ?: boolean | null
           adresa?: string
-          cod_fiscal?: string | null
           created_at?: string
           email?: string | null
           id?: string
