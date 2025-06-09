@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -16,21 +17,45 @@ export function useComenzi() {
     }
     setLoading(true);
     try {
-      // --- AICI ESTE MODIFICAREA CHEIE ---
-      // Am înlocuit .select('*') cu o interogare specifică care face "join"
-      // și aduce numele companiei din tabelul relaționat 'distribuitori'.
-      const { data, error } = await supabase
+      // Preluat comenzile cu informații despre distribuitori
+      const { data: comenziData, error: comenziError } = await supabase
         .from('comenzi')
-        .select('*, distribuitori ( nume_companie )')
+        .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Eroare la preluarea comenzilor:', error.message);
+      if (comenziError) {
+        console.error('Eroare la preluarea comenzilor:', comenziError.message);
         setComenzi([]);
       } else {
-        // Facem o conversie de tip explicită pentru a satisface compilatorul
-        setComenzi((data as any[]) || []);
+        // Pentru fiecare comandă, preiau și informațiile despre distribuitor
+        const comenziWithDistributors = await Promise.all(
+          (comenziData || []).map(async (comanda) => {
+            let distributorInfo = null;
+            
+            // Verific dacă distribuitor_id este un UUID (distribuitor existent)
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(comanda.distribuitor_id);
+            
+            if (isUUID) {
+              const { data: distributorData, error: distributorError } = await supabase
+                .from('distribuitori')
+                .select('*')
+                .eq('id', comanda.distribuitor_id)
+                .single();
+
+              if (!distributorError && distributorData) {
+                distributorInfo = distributorData;
+              }
+            }
+
+            return {
+              ...comanda,
+              distribuitori: distributorInfo
+            };
+          })
+        );
+
+        setComenzi(comenziWithDistributors as Comanda[]);
       }
     } catch (e) {
       console.error('Exceptie la preluarea comenzilor:', e);
@@ -55,7 +80,6 @@ export function useComenzi() {
         console.error('Eroare la preluarea comenzii după ID:', error.message);
         return null;
       }
-      // Facem o conversie de tip explicită pentru a satisface compilatorul
       return data as unknown as Comanda | null;
     } catch (e) {
       console.error('Excepție la preluarea comenzii după ID:', e);
