@@ -1,6 +1,7 @@
+
 import { useCallback } from 'react';
 import { useComandaCreate } from '@/hooks/comenzi/useComandaCreate';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { ItemComanda } from '@/data-types';
 
 interface UseOrderSubmissionProps {
@@ -17,7 +18,6 @@ export function useOrderSubmission({
 
   const submitOrder = useCallback(async (formData: any) => {
     try {
-      // Apelăm funcția de creare cu datele formularului și itemii
       const result = await createComanda(formData, items);
 
       toast({
@@ -27,7 +27,16 @@ export function useOrderSubmission({
       });
 
       if (onSuccess) {
-        onSuccess(result);
+        onSuccess({
+          id: result.id,
+          numar_comanda: result.numar_comanda,
+          distribuitor_nume: result.distribuitor_nume,
+          oras_livrare: result.oras_livrare,
+          adresa_livrare: result.adresa_livrare,
+          total_comanda: result.total_comanda,
+          numar_paleti: result.numar_paleti,
+          items: result.items,
+        });
       }
     } catch (error: any) {
       console.error("Eroare la trimiterea comenzii:", error);

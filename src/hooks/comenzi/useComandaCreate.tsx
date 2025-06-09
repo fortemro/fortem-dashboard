@@ -27,7 +27,7 @@ export function useComandaCreate() {
           // Preiau prețul produsului din baza de date
           const { data: produs, error: produsError } = await supabase
             .from('produse')
-            .select('pret')
+            .select('pret, nume')
             .eq('id', item.produs_id)
             .single();
 
@@ -45,6 +45,7 @@ export function useComandaCreate() {
             cantitate: cantitate,
             pret_unitar: pretUnitar,
             total_item: totalItem,
+            nume_produs: produs.nume,
           };
         })
       );
@@ -79,7 +80,12 @@ export function useComandaCreate() {
       const { error: itemsError } = await supabase.from('itemi_comanda').insert(itemsData);
       if (itemsError) throw itemsError;
 
-      return comanda;
+      // Returnez datele complete pentru popup
+      return {
+        ...comanda,
+        distribuitor_nume: distributorName,
+        items: itemsWithPrices,
+      };
     } catch (error) {
       console.error('Eroare în fluxul de creare a comenzii:', error);
       throw error;

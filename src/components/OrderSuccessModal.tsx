@@ -21,6 +21,7 @@ interface OrderSuccessModalProps {
     oras_livrare: string;
     adresa_livrare: string;
     total_comanda: number;
+    numar_paleti: number;
     items: Array<{
       nume_produs: string;
       cantitate: number;
@@ -83,14 +84,13 @@ export function OrderSuccessModal({ isOpen, onClose, orderData }: OrderSuccessMo
   };
 
   const handleDuplicateOrder = () => {
-    // Store order data in localStorage for duplication
     localStorage.setItem('duplicateOrderData', JSON.stringify({
       distribuitor_nume: orderData.distribuitor_nume,
       oras_livrare: orderData.oras_livrare,
       adresa_livrare: orderData.adresa_livrare,
       items: orderData.items.map(item => ({
         ...item,
-        cantitate: 0 // Reset quantities for new order
+        cantitate: 0
       }))
     }));
     
@@ -127,7 +127,6 @@ export function OrderSuccessModal({ isOpen, onClose, orderData }: OrderSuccessMo
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Order Summary */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Detalii Comandă</CardTitle>
@@ -151,6 +150,10 @@ export function OrderSuccessModal({ isOpen, onClose, orderData }: OrderSuccessMo
                 <span>{orderData.oras_livrare}</span>
               </div>
               <div className="flex items-center justify-between">
+                <span className="font-medium">Total Paleți:</span>
+                <span className="font-semibold">{orderData.numar_paleti}</span>
+              </div>
+              <div className="flex items-center justify-between">
                 <span className="font-medium">Total Comandă:</span>
                 <span className="text-xl font-bold text-green-600">
                   {orderData.total_comanda.toFixed(2)} RON
@@ -159,7 +162,6 @@ export function OrderSuccessModal({ isOpen, onClose, orderData }: OrderSuccessMo
             </CardContent>
           </Card>
 
-          {/* Email Section */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -198,7 +200,6 @@ export function OrderSuccessModal({ isOpen, onClose, orderData }: OrderSuccessMo
             </CardContent>
           </Card>
 
-          {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <Button onClick={handleViewOrder} variant="outline">
               <Eye className="h-4 w-4 mr-2" />
@@ -214,7 +215,6 @@ export function OrderSuccessModal({ isOpen, onClose, orderData }: OrderSuccessMo
             </Button>
           </div>
 
-          {/* Main Action */}
           <Button onClick={handleViewOrder} className="w-full" size="lg">
             <ArrowRight className="h-4 w-4 mr-2" />
             Mergi la Comenzile Mele

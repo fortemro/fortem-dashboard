@@ -1,3 +1,4 @@
+
 // src/hooks/useDistribuitori.tsx
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,14 +30,22 @@ export function useDistribuitori() {
       let { data: existing } = await supabase.from('distribuitori').select('id').eq('nume_companie', numeCompanie.trim()).single();
       if (existing) return existing.id;
 
-      const { data: created, error } = await supabase.from('distribuitori').insert({ nume_companie: numeCompanie.trim(), adresa: 'N/A', oras: 'N/A' }).select('id').single();
+      const { data: created, error } = await supabase.from('distribuitori').insert({ 
+        nume_companie: numeCompanie.trim(), 
+        adresa: 'De completat', 
+        oras: 'De completat',
+        judet: 'De completat',
+        telefon: 'De completat',
+        email: 'De completat',
+        persoana_contact: 'De completat'
+      }).select('id').single();
       if (error) throw error;
       
       await fetchDistribuitori();
       return created!.id;
     } catch (error: any) {
       if (error.code !== 'PGRST116') console.error("Eroare în findOrCreateDistribuitor:", error);
-      return null; // Returnează null în caz de eroare, pentru a fi gestionat mai sus
+      return null;
     }
   }, [fetchDistribuitori]);
 
