@@ -27,7 +27,7 @@ export function FormInitializer({
   setSelectedDistributorName
 }: FormInitializerProps) {
 
-  // Initialize items from cart
+  // Initialize items from cart - doar când nu suntem în edit mode
   useEffect(() => {
     if (cartItems.length > 0 && !isEditMode) {
       const cartBasedItems = cartItems.map(cartItem => ({
@@ -40,7 +40,7 @@ export function FormInitializer({
     }
   }, [cartItems, isEditMode, setItems]);
 
-  // Check for duplicate order data on mount - only process when NOT in edit mode
+  // Check for duplicate order data on mount - doar când nu suntem în edit mode
   useEffect(() => {
     if (!isEditMode) {
       const duplicateData = localStorage.getItem('duplicateOrderData');

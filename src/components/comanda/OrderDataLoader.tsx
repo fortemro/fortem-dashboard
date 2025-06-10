@@ -46,12 +46,14 @@ export function OrderDataLoader({
       }
 
       // Pre-fill form with order data
-      form.setValue('distribuitor_id', orderData.distribuitor?.nume_companie || orderData.distribuitor_id || '');
-      form.setValue('oras_livrare', orderData.oras_livrare || '');
-      form.setValue('adresa_livrare', orderData.adresa_livrare || '');
-      form.setValue('judet_livrare', orderData.judet_livrare || '');
-      form.setValue('telefon_livrare', orderData.telefon_livrare || '');
-      form.setValue('observatii', orderData.observatii || '');
+      form.reset({
+        distribuitor_id: orderData.distribuitor?.nume_companie || orderData.distribuitor_id || '',
+        oras_livrare: orderData.oras_livrare || '',
+        adresa_livrare: orderData.adresa_livrare || '',
+        judet_livrare: orderData.judet_livrare || '',
+        telefon_livrare: orderData.telefon_livrare || '',
+        observatii: orderData.observatii || ''
+      });
       
       // Set distributor data properly - use name not ID
       const distributorName = orderData.distribuitor?.nume_companie || orderData.distribuitor_id || '';
@@ -73,13 +75,13 @@ export function OrderDataLoader({
     } finally {
       setLoadingOrder(false);
     }
-  }, [editId, getComandaById, form, setLoadingOrder, setSelectedDistributorId, setSelectedDistributorName, setItems]);
+  }, [editId]); // Doar editId în dependințe pentru a evita loop-urile
 
   useEffect(() => {
     if (isEditMode && editId) {
       loadOrderForEditing();
     }
-  }, [isEditMode, loadOrderForEditing]); // Folosesc loadOrderForEditing stabilizat
+  }, [isEditMode, editId, loadOrderForEditing]);
 
   return null; // This is a logic-only component
 }
