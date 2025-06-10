@@ -1,73 +1,92 @@
-# Welcome to your Lovable project
+# Fortem Dashboard
 
-## Project info
+O aplicație web modernă pentru managementul simplificat al comenzilor de produse Fortem, creată special pentru agenții de vânzări (MZV) și administratori.
 
-**URL**: https://lovable.dev/projects/94a1c05c-9c60-4292-8fd4-fae7daf161be
+![Dashboard Screenshot](https://imgur.com/a/PQlfeGe)
 
-## How can I edit this code?
+## 📜 Despre Proiect
 
-There are several ways of editing your application.
+Acest proiect a fost dezvoltat pentru a oferi o soluție digitală, rapidă și eficientă pentru plasarea și urmărirea comenzilor de produse. Aplicația este un panou de control (dashboard) care permite utilizatorilor autentificați (agenți de vânzări) să:
+* Creeze comenzi noi pentru clienți (distribuitori).
+* Utilizeze un sistem inteligent **"Găsește sau Creează"** pentru distribuitori, care elimină necesitatea unei liste predefinite și menține datele curate.
+* Adauge produse în comandă dintr-un catalog predefinit.
+* Calculeze automat totaluri pe baza unor reguli simple (ex: preț per palet).
+* Vizualizeze și să duplice comenzi anterioare pentru o operare rapidă.
+* Urmărească statusul comenzilor (ex: în așteptare, în tranzit, livrată).
 
-**Use Lovable**
+Aplicația include și un **panou de administrare** care oferă o privire de ansamblu asupra tuturor comenzilor din sistem.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/94a1c05c-9c60-4292-8fd4-fae7daf161be) and start prompting.
+## 🚀 Construit Cu:
 
-Changes made via Lovable will be committed automatically to this repo.
+Acest proiect folosește o serie de tehnologii moderne pentru a asigura o experiență de utilizare fluidă și o dezvoltare eficientă:
 
-**Use your preferred IDE**
+* **Framework:** [React](https://reactjs.org/)
+* **Build Tool:** [Vite](https://vitejs.dev/)
+* **Limbaj:** [TypeScript](https://www.typescriptlang.org/)
+* **Backend & Bază de Date:** [Supabase](https://supabase.io/)
+    * Bază de date PostgreSQL
+    * Autentificare
+    * Edge Functions (pentru trimiterea de email-uri)
+* **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+* **Componente UI:** [shadcn/ui](https://ui.shadcn.com/)
+* **Management Formulare:** [React Hook Form](https://react-hook-form.com/)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🛠️ Pornire Proiect (Getting Started)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Pentru a rula acest proiect local, urmează acești pași simpli.
 
-Follow these steps:
+### Prerechizite
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Asigură-te că ai instalat [Node.js](https://nodejs.org/) (versiunea 18 sau mai recentă).
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Instalare
 
-# Step 3: Install the necessary dependencies.
-npm i
+1.  **Clonează repository-ul:**
+    ```bash
+    git clone [https://github.com/fortemro/fortem-dashboard.git](https://github.com/fortemro/fortem-dashboard.git)
+    cd fortem-dashboard
+    ```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+2.  **Instalează dependențele:**
+    ```bash
+    npm install
+    ```
 
-**Edit a file directly in GitHub**
+3.  **Configurează variabilele de mediu:**
+    * Creează un fișier nou la rădăcina proiectului numit `.env`.
+    * Adaugă în acest fișier cheile tale de la Supabase, pe care le găsești în Supabase Dashboard > Project Settings > API.
+    * Fișierul `.env` ar trebui să arate astfel:
+        ```
+        VITE_SUPABASE_URL="URL-UL_PROIECTULUI_TAU_SUPABASE"
+        VITE_SUPABASE_ANON_KEY="CHEIA_TA_ANON_SUPABASE"
+        ```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+4.  **Pornește serverul de dezvoltare:**
+    ```bash
+    npm run dev
+    ```
+    Deschide [http://localhost:5173](http://localhost:5173) (sau portul indicat în consolă) în browserul tău.
 
-**Use GitHub Codespaces**
+## 📂 Structura Proiectului
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Codul este organizat într-un mod modular pentru a facilita mentenanța și dezvoltarea ulterioară:
 
-## What technologies are used for this project?
+/src
+|-- /components/       # Componente UI reutilizabile (Card, Button, Tabele etc.)
+|   |-- /ui/           # Componente de bază generate de shadcn/ui
+|   |-- /comanda/      # Componente specifice formularului de comandă
+|   |-- ...
+|
+|-- /data-types/       # Definițiile centrale TypeScript (Comanda, Produs etc.)
+|
+|-- /hooks/            # Hook-uri custom pentru logică (ex: useComenzi, useProduse)
+|   |-- /comenzi/      # Hook-uri specifice pentru logica de creare comenzi
+|
+|-- /integrations/     # Cod pentru integrarea cu servicii externe
+|   |-- /supabase/     # Configurația clientului Supabase
+|
+|-- /pages/            # Componentele care reprezintă paginile aplicației (Dashboard, Comanda etc.)
 
-This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/94a1c05c-9c60-4292-8fd4-fae7daf161be) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+---
+Acest README oferă o imagine de ansamblu clară și ajută pe oricine (inclusiv pe tine în viitor) să înțeleagă rapid proiectul.
