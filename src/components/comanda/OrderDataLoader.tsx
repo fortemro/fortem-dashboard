@@ -35,7 +35,7 @@ export function OrderDataLoader({
     if (isEditMode && editId) {
       loadOrderForEditing();
     }
-  }, [isEditMode, editId]);
+  }, [isEditMode, editId, getComandaById]); // Adăugat getComandaById în dependințe
 
   const loadOrderForEditing = async () => {
     if (!editId) return;
@@ -44,6 +44,11 @@ export function OrderDataLoader({
     try {
       const orderData = await getComandaById(editId);
       console.log('Loading order for editing:', orderData);
+
+      if (!orderData) {
+        console.error('No order data found for id:', editId);
+        return;
+      }
 
       // Pre-fill form with order data
       form.setValue('distribuitor_id', orderData.distribuitor?.nume_companie || orderData.distribuitor_id || '');

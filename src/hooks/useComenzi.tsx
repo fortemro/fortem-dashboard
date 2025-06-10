@@ -67,25 +67,78 @@ export function useComenzi() {
 
   useEffect(() => { fetchComenzi(); }, [fetchComenzi]);
   
+  // Stabilizez getComandaById cu useCallback pentru a evita loop-ul infinit
   const getComandaById = useCallback(async (id: string): Promise<Comanda | null> => {
     if (!id) return null;
     try {
-      const { data, error } = await supabase
+      // Preiau comanda principală
+      const { data: comanda, error: comandaError } = await supabase
         .from('comenzi')
-        .select('*, itemi_comanda(*, produse(*)), distribuitori(*)')
+        .select('*')
         .eq('id', id)
-        .maybeSingle();
+        .single();
 
-      if (error) {
-        console.error('Eroare la preluarea comenzii după ID:', error.message);
+      if (comandaError) {
+        console.error('Eroare la preluarea comenzii după ID:', comandaError.message);
         return null;
       }
-      return data as unknown as Comanda | null;
+
+      // Preiau informații despre distribuitor dacă este UUID
+      let distributorDetails = null;
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(comanda.distribuitor_id);
+      
+      if (isUUID) {
+        const { data: distributorData, error: distributorError } = await supabase
+          .from('distribuitori')
+          .select('*')
+          .eq('id', comanda.distribuitor_id)
+          .single();
+
+        if (!distributorError && distributorData) {
+          distributorDetails = distributorData;
+        }
+      }
+
+      // Preiau itemii comenzii
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('itemi_comanda')
+        .select('*')
+        .eq('comanda_id', id);
+
+      if (itemsError) {
+        console.error('Eroare la preluarea itemilor:', itemsError.message);
+      }
+
+      // Preiau detaliile produselor pentru fiecare item
+      const itemsWithProducts = await Promise.all(
+        (itemsData || []).map(async (item) => {
+          const { data: productData, error: productError } = await supabase
+            .from('produse')
+            .select('id, nume, dimensiuni, bucati_per_palet')
+            .eq('id', item.produs_id)
+            .single();
+
+          if (productError) {
+            console.error('Error fetching product for item:', item.id, productError);
+          }
+
+          return {
+            ...item,
+            produs: productData || undefined
+          };
+        })
+      );
+
+      return {
+        ...comanda,
+        items: itemsWithProducts || [],
+        distribuitor: distributorDetails
+      } as unknown as Comanda;
     } catch (e) {
       console.error('Excepție la preluarea comenzii după ID:', e);
       return null;
     }
-  }, []);
+  }, []); // Dependințe goale pentru a evita re-crearea constantă
 
   return { comenzi, loading, fetchComenzi, getComandaById };
 }

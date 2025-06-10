@@ -145,9 +145,10 @@ export function OrderDetailsModal({ isOpen, onClose, comanda }: OrderDetailsModa
   };
 
   const handleDuplicateOrder = () => {
-    // Store order data for duplication including real items
+    // Store order data for duplication including real items with distribuitor_name
     localStorage.setItem('duplicateOrderData', JSON.stringify({
       distribuitor_id: comanda.distribuitor_id,
+      distribuitor_name: distributorName, // Adăugat distribuitor_name pentru a fi folosit în FormInitializer
       oras_livrare: comanda.oras_livrare,
       adresa_livrare: comanda.adresa_livrare,
       judet_livrare: comanda.judet_livrare,
@@ -174,6 +175,7 @@ export function OrderDetailsModal({ isOpen, onClose, comanda }: OrderDetailsModa
     localStorage.setItem('editOrderData', JSON.stringify({
       id: comanda.id,
       distribuitor_id: comanda.distribuitor_id,
+      distribuitor_name: distributorName, // Adăugat și aici pentru consistență
       oras_livrare: comanda.oras_livrare,
       adresa_livrare: comanda.adresa_livrare,
       judet_livrare: comanda.judet_livrare,

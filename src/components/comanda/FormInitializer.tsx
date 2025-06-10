@@ -38,7 +38,7 @@ export function FormInitializer({
       }));
       setItems(cartBasedItems);
     }
-  }, [cartItems, isEditMode]);
+  }, [cartItems, isEditMode, setItems]);
 
   // Check for duplicate order data on mount - only process when NOT in edit mode
   useEffect(() => {
@@ -50,11 +50,12 @@ export function FormInitializer({
           const parsedData = JSON.parse(duplicateData);
           console.log('Loading duplicate order data:', parsedData);
           
-          // Pre-fill form with order data - for duplication, use distributor name
-          if (parsedData.distribuitor_name) {
-            form.setValue('distribuitor_id', parsedData.distribuitor_name);
-            setSelectedDistributorId(parsedData.distribuitor_name);
-            setSelectedDistributorName(parsedData.distribuitor_name);
+          // Pre-fill form with order data - pentru duplicare, folosesc distribuitor_name sau distribuitor_id
+          const distributorToUse = parsedData.distribuitor_name || parsedData.distribuitor_id;
+          if (distributorToUse) {
+            form.setValue('distribuitor_id', distributorToUse);
+            setSelectedDistributorId(distributorToUse);
+            setSelectedDistributorName(distributorToUse);
           }
           if (parsedData.oras_livrare) form.setValue('oras_livrare', parsedData.oras_livrare);
           if (parsedData.adresa_livrare) form.setValue('adresa_livrare', parsedData.adresa_livrare);
@@ -62,9 +63,16 @@ export function FormInitializer({
           if (parsedData.telefon_livrare) form.setValue('telefon_livrare', parsedData.telefon_livrare);
           if (parsedData.observatii) form.setValue('observatii', parsedData.observatii);
           
-          // Pre-fill items if available
+          // Pre-fill items if available - verifică că toate câmpurile necesare sunt prezente
           if (parsedData.items && Array.isArray(parsedData.items)) {
-            setItems(parsedData.items);
+            const validItems = parsedData.items.filter(item => 
+              item.produs_id && item.nume_produs && 
+              typeof item.cantitate === 'number' && 
+              typeof item.pret_unitar === 'number'
+            );
+            if (validItems.length > 0) {
+              setItems(validItems);
+            }
           }
           
           localStorage.removeItem('duplicateOrderData');
@@ -73,7 +81,7 @@ export function FormInitializer({
         }
       }
     }
-  }, [form, isEditMode]);
+  }, [form, isEditMode, setItems, setSelectedDistributorId, setSelectedDistributorName]);
 
   return null; // This is a logic-only component
 }
