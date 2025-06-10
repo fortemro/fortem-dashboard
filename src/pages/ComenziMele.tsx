@@ -46,19 +46,43 @@ export default function ComenziMele() {
   };
 
   const handleDuplicateOrder = (comanda) => {
-    // Store order data for duplication
+    // Get distributor name properly
+    const distributorName = getDistributorName(comanda);
+    
+    // Store order data for duplication with distributor_name
     localStorage.setItem('duplicateOrderData', JSON.stringify({
       distribuitor_id: comanda.distribuitor_id,
+      distribuitor_name: distributorName, // Add distributor name for proper handling
       oras_livrare: comanda.oras_livrare,
       adresa_livrare: comanda.adresa_livrare,
       judet_livrare: comanda.judet_livrare,
-      telefon_livrare: comanda.telefon_livrare
+      telefon_livrare: comanda.telefon_livrare,
+      observatii: comanda.observatii
     }));
     
     navigate('/comanda');
     toast({
       title: "Template creat",
       description: "Formularul a fost pre-completat cu datele comenzii"
+    });
+  };
+
+  const handleEditOrder = (comanda) => {
+    // Check if order can be edited
+    if (comanda.status !== 'in_asteptare') {
+      toast({
+        title: "Nu se poate edita",
+        description: "Doar comenzile în așteptare pot fi editate",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Navigate to edit mode
+    navigate(`/comanda?edit=${comanda.id}`);
+    toast({
+      title: "Editare comandă",
+      description: "Formularul a fost încărcat pentru editare"
     });
   };
 
@@ -212,7 +236,11 @@ export default function ComenziMele() {
                               <Copy className="h-4 w-4" />
                             </Button>
                             {comanda.status === 'in_asteptare' && (
-                              <Button variant="ghost" size="sm">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleEditOrder(comanda)}
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
                             )}

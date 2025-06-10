@@ -50,7 +50,7 @@ export function FormInitializer({
           const parsedData = JSON.parse(duplicateData);
           console.log('Loading duplicate order data:', parsedData);
           
-          // Pre-fill form with order data - pentru duplicare, folosesc distribuitor_name sau distribuitor_id
+          // Pre-fill form with order data - prioritize distribuitor_name over distribuitor_id
           const distributorToUse = parsedData.distribuitor_name || parsedData.distribuitor_id;
           if (distributorToUse) {
             form.setValue('distribuitor_id', distributorToUse);

@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 
 interface ItemComanda {
@@ -31,13 +31,8 @@ export function OrderDataLoader({
   getComandaById
 }: OrderDataLoaderProps) {
   
-  useEffect(() => {
-    if (isEditMode && editId) {
-      loadOrderForEditing();
-    }
-  }, [isEditMode, editId, getComandaById]); // Adăugat getComandaById în dependințe
-
-  const loadOrderForEditing = async () => {
+  // Stabilizez loadOrderForEditing cu useCallback pentru a evita dependințe instabile
+  const loadOrderForEditing = useCallback(async () => {
     if (!editId) return;
 
     setLoadingOrder(true);
@@ -78,7 +73,13 @@ export function OrderDataLoader({
     } finally {
       setLoadingOrder(false);
     }
-  };
+  }, [editId, getComandaById, form, setLoadingOrder, setSelectedDistributorId, setSelectedDistributorName, setItems]);
+
+  useEffect(() => {
+    if (isEditMode && editId) {
+      loadOrderForEditing();
+    }
+  }, [isEditMode, loadOrderForEditing]); // Folosesc loadOrderForEditing stabilizat
 
   return null; // This is a logic-only component
 }

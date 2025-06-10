@@ -67,7 +67,7 @@ export function useComenzi() {
 
   useEffect(() => { fetchComenzi(); }, [fetchComenzi]);
   
-  // Stabilizez getComandaById cu useCallback pentru a evita loop-ul infinit
+  // Stabilizez getComandaById cu useCallback - dependințe stabile pentru a evita loop-ul infinit
   const getComandaById = useCallback(async (id: string): Promise<Comanda | null> => {
     if (!id) return null;
     try {
@@ -138,7 +138,7 @@ export function useComenzi() {
       console.error('Excepție la preluarea comenzii după ID:', e);
       return null;
     }
-  }, []); // Dependințe goale pentru a evita re-crearea constantă
+  }, []); // Dependințe goale și stabile pentru a evita re-crearea constantă
 
   return { comenzi, loading, fetchComenzi, getComandaById };
 }
