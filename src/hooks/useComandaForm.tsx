@@ -60,9 +60,11 @@ export function useComandaForm() {
         return;
       }
 
-      // Pre-fill form with order data
+      // Pre-fill form with order data - using correct property names
+      const distributorName = orderData.distribuitori?.nume_companie || orderData.distribuitor_id || '';
+      
       const formData = {
-        distribuitor_id: orderData.distribuitor?.nume_companie || orderData.distribuitor_id || '',
+        distribuitor_id: distributorName,
         oras_livrare: orderData.oras_livrare || '',
         adresa_livrare: orderData.adresa_livrare || '',
         judet_livrare: orderData.judet_livrare || '',
@@ -74,11 +76,10 @@ export function useComandaForm() {
       form.reset(formData);
       
       // Set distributor data properly
-      const distributorName = orderData.distribuitor?.nume_companie || orderData.distribuitor_id || '';
       setSelectedDistributorId(distributorName);
       setSelectedDistributorName(distributorName);
 
-      // Pre-fill items
+      // Pre-fill items - checking if items exist from the hook
       if (orderData.items && Array.isArray(orderData.items)) {
         const orderItems = orderData.items.map((item: any) => ({
           produs_id: item.produs?.id || item.produs_id,
