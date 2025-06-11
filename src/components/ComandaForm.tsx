@@ -19,7 +19,6 @@ export function ComandaForm() {
     selectedDistributorName,
     produse,
     loadingProduse,
-    cartItems,
     items,
     showSuccessModal,
     orderData,
