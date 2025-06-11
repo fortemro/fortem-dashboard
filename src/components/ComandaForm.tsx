@@ -41,9 +41,9 @@ export function ComandaForm() {
   } = useComandaForm();
 
    const { submitOrder } = useOrderSubmission({
-    items,
-    onSuccess: handleSuccess
-  });
+    items,
+    onSuccess: handleSuccess
+  });
 
   const onSubmit = async (data: any) => {
     console.log('Form data on submit:', data);
@@ -58,6 +58,8 @@ export function ComandaForm() {
     
     await submitOrder(submitData);
   };
+
+  console.log('ComandaForm render - isEditMode:', isEditMode, 'editId:', editId, 'loadingOrder:', loadingOrder);
 
   if (loadingOrder) {
     return (

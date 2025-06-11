@@ -31,72 +31,67 @@ export function OrderDataLoader({
   getComandaById
 }: OrderDataLoaderProps) {
   
-  useEffect(() => {
-    // Doar încarcă data dacă suntem în edit mode și avem un ID valid
+  const loadOrderForEditing = useCallback(async () => {
     if (!isEditMode || !editId) {
+      setLoadingOrder(false);
       return;
     }
 
-    let cancelled = false;
+    console.log('Starting to load order for editing:', editId);
+    setLoadingOrder(true);
+    
+    try {
+      const orderData = await getComandaById(editId);
+      console.log('Order data loaded:', orderData);
 
-    const loadOrderForEditing = async () => {
-      setLoadingOrder(true);
-      try {
-        const orderData = await getComandaById(editId);
-        
-        // Verifică dacă request-ul a fost anulat
-        if (cancelled) return;
-
-        console.log('Loading order for editing:', orderData);
-
-        if (!orderData) {
-          console.error('No order data found for id:', editId);
-          return;
-        }
-
-        // Pre-fill form with order data
-        form.reset({
-          distribuitor_id: orderData.distribuitor?.nume_companie || orderData.distribuitor_id || '',
-          oras_livrare: orderData.oras_livrare || '',
-          adresa_livrare: orderData.adresa_livrare || '',
-          judet_livrare: orderData.judet_livrare || '',
-          telefon_livrare: orderData.telefon_livrare || '',
-          observatii: orderData.observatii || ''
-        });
-        
-        // Set distributor data properly - use name not ID
-        const distributorName = orderData.distribuitor?.nume_companie || orderData.distribuitor_id || '';
-        setSelectedDistributorId(distributorName);
-        setSelectedDistributorName(distributorName);
-
-        // Pre-fill items - safely handle product data
-        if (orderData.items && Array.isArray(orderData.items)) {
-          const orderItems = orderData.items.map((item: any) => ({
-            produs_id: item.produs?.id || item.produs_id,
-            nume_produs: item.produs?.nume || 'Produs necunoscut',
-            cantitate: item.cantitate || 0,
-            pret_unitar: item.pret_unitar || 0
-          }));
-          setItems(orderItems);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          console.error('Error loading order for editing:', error);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoadingOrder(false);
-        }
+      if (!orderData) {
+        console.error('No order data found for id:', editId);
+        setLoadingOrder(false);
+        return;
       }
-    };
 
+      // Pre-fill form with order data
+      const formData = {
+        distribuitor_id: orderData.distribuitor?.nume_companie || orderData.distribuitor_id || '',
+        oras_livrare: orderData.oras_livrare || '',
+        adresa_livrare: orderData.adresa_livrare || '',
+        judet_livrare: orderData.judet_livrare || '',
+        telefon_livrare: orderData.telefon_livrare || '',
+        observatii: orderData.observatii || ''
+      };
+      
+      console.log('Setting form data:', formData);
+      form.reset(formData);
+      
+      // Set distributor data properly - use name not ID
+      const distributorName = orderData.distribuitor?.nume_companie || orderData.distribuitor_id || '';
+      setSelectedDistributorId(distributorName);
+      setSelectedDistributorName(distributorName);
+      console.log('Set distributor:', distributorName);
+
+      // Pre-fill items - safely handle product data
+      if (orderData.items && Array.isArray(orderData.items)) {
+        const orderItems = orderData.items.map((item: any) => ({
+          produs_id: item.produs?.id || item.produs_id,
+          nume_produs: item.produs?.nume || 'Produs necunoscut',
+          cantitate: item.cantitate || 0,
+          pret_unitar: item.pret_unitar || 0
+        }));
+        console.log('Setting items:', orderItems);
+        setItems(orderItems);
+      }
+
+      console.log('Order loading completed successfully');
+    } catch (error) {
+      console.error('Error loading order for editing:', error);
+    } finally {
+      setLoadingOrder(false);
+    }
+  }, [isEditMode, editId, getComandaById, form, setLoadingOrder, setSelectedDistributorId, setSelectedDistributorName, setItems]);
+
+  useEffect(() => {
     loadOrderForEditing();
-
-    // Cleanup function pentru a anula request-ul dacă componenta se demontează
-    return () => {
-      cancelled = true;
-    };
-  }, [isEditMode, editId]); // Doar aceste dependințe critice
+  }, [loadOrderForEditing]);
 
   return null; // This is a logic-only component
 }
