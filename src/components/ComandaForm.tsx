@@ -9,8 +9,6 @@ import { OrderFormActions } from './OrderFormActions';
 import { OrderSuccessModal } from './OrderSuccessModal';
 import { useOrderSubmission } from './OrderSubmissionHandler';
 import { useComandaForm } from '@/hooks/useComandaForm';
-import { OrderDataLoader } from './comanda/OrderDataLoader';
-import { FormInitializer } from './comanda/FormInitializer';
 
 export function ComandaForm() {
   const {
@@ -50,7 +48,6 @@ export function ComandaForm() {
     console.log('Selected distributor ID:', selectedDistributorId);
     console.log('Selected distributor name:', selectedDistributorName);
     
-    // Ensure distribuitor_id is included in the data
     const submitData = {
       ...data,
       distribuitor_id: selectedDistributorId || data.distribuitor_id
@@ -72,26 +69,6 @@ export function ComandaForm() {
 
   return (
     <>
-      <OrderDataLoader
-        isEditMode={isEditMode}
-        editId={editId}
-        form={form}
-        setLoadingOrder={setLoadingOrder}
-        setSelectedDistributorId={setSelectedDistributorId}
-        setSelectedDistributorName={setSelectedDistributorName}
-        setItems={setItems}
-        getComandaById={getComandaById}
-      />
-      
-      <FormInitializer
-        isEditMode={isEditMode}
-        cartItems={cartItems}
-        form={form}
-        setItems={setItems}
-        setSelectedDistributorId={setSelectedDistributorId}
-        setSelectedDistributorName={setSelectedDistributorName}
-      />
-
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {isEditMode && (

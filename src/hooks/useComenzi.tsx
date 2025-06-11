@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { Comanda } from '@/data-types';
@@ -17,7 +17,6 @@ export function useComenzi() {
     }
     setLoading(true);
     try {
-      // Preluat comenzile cu informații despre distribuitori
       const { data: comenziData, error: comenziError } = await supabase
         .from('comenzi')
         .select('*')
@@ -28,12 +27,10 @@ export function useComenzi() {
         console.error('Eroare la preluarea comenzilor:', comenziError.message);
         setComenzi([]);
       } else {
-        // Pentru fiecare comandă, preiau și informațiile despre distribuitor
         const comenziWithDistributors = await Promise.all(
           (comenziData || []).map(async (comanda) => {
             let distributorInfo = null;
             
-            // Verific dacă distribuitor_id este un UUID (distribuitor existent)
             const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(comanda.distribuitor_id);
             
             if (isUUID) {
@@ -65,10 +62,12 @@ export function useComenzi() {
     }
   }, [user]);
 
-  useEffect(() => { fetchComenzi(); }, [fetchComenzi]);
+  useEffect(() => { 
+    fetchComenzi(); 
+  }, [fetchComenzi]);
   
-  // Funcție memoizată pentru preluarea unei comenzi după ID
-  const getComandaById = useMemo(() => async (id: string): Promise<Comanda | null> => {
+  // Stable function for getting order by ID
+  const getComandaById = useCallback(async (id: string): Promise<Comanda | null> => {
     if (!id) {
       console.log('No ID provided to getComandaById');
       return null;
@@ -77,7 +76,6 @@ export function useComenzi() {
     console.log('getComandaById called with ID:', id);
     
     try {
-      // Preiau comanda principală
       const { data: comanda, error: comandaError } = await supabase
         .from('comenzi')
         .select('*')
@@ -91,7 +89,6 @@ export function useComenzi() {
 
       console.log('Comanda found:', comanda);
 
-      // Preiau informații despre distribuitor dacă este UUID
       let distributorDetails = null;
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(comanda.distribuitor_id);
       
@@ -108,7 +105,6 @@ export function useComenzi() {
         }
       }
 
-      // Preiau itemii comenzii
       const { data: itemsData, error: itemsError } = await supabase
         .from('itemi_comanda')
         .select('*')
@@ -120,7 +116,6 @@ export function useComenzi() {
 
       console.log('Items found:', itemsData);
 
-      // Preiau detaliile produselor pentru fiecare item
       const itemsWithProducts = await Promise.all(
         (itemsData || []).map(async (item) => {
           const { data: productData, error: productError } = await supabase
@@ -152,7 +147,7 @@ export function useComenzi() {
       console.error('Excepție la preluarea comenzii după ID:', e);
       return null;
     }
-  }, []); // Dependințe goale pentru stabilitate
+  }, []);
 
   return { comenzi, loading, fetchComenzi, getComandaById };
 }

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { useSearchParams } from 'react-router-dom';
 import { useProduse } from '@/hooks/useProduse';
@@ -39,6 +39,125 @@ export function useComandaForm() {
       numar_paleti: 0
     }
   });
+
+  // Stable function to load order for editing
+  const loadOrderForEditing = useCallback(async () => {
+    if (!isEditMode || !editId) {
+      setLoadingOrder(false);
+      return;
+    }
+
+    console.log('Loading order for editing:', editId);
+    setLoadingOrder(true);
+    
+    try {
+      const orderData = await getComandaById(editId);
+      console.log('Order data loaded:', orderData);
+
+      if (!orderData) {
+        console.error('No order data found for id:', editId);
+        setLoadingOrder(false);
+        return;
+      }
+
+      // Pre-fill form with order data
+      const formData = {
+        distribuitor_id: orderData.distribuitor?.nume_companie || orderData.distribuitor_id || '',
+        oras_livrare: orderData.oras_livrare || '',
+        adresa_livrare: orderData.adresa_livrare || '',
+        judet_livrare: orderData.judet_livrare || '',
+        telefon_livrare: orderData.telefon_livrare || '',
+        observatii: orderData.observatii || ''
+      };
+      
+      console.log('Setting form data:', formData);
+      form.reset(formData);
+      
+      // Set distributor data properly
+      const distributorName = orderData.distribuitor?.nume_companie || orderData.distribuitor_id || '';
+      setSelectedDistributorId(distributorName);
+      setSelectedDistributorName(distributorName);
+
+      // Pre-fill items
+      if (orderData.items && Array.isArray(orderData.items)) {
+        const orderItems = orderData.items.map((item: any) => ({
+          produs_id: item.produs?.id || item.produs_id,
+          nume_produs: item.produs?.nume || 'Produs necunoscut',
+          cantitate: item.cantitate || 0,
+          pret_unitar: item.pret_unitar || 0
+        }));
+        console.log('Setting items:', orderItems);
+        setItems(orderItems);
+      }
+
+      console.log('Order loading completed successfully');
+    } catch (error) {
+      console.error('Error loading order for editing:', error);
+    } finally {
+      setLoadingOrder(false);
+    }
+  }, [isEditMode, editId, getComandaById, form]);
+
+  // Load order data when in edit mode
+  useEffect(() => {
+    if (isEditMode && editId) {
+      loadOrderForEditing();
+    }
+  }, [isEditMode, editId, loadOrderForEditing]);
+
+  // Initialize items from cart - doar când nu suntem în edit mode
+  useEffect(() => {
+    if (cartItems.length > 0 && !isEditMode) {
+      const cartBasedItems = cartItems.map(cartItem => ({
+        produs_id: cartItem.produs.id,
+        nume_produs: cartItem.produs.nume,
+        cantitate: cartItem.cantitate,
+        pret_unitar: 0
+      }));
+      setItems(cartBasedItems);
+    }
+  }, [cartItems, isEditMode]);
+
+  // Check for duplicate order data on mount - doar când nu suntem în edit mode
+  useEffect(() => {
+    if (!isEditMode) {
+      const duplicateData = localStorage.getItem('duplicateOrderData');
+      
+      if (duplicateData) {
+        try {
+          const parsedData = JSON.parse(duplicateData);
+          console.log('Loading duplicate order data:', parsedData);
+          
+          const distributorToUse = parsedData.distribuitor_name || parsedData.distribuitor_id;
+          if (distributorToUse) {
+            form.setValue('distribuitor_id', distributorToUse);
+            setSelectedDistributorId(distributorToUse);
+            setSelectedDistributorName(distributorToUse);
+          }
+          if (parsedData.oras_livrare) form.setValue('oras_livrare', parsedData.oras_livrare);
+          if (parsedData.adresa_livrare) form.setValue('adresa_livrare', parsedData.adresa_livrare);
+          if (parsedData.judet_livrare) form.setValue('judet_livrare', parsedData.judet_livrare);
+          if (parsedData.telefon_livrare) form.setValue('telefon_livrare', parsedData.telefon_livrare);
+          if (parsedData.observatii) form.setValue('observatii', parsedData.observatii);
+          
+          if (parsedData.items && Array.isArray(parsedData.items)) {
+            const validItems = parsedData.items.filter(item => 
+              item.produs_id && item.nume_produs && 
+              typeof item.cantitate === 'number' && 
+              typeof item.pret_unitar === 'number'
+            );
+            if (validItems.length > 0) {
+              setItems(validItems);
+            }
+          }
+          
+          localStorage.removeItem('duplicateOrderData');
+        } catch (error) {
+          console.error('Error parsing duplicate order data:', error);
+        }
+      }
+    }
+  }, [form, isEditMode]);
 
   const handleSuccess = (successOrderData: any) => {
     setOrderData(successOrderData);
