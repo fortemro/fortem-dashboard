@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useProduse } from '@/hooks/useProduse';
 import { useCart } from '@/contexts/CartContext';
 import { useComenzi } from '@/hooks/useComenzi';
+import type { Comanda } from '@/types/comanda';
 
 interface ItemComanda {
   produs_id: string;
@@ -51,7 +52,7 @@ export function useComandaForm() {
     setLoadingOrder(true);
     
     try {
-      const orderData = await getComandaById(editId);
+      const orderData = await getComandaById(editId) as Comanda | null;
       console.log('Order data loaded:', orderData);
 
       if (!orderData) {
