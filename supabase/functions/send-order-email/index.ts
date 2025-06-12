@@ -25,6 +25,8 @@ interface OrderEmailRequest {
   }>;
   total_comanda: number;
   data_comanda: string;
+  recipients?: string[];
+  custom_message?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -39,6 +41,11 @@ const handler = async (req: Request): Promise<Response> => {
     const orderData: OrderEmailRequest = await req.json();
     console.log("Order data received:", orderData);
 
+    // Validate required data
+    if (!orderData.numarul_comanda || !orderData.distribuitor || !orderData.items || orderData.items.length === 0) {
+      throw new Error("Date incomplete pentru trimiterea email-ului");
+    }
+
     const itemsHtml = orderData.items.map(item => `
       <tr>
         <td style="padding: 8px; border: 1px solid #ddd;">${item.nume_produs}</td>
@@ -47,6 +54,13 @@ const handler = async (req: Request): Promise<Response> => {
         <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${item.total_item.toFixed(2)} RON</td>
       </tr>
     `).join('');
+
+    const customMessageHtml = orderData.custom_message ? `
+      <div style="margin: 20px 0; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+        <h4 style="margin: 0 0 10px 0; color: #856404;">Mesaj personalizat:</h4>
+        <p style="margin: 0; color: #856404;">${orderData.custom_message}</p>
+      </div>
+    ` : '';
 
     const emailHtml = `
       <html>
@@ -66,6 +80,8 @@ const handler = async (req: Request): Promise<Response> => {
             <li><strong>Adresa:</strong> ${orderData.adresa_livrare}</li>
             <li><strong>Telefon:</strong> ${orderData.telefon_livrare}</li>
           </ul>
+
+          ${customMessageHtml}
 
           <h3>Produse Comandate:</h3>
           <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
@@ -93,18 +109,32 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
+    // Use a verified domain - onboarding@resend.dev is always verified
+    const fromEmail = "onboarding@resend.dev";
+    const recipients = orderData.recipients || ["lucian.cebuc@fortem.ro"];
+
+    console.log("Attempting to send email with from:", fromEmail, "to:", recipients);
+
     const emailResponse = await resend.emails.send({
-      from: "lucian.cebuc@fortem.ro",
-      to: ["lucian.cebuc@fortem.ro"],
+      from: fromEmail,
+      to: recipients,
       subject: `Comandă Nouă #${orderData.numarul_comanda} - ${orderData.distribuitor}`,
       html: emailHtml,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log("Email response:", emailResponse);
+
+    if (emailResponse.error) {
+      console.error("Resend API error:", emailResponse.error);
+      throw new Error(`Eroare Resend: ${emailResponse.error.message}`);
+    }
+
+    console.log("Email sent successfully:", emailResponse.data);
 
     return new Response(JSON.stringify({ 
       success: true, 
-      emailId: emailResponse.data?.id 
+      emailId: emailResponse.data?.id,
+      message: "Email trimis cu succes" 
     }), {
       status: 200,
       headers: {
@@ -116,8 +146,9 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error in send-order-email function:", error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
-        success: false 
+        error: error.message || "Eroare necunoscută",
+        success: false,
+        details: error.toString()
       }),
       {
         status: 500,

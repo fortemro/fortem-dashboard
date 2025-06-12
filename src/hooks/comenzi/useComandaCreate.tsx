@@ -80,6 +80,35 @@ export function useComandaCreate() {
       const { error: itemsError } = await supabase.from('itemi_comanda').insert(itemsData);
       if (itemsError) throw itemsError;
 
+      // Încerc să trimit email-ul, dar nu blochez procesul dacă fail-uiește
+      try {
+        console.log('Attempting to send order email...');
+        const emailData = {
+          comandaId: comanda.id,
+          numarul_comanda: comanda.numar_comanda,
+          distribuitor: distributorName,
+          oras_livrare: restOfFormData.oras_livrare,
+          adresa_livrare: restOfFormData.adresa_livrare,
+          telefon_livrare: restOfFormData.telefon_livrare,
+          items: itemsWithPrices,
+          total_comanda: totalComanda,
+          data_comanda: comanda.data_comanda,
+        };
+
+        const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-order-email', {
+          body: emailData
+        });
+
+        if (emailError) {
+          console.error('Eroare la trimiterea email-ului:', emailError);
+        } else {
+          console.log('Email trimis cu succes:', emailResult);
+        }
+      } catch (emailError) {
+        console.error('Excepție la trimiterea email-ului:', emailError);
+        // Nu arunc eroarea - comanda a fost creată cu succes
+      }
+
       // Returnez datele complete pentru popup
       return {
         ...comanda,
