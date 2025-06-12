@@ -39,16 +39,17 @@ export function ProductList({
   console.log('ProductList - loadingProduse:', loadingProduse);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>Produse</CardTitle>
-          <div className="flex flex-col items-end space-y-2">
+    <Card className="w-full">
+      <CardHeader className="pb-3 sm:pb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0">
+          <CardTitle className="text-lg sm:text-xl">Produse</CardTitle>
+          <div className="flex flex-col items-start sm:items-end space-y-2">
             <Button 
               type="button" 
               onClick={onAddItem} 
               disabled={loadingProduse}
-              className="relative"
+              className="relative w-full sm:w-auto text-sm"
+              size="sm"
             >
               {loadingProduse ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -59,38 +60,44 @@ export function ProductList({
             </Button>
             
             {loadingProduse && (
-              <p className="text-xs text-blue-600 text-right">
+              <p className="text-xs text-blue-600 text-left sm:text-right">
                 Se încarcă produsele...
               </p>
             )}
             
             {!loadingProduse && produse.length === 0 && (
-              <p className="text-xs text-orange-600 text-right">
+              <p className="text-xs text-orange-600 text-left sm:text-right">
                 Nu există produse în catalog
               </p>
             )}
             
             {!loadingProduse && produse.length > 0 && (
-              <p className="text-xs text-green-600 text-right">
+              <p className="text-xs text-green-600 text-left sm:text-right">
                 {produse.length} produse disponibile în catalog
               </p>
             )}
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        {items.map((item, index) => (
-          <ProductItemForm
-            key={index}
-            item={item}
-            index={index}
-            produse={produse}
-            onUpdate={onUpdateItem}
-            onDelete={onDeleteItem}
-          />
-        ))}
+      <CardContent className="px-3 sm:px-6">
+        <div className="space-y-3 sm:space-y-4">
+          {items.map((item, index) => (
+            <ProductItemForm
+              key={index}
+              item={item}
+              index={index}
+              produse={produse}
+              onUpdate={onUpdateItem}
+              onDelete={onDeleteItem}
+            />
+          ))}
+        </div>
 
-        {items.length > 0 && <OrderSummary items={items} />}
+        {items.length > 0 && (
+          <div className="mt-4 sm:mt-6">
+            <OrderSummary items={items} />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -59,23 +59,23 @@ export function ComandaForm() {
 
   if (loadingOrder) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-        <p className="ml-4">Se încarcă datele comenzii...</p>
+      <div className="flex flex-col items-center justify-center py-8 px-4">
+        <div className="animate-spin rounded-full h-16 w-16 sm:h-32 sm:w-32 border-b-2 border-primary"></div>
+        <p className="ml-0 mt-4 text-center text-sm sm:text-base">Se încarcă datele comenzii...</p>
       </div>
     );
   }
 
   return (
-    <>
+    <div className="w-full max-w-none">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
           {isEditMode && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <h2 className="text-lg font-semibold text-blue-800 mb-2">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+              <h2 className="text-base sm:text-lg font-semibold text-blue-800 mb-2">
                 Editare Comandă
               </h2>
-              <p className="text-blue-600">
+              <p className="text-sm sm:text-base text-blue-600">
                 Modificați detaliile comenzii și apăsați "Salvează Modificările" pentru a actualiza comanda.
               </p>
             </div>
@@ -112,6 +112,6 @@ export function ComandaForm() {
           )}
         </form>
       </Form>
-    </>
+    </div>
   );
 }

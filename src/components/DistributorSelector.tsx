@@ -23,23 +23,24 @@ export function DistributorSelector({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Distribuitor</CardTitle>
+    <Card className="w-full">
+      <CardHeader className="pb-3 sm:pb-6">
+        <CardTitle className="text-lg sm:text-xl">Distribuitor</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-3 sm:px-6">
         <div className="space-y-4">
           <FormField
             control={form.control}
             name="distribuitor_id"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nume Distribuitor *</FormLabel>
+                <FormLabel className="text-sm sm:text-base">Nume Distribuitor *</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="Introduceți numele distribuitorului"
                     value={field.value}
                     onChange={(e) => handleDistributorNameChange(e.target.value)}
+                    className="text-sm sm:text-base"
                   />
                 </FormControl>
                 <FormMessage />
@@ -48,8 +49,8 @@ export function DistributorSelector({
           />
 
           {selectedDistributor && (
-            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-              <p className="text-green-800 text-sm font-medium">
+            <div className="p-3 sm:p-4 bg-green-50 rounded-lg border border-green-200">
+              <p className="text-green-800 text-sm font-medium break-words">
                 ✓ Distribuitor: <strong>{selectedDistributor}</strong>
               </p>
               <p className="text-green-600 text-xs mt-2">

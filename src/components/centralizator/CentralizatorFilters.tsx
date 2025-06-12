@@ -29,31 +29,31 @@ export default function CentralizatorFilters({
   onRefresh
 }: CentralizatorFiltersProps) {
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Filter className="h-5 w-5" />
+    <Card className="mb-4 sm:mb-6 w-full">
+      <CardHeader className="pb-3 sm:pb-6">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
           Filtre și Căutare
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Căutare</label>
+      <CardContent className="px-3 sm:px-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+          <div className="sm:col-span-2 lg:col-span-1">
+            <label className="block text-xs sm:text-sm font-medium mb-2">Căutare</label>
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-3 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
               <Input
-                placeholder="Număr comandă, distribuitor, oraș..."
+                placeholder="Comandă, distribuitor..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-8 sm:pl-10 text-xs sm:text-sm"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Status</label>
+            <label className="block text-xs sm:text-sm font-medium mb-2">Status</label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="text-xs sm:text-sm">
                 <SelectValue placeholder="Toate" />
               </SelectTrigger>
               <SelectContent>
@@ -66,23 +66,25 @@ export default function CentralizatorFilters({
             </Select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Data început</label>
+            <label className="block text-xs sm:text-sm font-medium mb-2">Data început</label>
             <Input
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
+              className="text-xs sm:text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Data sfârșit</label>
+            <label className="block text-xs sm:text-sm font-medium mb-2">Data sfârșit</label>
             <Input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
+              className="text-xs sm:text-sm"
             />
           </div>
           <div className="flex items-end">
-            <Button onClick={onRefresh} className="w-full">
+            <Button onClick={onRefresh} className="w-full text-xs sm:text-sm">
               Actualizează
             </Button>
           </div>

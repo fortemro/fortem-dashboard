@@ -42,100 +42,110 @@ export default function OrderDetailsDialog({ isOpen, onOpenChange, comanda }: Or
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Detalii Comandă {comanda.numar_comanda}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-base sm:text-lg">Detalii Comandă {comanda.numar_comanda}</DialogTitle>
+          <DialogDescription className="text-sm">
             Toate informațiile despre această comandă
           </DialogDescription>
         </DialogHeader>
         
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="general">Informații Generale</TabsTrigger>
-            <TabsTrigger value="livrare">Livrare</TabsTrigger>
-            <TabsTrigger value="produse">Produse</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm">
+            <TabsTrigger value="general" className="px-2 py-1">Generale</TabsTrigger>
+            <TabsTrigger value="livrare" className="px-2 py-1">Livrare</TabsTrigger>
+            <TabsTrigger value="produse" className="px-2 py-1">Produse</TabsTrigger>
           </TabsList>
           
           <TabsContent value="general" className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Număr Comandă</label>
-                <p className="text-sm text-gray-600">{comanda.numar_comanda}</p>
+                <label className="text-xs sm:text-sm font-medium">Număr Comandă</label>
+                <p className="text-xs sm:text-sm text-gray-600 break-words">{comanda.numar_comanda}</p>
               </div>
               <div>
-                <label className="text-sm font-medium">Data Comandă</label>
-                <p className="text-sm text-gray-600">{formatDate(comanda.data_comanda)}</p>
+                <label className="text-xs sm:text-sm font-medium">Data Comandă</label>
+                <p className="text-xs sm:text-sm text-gray-600">{formatDate(comanda.data_comanda)}</p>
               </div>
               <div>
-                <label className="text-sm font-medium">Status</label>
+                <label className="text-xs sm:text-sm font-medium">Status</label>
                 <div className="mt-1">{getStatusBadge(comanda.status)}</div>
               </div>
               <div>
-                <label className="text-sm font-medium">Număr Paleți</label>
-                <p className="text-sm text-gray-600">{comanda.numar_paleti}</p>
+                <label className="text-xs sm:text-sm font-medium">Număr Paleți</label>
+                <p className="text-xs sm:text-sm text-gray-600">{comanda.numar_paleti}</p>
               </div>
-              <div className="col-span-2">
-                <label className="text-sm font-medium">Distribuitor</label>
-                <p className="text-sm text-gray-600">{comanda.distribuitor?.nume_companie}</p>
+              <div className="col-span-1 sm:col-span-2">
+                <label className="text-xs sm:text-sm font-medium">Distribuitor</label>
+                <p className="text-xs sm:text-sm text-gray-600 break-words">{comanda.distribuitor?.nume_companie}</p>
               </div>
               {comanda.observatii && (
-                <div className="col-span-2">
-                  <label className="text-sm font-medium">Observații</label>
-                  <p className="text-sm text-gray-600">{comanda.observatii}</p>
+                <div className="col-span-1 sm:col-span-2">
+                  <label className="text-xs sm:text-sm font-medium">Observații</label>
+                  <p className="text-xs sm:text-sm text-gray-600 break-words">{comanda.observatii}</p>
                 </div>
               )}
             </div>
           </TabsContent>
           
           <TabsContent value="livrare" className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Oraș</label>
-                <p className="text-sm text-gray-600">{comanda.oras_livrare}</p>
+                <label className="text-xs sm:text-sm font-medium">Oraș</label>
+                <p className="text-xs sm:text-sm text-gray-600 break-words">{comanda.oras_livrare}</p>
               </div>
               <div>
-                <label className="text-sm font-medium">Județ</label>
-                <p className="text-sm text-gray-600">{comanda.judet_livrare || 'N/A'}</p>
+                <label className="text-xs sm:text-sm font-medium">Județ</label>
+                <p className="text-xs sm:text-sm text-gray-600 break-words">{comanda.judet_livrare || 'N/A'}</p>
               </div>
-              <div className="col-span-2">
-                <label className="text-sm font-medium">Adresă</label>
-                <p className="text-sm text-gray-600">{comanda.adresa_livrare}</p>
+              <div className="col-span-1 sm:col-span-2">
+                <label className="text-xs sm:text-sm font-medium">Adresă</label>
+                <p className="text-xs sm:text-sm text-gray-600 break-words">{comanda.adresa_livrare}</p>
               </div>
               <div>
-                <label className="text-sm font-medium">Telefon</label>
-                <p className="text-sm text-gray-600">{comanda.telefon_livrare || 'N/A'}</p>
+                <label className="text-xs sm:text-sm font-medium">Telefon</label>
+                <p className="text-xs sm:text-sm text-gray-600 break-words">{comanda.telefon_livrare || 'N/A'}</p>
               </div>
             </div>
           </TabsContent>
           
           <TabsContent value="produse" className="space-y-4">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Produs</TableHead>
-                  <TableHead>Dimensiuni</TableHead>
-                  <TableHead>Cantitate</TableHead>
-                  <TableHead>Preț Unitar</TableHead>
-                  <TableHead>Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {comanda.items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.produs?.nume || 'N/A'}</TableCell>
-                    <TableCell>{item.produs?.dimensiuni || 'N/A'}</TableCell>
-                    <TableCell>{item.cantitate}</TableCell>
-                    <TableCell>{formatCurrency(item.pret_unitar)}</TableCell>
-                    <TableCell className="font-semibold">{formatCurrency(item.total_item)}</TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs sm:text-sm">Produs</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Dimensiuni</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Cant.</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Preț</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Total</TableHead>
                   </TableRow>
-                ))}
-                <TableRow className="bg-gray-50">
-                  <TableCell colSpan={4} className="font-semibold">TOTAL COMANDĂ</TableCell>
-                  <TableCell className="font-bold text-lg">{formatCurrency(comanda.total_comanda)}</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {comanda.items.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="text-xs sm:text-sm">
+                        <div className="max-w-[120px] sm:max-w-none break-words">
+                          {item.produs?.nume || 'N/A'}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs sm:text-sm hidden sm:table-cell">
+                        <div className="max-w-[100px] break-words">
+                          {item.produs?.dimensiuni || 'N/A'}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs sm:text-sm">{item.cantitate}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{formatCurrency(item.pret_unitar)}</TableCell>
+                      <TableCell className="font-semibold text-xs sm:text-sm">{formatCurrency(item.total_item)}</TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="bg-gray-50">
+                    <TableCell colSpan={4} className="font-semibold text-xs sm:text-sm">TOTAL COMANDĂ</TableCell>
+                    <TableCell className="font-bold text-sm sm:text-lg">{formatCurrency(comanda.total_comanda)}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
           </TabsContent>
         </Tabs>
       </DialogContent>
