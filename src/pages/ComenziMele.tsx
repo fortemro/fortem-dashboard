@@ -89,8 +89,11 @@ export default function ComenziMele() {
   const getStatusBadge = (status) => {
     const statusConfig = {
       'in_asteptare': { label: 'În Așteptare', variant: 'secondary' },
-      'procesare': { label: 'În Procesare', variant: 'default' },
-      'expediere': { label: 'În Expediere', variant: 'default' },
+      'procesare': { label: 'Procesare', variant: 'default' },
+      'in_procesare': { label: 'În Procesare', variant: 'default' },
+      'pregatit_pentru_livrare': { label: 'Pregătit Livrare', variant: 'default' },
+      'in_tranzit': { label: 'În Tranzit', variant: 'default' },
+      'livrata': { label: 'Livrată', variant: 'default' },
       'finalizata': { label: 'Finalizată', variant: 'default' },
       'anulata': { label: 'Anulată', variant: 'destructive' }
     };
@@ -158,8 +161,11 @@ export default function ComenziMele() {
                 <SelectContent>
                   <SelectItem value="toate">Toate Statusurile</SelectItem>
                   <SelectItem value="in_asteptare">În Așteptare</SelectItem>
-                  <SelectItem value="procesare">În Procesare</SelectItem>
-                  <SelectItem value="expediere">În Expediere</SelectItem>
+                  <SelectItem value="procesare">Procesare</SelectItem>
+                  <SelectItem value="in_procesare">În Procesare</SelectItem>
+                  <SelectItem value="pregatit_pentru_livrare">Pregătit Livrare</SelectItem>
+                  <SelectItem value="in_tranzit">În Tranzit</SelectItem>
+                  <SelectItem value="livrata">Livrată</SelectItem>
                   <SelectItem value="finalizata">Finalizată</SelectItem>
                   <SelectItem value="anulata">Anulată</SelectItem>
                 </SelectContent>

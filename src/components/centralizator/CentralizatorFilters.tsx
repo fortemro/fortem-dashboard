@@ -60,6 +60,10 @@ export default function CentralizatorFilters({
                 <SelectItem value="toate">Toate</SelectItem>
                 <SelectItem value="in_asteptare">În Așteptare</SelectItem>
                 <SelectItem value="procesare">Procesare</SelectItem>
+                <SelectItem value="in_procesare">În Procesare</SelectItem>
+                <SelectItem value="pregatit_pentru_livrare">Pregătit Livrare</SelectItem>
+                <SelectItem value="in_tranzit">În Tranzit</SelectItem>
+                <SelectItem value="livrata">Livrată</SelectItem>
                 <SelectItem value="finalizata">Finalizată</SelectItem>
                 <SelectItem value="anulata">Anulată</SelectItem>
               </SelectContent>

@@ -27,13 +27,30 @@ export default function OrderDetailsDialog({ isOpen, onOpenChange, comanda }: Or
     const statusStyles = {
       'in_asteptare': 'bg-yellow-100 text-yellow-800',
       'procesare': 'bg-blue-100 text-blue-800',
+      'in_procesare': 'bg-blue-100 text-blue-800',
+      'pregatit_pentru_livrare': 'bg-orange-100 text-orange-800',
+      'in_tranzit': 'bg-purple-100 text-purple-800',
+      'livrata': 'bg-green-100 text-green-800',
       'finalizata': 'bg-green-100 text-green-800',
       'anulata': 'bg-red-100 text-red-800'
     };
 
+    const statusLabels = {
+      'in_asteptare': 'ÎN AȘTEPTARE',
+      'procesare': 'PROCESARE',
+      'in_procesare': 'ÎN PROCESARE',
+      'pregatit_pentru_livrare': 'PREGĂTIT LIVRARE',
+      'in_tranzit': 'ÎN TRANZIT',
+      'livrata': 'LIVRATĂ',
+      'finalizata': 'FINALIZATĂ',
+      'anulata': 'ANULATĂ'
+    };
+
+    const label = statusLabels[status as keyof typeof statusLabels] || status.toUpperCase();
+
     return (
       <Badge className={statusStyles[status as keyof typeof statusStyles] || 'bg-gray-100 text-gray-800'}>
-        {status.replace('_', ' ').toUpperCase()}
+        {label}
       </Badge>
     );
   };
