@@ -12,8 +12,10 @@ export type Database = {
       comenzi: {
         Row: {
           adresa_livrare: string
+          awb: string | null
           created_at: string
           data_comanda: string
+          data_expediere: string | null
           distribuitor_id: string
           distribuitor_uuid: string | null
           id: string
@@ -21,6 +23,7 @@ export type Database = {
           mzv_emitent: string | null
           numar_comanda: string
           numar_paleti: number
+          nume_transportator: string | null
           observatii: string | null
           oras_livrare: string
           status: string | null
@@ -31,8 +34,10 @@ export type Database = {
         }
         Insert: {
           adresa_livrare: string
+          awb?: string | null
           created_at?: string
           data_comanda?: string
+          data_expediere?: string | null
           distribuitor_id: string
           distribuitor_uuid?: string | null
           id?: string
@@ -40,6 +45,7 @@ export type Database = {
           mzv_emitent?: string | null
           numar_comanda: string
           numar_paleti?: number
+          nume_transportator?: string | null
           observatii?: string | null
           oras_livrare: string
           status?: string | null
@@ -50,8 +56,10 @@ export type Database = {
         }
         Update: {
           adresa_livrare?: string
+          awb?: string | null
           created_at?: string
           data_comanda?: string
+          data_expediere?: string | null
           distribuitor_id?: string
           distribuitor_uuid?: string | null
           id?: string
@@ -59,6 +67,7 @@ export type Database = {
           mzv_emitent?: string | null
           numar_comanda?: string
           numar_paleti?: number
+          nume_transportator?: string | null
           observatii?: string | null
           oras_livrare?: string
           status?: string | null
@@ -363,7 +372,12 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      status_enum:
+        | "in asteptare"
+        | "in procesare"
+        | "pregatit pentru livrare"
+        | "in tranzit"
+        | "anulata"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -478,6 +492,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      status_enum: [
+        "in asteptare",
+        "in procesare",
+        "pregatit pentru livrare",
+        "in tranzit",
+        "anulata",
+      ],
+    },
   },
 } as const

@@ -32,6 +32,10 @@ export interface Comanda {
     pret_per_palet?: number;
     total_comanda: number;
     mzv_emitent: string;
+    // Noile coloane adăugate
+    awb?: string;
+    nume_transportator?: string;
+    data_expediere?: string;
     // Pentru datele join-uite
     distribuitori?: { nume_companie: string };
     profiluri_utilizatori?: { full_name: string };
