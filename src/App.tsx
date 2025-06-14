@@ -20,6 +20,7 @@ import CentralizatorComenzi from '@/pages/CentralizatorComenzi';
 import PortalLogistica from '@/pages/PortalLogistica';
 import Productie from '@/pages/Productie';
 import DashboardExecutiv from '@/pages/DashboardExecutiv';
+import PanouVanzari from '@/pages/PanouVanzari';
 
 const queryClient = new QueryClient();
 
@@ -111,6 +112,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <DashboardExecutiv />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/panou-vanzari"
+                  element={
+                    <ProtectedRoute>
+                      <PanouVanzari />
                     </ProtectedRoute>
                   }
                 />
