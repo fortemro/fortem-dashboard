@@ -14,10 +14,10 @@ export function useLogisticaStats() {
       const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
       const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
 
-      // Query all relevant data
+      // Query all relevant data - make sure we get ALL orders
       const { data: allComenzi, error } = await supabase
         .from('comenzi')
-        .select('id, status, data_expediere, awb, created_at')
+        .select('id, status, data_expediere, awb, created_at, data_comanda')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -25,7 +25,8 @@ export function useLogisticaStats() {
         throw error;
       }
 
-      console.log('Total comenzi found:', allComenzi?.length || 0);
+      console.log('Total comenzi found for stats:', allComenzi?.length || 0);
+      console.log('Sample comenzi statuses:', allComenzi?.slice(0, 5).map(c => ({ id: c.id, status: c.status })));
 
       if (!allComenzi) {
         return {
@@ -36,9 +37,11 @@ export function useLogisticaStats() {
         };
       }
 
-      // Calculate comenzi în procesare (in_procesare + pregatit_pentru_livrare)
+      // Calculate comenzi în procesare (in_procesare + pregatit_pentru_livrare + in_asteptare)
       const comenziInProcesare = allComenzi.filter(comanda => 
-        comanda.status === 'in_procesare' || comanda.status === 'pregatit_pentru_livrare'
+        comanda.status === 'in_procesare' || 
+        comanda.status === 'pregatit_pentru_livrare' ||
+        comanda.status === 'in_asteptare'
       ).length;
 
       // Calculate livrări programate (în tranzit cu data expediere astăzi)
@@ -72,7 +75,8 @@ export function useLogisticaStats() {
         comenziInProcesare,
         livrariprogramate,
         ruteActive,
-        eficientaLivrari
+        eficientaLivrari,
+        totalComenzi: allComenzi.length
       });
 
       return {

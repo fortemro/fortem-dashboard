@@ -12,28 +12,60 @@ export function useComenziLogistica() {
   const { data: comenzi = [], isLoading: loading, refetch } = useQuery({
     queryKey: ['comenzi-logistica'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      console.log('Fetching comenzi for logistica...');
+      
+      // First get all orders
+      const { data: comenziData, error: comenziError } = await supabase
         .from('comenzi')
-        .select(`
-          *,
-          distribuitori!inner(*)
-        `)
+        .select('*')
         .order('data_comanda', { ascending: false });
 
-      if (error) throw error;
+      if (comenziError) {
+        console.error('Error fetching comenzi:', comenziError);
+        throw comenziError;
+      }
+
+      console.log('Found comenzi:', comenziData?.length || 0);
+
+      if (!comenziData) return [];
+
+      // Then get distributor details for each order if the distribuitor_id is a UUID
+      const comenziWithDistributors = await Promise.all(
+        comenziData.map(async (comanda) => {
+          let distributorDetails = null;
+          
+          // Check if distribuitor_id is a UUID
+          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(comanda.distribuitor_id);
+          
+          if (isUUID) {
+            const { data: distributorData, error: distributorError } = await supabase
+              .from('distribuitori')
+              .select('*')
+              .eq('id', comanda.distribuitor_id)
+              .single();
+
+            if (!distributorError && distributorData) {
+              distributorDetails = distributorData;
+            }
+          }
+
+          return {
+            ...comanda,
+            distribuitor: distributorDetails
+          };
+        })
+      );
+
+      console.log('Processed comenzi with distributors:', comenziWithDistributors.length);
       
-      // Transform the data to match our Comanda type
-      const transformedData = data.map((item: any) => ({
-        ...item,
-        distribuitor: item.distribuitori
-      }));
-      
-      return transformedData as Comanda[];
+      return comenziWithDistributors as Comanda[];
     }
   });
 
   const updateComandaStatus = async (comandaId: string, newStatus: string) => {
     try {
+      console.log('Updating comanda status:', comandaId, 'to:', newStatus);
+      
       const { error } = await supabase
         .from('comenzi')
         .update({ 
@@ -46,6 +78,7 @@ export function useComenziLogistica() {
 
       // Invalidate and refetch the query
       queryClient.invalidateQueries({ queryKey: ['comenzi-logistica'] });
+      queryClient.invalidateQueries({ queryKey: ['logistica-stats'] });
 
       toast({
         title: "Status actualizat",
