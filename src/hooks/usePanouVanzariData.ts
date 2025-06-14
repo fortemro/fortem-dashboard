@@ -25,24 +25,27 @@ interface Agent {
 }
 
 const fetchPanouVanzariData = async () => {
-  // Preluăm toate comenzile cu detalii despre distribuitori și utilizatori
+  // Preluăm comenzile fără join-uri
   const { data: comenzi, error: comenziError } = await supabase
     .from('comenzi')
-    .select(`
-      id,
-      numar_comanda,
-      data_comanda,
-      distribuitor_id,
-      oras_livrare,
-      status,
-      total_comanda,
-      user_id,
-      distribuitori(nume_companie),
-      profiluri_utilizatori(nume_complet)
-    `)
+    .select('*')
     .order('data_comanda', { ascending: false });
 
   if (comenziError) throw new Error(comenziError.message);
+
+  // Preluăm toți distribuitorii
+  const { data: distribuitori, error: distributoriError } = await supabase
+    .from('distribuitori')
+    .select('id, nume_companie');
+
+  if (distributoriError) throw new Error(distributoriError.message);
+
+  // Preluăm profilurile utilizatorilor
+  const { data: profiluri, error: profituriError } = await supabase
+    .from('profiluri_utilizatori')
+    .select('user_id, nume_complet');
+
+  if (profituriError) throw new Error(profituriError.message);
 
   // Preluăm toți agenții unici pentru dropdown
   const { data: agenti, error: agentiError } = await supabase
@@ -53,8 +56,25 @@ const fetchPanouVanzariData = async () => {
 
   if (agentiError) throw new Error(agentiError.message);
 
+  // Combinăm datele manual
+  const comenziCombinate = (comenzi || []).map(comanda => {
+    // Găsim distribuitor după ID (text sau UUID)
+    const distribuitor = (distribuitori || []).find(d => 
+      d.id === comanda.distribuitor_id || d.id.toString() === comanda.distribuitor_id
+    );
+    
+    // Găsim profilul utilizatorului
+    const profil = (profiluri || []).find(p => p.user_id === comanda.user_id);
+
+    return {
+      ...comanda,
+      distribuitori: distribuitor ? { nume_companie: distribuitor.nume_companie } : undefined,
+      profiluri_utilizatori: profil ? { nume_complet: profil.nume_complet } : undefined
+    };
+  });
+
   return { 
-    comenzi: comenzi || [], 
+    comenzi: comenziCombinate, 
     agenti: agenti || [] 
   };
 };
