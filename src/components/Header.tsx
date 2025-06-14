@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -18,6 +17,8 @@ import {
   Shield,
   AlertTriangle,
   Truck,
+  Factory,
+  Cog,
 } from "lucide-react";
 
 export default function Header() {
@@ -68,6 +69,16 @@ export default function Header() {
                 >
                   Comandă Nouă
                 </Link>
+                {/* Link doar pentru utilizatori cu rolul productie */}
+                {!loading && profile?.rol === 'productie' && (
+                  <Link
+                    to="/productie"
+                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                  >
+                    <Factory className="h-4 w-4 mr-1" />
+                    Producție
+                  </Link>
+                )}
                 {!loading && profile?.rol === 'logistica' && (
                   <Link
                     to="/portal-logistica"
@@ -128,6 +139,15 @@ export default function Header() {
                       <span>Profil</span>
                     </Link>
                   </DropdownMenuItem>
+                  {/* Link dropdown Producție doar pt rol productie */}
+                  {!loading && profile?.rol === 'productie' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/productie">
+                        <Factory className="mr-2 h-4 w-4" />
+                        <span>Producție</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   {!loading && profile?.rol === 'logistica' && (
                     <DropdownMenuItem asChild>
                       <Link to="/portal-logistica">

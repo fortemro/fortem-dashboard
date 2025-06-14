@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/hooks/useAuth';
@@ -18,6 +17,7 @@ import AdminDashboard from '@/pages/AdminDashboard';
 import AdminValidarePreturi from '@/pages/AdminValidarePreturi';
 import CentralizatorComenzi from '@/pages/CentralizatorComenzi';
 import PortalLogistica from '@/pages/PortalLogistica';
+import Productie from '@/pages/Productie';
 
 const queryClient = new QueryClient();
 
@@ -93,6 +93,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <AdminValidarePreturi />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/productie"
+                  element={
+                    <ProtectedRoute>
+                      <Productie />
                     </ProtectedRoute>
                   }
                 />
