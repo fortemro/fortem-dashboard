@@ -4,9 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Navigate } from 'react-router-dom';
 import { Truck, Package, MapPin, Clock } from 'lucide-react';
 import { ComenziLogisticaTable } from '@/components/logistica/ComenziLogisticaTable';
+import { useLogisticaStats } from '@/hooks/logistica/useLogisticaStats';
 
 export default function PortalLogistica() {
   const { profile, loading } = useProfile();
+  const { stats, loading: statsLoading } = useLogisticaStats();
 
   if (loading) {
     return (
@@ -43,9 +45,11 @@ export default function PortalLogistica() {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">
+                {statsLoading ? '...' : stats.comenziInProcesare}
+              </div>
               <p className="text-xs text-muted-foreground">
-                +0% față de săptămâna trecută
+                în procesare + pregătite pentru livrare
               </p>
             </CardContent>
           </Card>
@@ -58,7 +62,9 @@ export default function PortalLogistica() {
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">
+                {statsLoading ? '...' : stats.livrariprogramate}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Pentru astăzi
               </p>
@@ -73,9 +79,11 @@ export default function PortalLogistica() {
               <MapPin className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">
+                {statsLoading ? '...' : stats.ruteActive}
+              </div>
               <p className="text-xs text-muted-foreground">
-                Camioane în tranzit
+                Camioane în tranzit cu AWB
               </p>
             </CardContent>
           </Card>
@@ -88,7 +96,9 @@ export default function PortalLogistica() {
               <Truck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0%</div>
+              <div className="text-2xl font-bold">
+                {statsLoading ? '...' : `${stats.eficientaLivrari}%`}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Media ultimelor 30 de zile
               </p>
