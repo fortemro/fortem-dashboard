@@ -3,11 +3,13 @@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../useAuth';
 import { useDistribuitori } from '../useDistribuitori';
+import { useQueryClient } from '@tanstack/react-query';
 import { ItemComanda } from '@/data-types';
 
 export function useComandaCreate() {
   const { user } = useAuth();
   const { findOrCreateDistribuitor } = useDistribuitori();
+  const queryClient = useQueryClient();
 
   const createComanda = async (formData: any, items: Partial<ItemComanda>[]) => {
     if (!user) throw new Error('Nu ești autentificat');
@@ -79,6 +81,10 @@ export function useComandaCreate() {
       
       const { error: itemsError } = await supabase.from('itemi_comanda').insert(itemsData);
       if (itemsError) throw itemsError;
+
+      // Invalidez cache-ul produselor pentru a reîncărca stocurile reale în toată aplicația
+      await queryClient.invalidateQueries({ queryKey: ['produse'] });
+      console.log('Cache-ul produselor a fost invalidat - stocurile vor fi reîncărcate');
 
       // Încerc să trimit email-ul, dar nu blochez procesul dacă fail-uiește
       try {
