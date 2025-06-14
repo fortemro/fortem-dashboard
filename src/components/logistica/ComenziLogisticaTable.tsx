@@ -1,4 +1,5 @@
 
+
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -22,11 +23,16 @@ import { MoreHorizontal, Edit, Filter, Search, Truck, Package, CheckCircle, X, C
 import { useComenziLogistica } from '@/hooks/logistica/useComenziLogistica';
 import { ComandaDetailsModal } from './ComandaDetailsModal';
 import { ComandaEditModal } from './ComandaEditModal';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Comanda } from '@/types/comanda';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ComandaWithStockStatus extends Comanda {
-  stockAvailable?: boolean;
+  stockStatus?: {
+    type: 'loading' | 'available' | 'insufficient';
+    productName?: string;
+    missingQuantity?: number;
+  };
 }
 
 export function ComenziLogisticaTable() {
@@ -37,6 +43,7 @@ export function ComenziLogisticaTable() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('toate');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [comenziWithStockStatus, setComenziWithStockStatus] = useState<ComandaWithStockStatus[]>([]);
 
   // Updated status options to match database constraints
   const statusOptions = [
@@ -55,8 +62,103 @@ export function ComenziLogisticaTable() {
     { value: 'anulata', label: 'Anulată' }
   ];
 
+  // Function to check stock status for a specific order
+  const checkStockStatusForOrder = async (comanda: Comanda): Promise<ComandaWithStockStatus['stockStatus']> => {
+    try {
+      // Get order items
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('itemi_comanda')
+        .select('produs_id, cantitate')
+        .eq('comanda_id', comanda.id);
+
+      if (itemsError) {
+        console.error('Error fetching items for order:', comanda.id, itemsError);
+        return { type: 'loading' };
+      }
+
+      if (!itemsData || itemsData.length === 0) {
+        return { type: 'available' };
+      }
+
+      // Get real stock data
+      const { data: stocuriReale, error: stocuriError } = await supabase
+        .rpc('get_stocuri_reale_pentru_produse');
+
+      if (stocuriError) {
+        console.error('Error fetching real stock:', stocuriError);
+        return { type: 'loading' };
+      }
+
+      // Create a map of product ID to real stock
+      const stocuriMap = new Map(
+        stocuriReale?.map(item => [item.produs_id, item.stoc_real]) || []
+      );
+
+      // Check each item in the order
+      for (const item of itemsData) {
+        const realStock = stocuriMap.get(item.produs_id) || 0;
+        
+        if (realStock < item.cantitate) {
+          // Get product name for the insufficient stock item
+          const { data: productData, error: productError } = await supabase
+            .from('produse')
+            .select('nume')
+            .eq('id', item.produs_id)
+            .single();
+
+          const productName = productData?.nume || 'Produs necunoscut';
+          const missingQuantity = item.cantitate - realStock;
+
+          return {
+            type: 'insufficient',
+            productName,
+            missingQuantity
+          };
+        }
+      }
+
+      // All items have sufficient stock
+      return { type: 'available' };
+    } catch (error) {
+      console.error('Error checking stock for order:', comanda.id, error);
+      return { type: 'loading' };
+    }
+  };
+
+  // Effect to check stock status for all orders
+  useEffect(() => {
+    const checkAllStockStatuses = async () => {
+      if (!comenzi.length) {
+        setComenziWithStockStatus([]);
+        return;
+      }
+
+      // Initialize with loading status
+      const initialComenzi = comenzi.map(comanda => ({
+        ...comanda,
+        stockStatus: { type: 'loading' as const }
+      }));
+      setComenziWithStockStatus(initialComenzi);
+
+      // Check stock status for each order
+      const updatedComenzi = await Promise.all(
+        comenzi.map(async (comanda) => {
+          const stockStatus = await checkStockStatusForOrder(comanda);
+          return {
+            ...comanda,
+            stockStatus
+          };
+        })
+      );
+
+      setComenziWithStockStatus(updatedComenzi);
+    };
+
+    checkAllStockStatuses();
+  }, [comenzi]);
+
   // Filter comenzi based on selected status and search term
-  const filteredComenzi = comenzi.filter(comanda => {
+  const filteredComenzi = comenziWithStockStatus.filter(comanda => {
     // Filter by status
     const matchesStatus = statusFilter === 'toate' || (comanda.status || 'in_asteptare') === statusFilter;
     
@@ -113,8 +215,8 @@ export function ComenziLogisticaTable() {
     await updateComandaStatus(comanda.id, 'anulata');
   };
 
-  const renderStatusStoc = (stockAvailable: boolean | undefined) => {
-    if (stockAvailable === undefined) {
+  const renderStatusStoc = (stockStatus: ComandaWithStockStatus['stockStatus']) => {
+    if (!stockStatus || stockStatus.type === 'loading') {
       return (
         <Badge variant="secondary">
           Se verifică...
@@ -122,16 +224,16 @@ export function ComenziLogisticaTable() {
       );
     }
     
-    if (stockAvailable) {
+    if (stockStatus.type === 'available') {
       return (
         <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">
-          Disponibil
+          În Stoc
         </Badge>
       );
     } else {
       return (
         <Badge variant="destructive">
-          Insuficient
+          Lipsă: {stockStatus.productName} (-{stockStatus.missingQuantity} buc)
         </Badge>
       );
     }
@@ -159,7 +261,7 @@ export function ComenziLogisticaTable() {
           <CardTitle>Comenzi în Așteptare</CardTitle>
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              Comenzile care necesită procesare logistică ({filteredComenzi.length} din {comenzi.length} comenzi)
+              Comenzile care necesită procesare logistică ({filteredComenzi.length} din {comenziWithStockStatus.length} comenzi)
             </p>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
@@ -239,7 +341,7 @@ export function ComenziLogisticaTable() {
                           {comanda.oras_livrare}
                         </TableCell>
                         <TableCell>
-                          {renderStatusStoc((comanda as ComandaWithStockStatus).stockAvailable)}
+                          {renderStatusStoc(comanda.stockStatus)}
                         </TableCell>
                         <TableCell>
                           {comanda.nume_transportator || '-'}
@@ -343,3 +445,4 @@ export function ComenziLogisticaTable() {
     </>
   );
 }
+
