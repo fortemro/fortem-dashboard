@@ -16,12 +16,19 @@ export function useComenziLogistica() {
         .from('comenzi')
         .select(`
           *,
-          distribuitor:distribuitori(*)
+          distribuitori!inner(*)
         `)
         .order('data_comanda', { ascending: false });
 
       if (error) throw error;
-      return data as Comanda[];
+      
+      // Transform the data to match our Comanda type
+      const transformedData = data.map((item: any) => ({
+        ...item,
+        distribuitor: item.distribuitori
+      }));
+      
+      return transformedData as Comanda[];
     }
   });
 
