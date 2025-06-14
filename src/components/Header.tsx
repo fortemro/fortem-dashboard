@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -18,7 +19,7 @@ import {
   AlertTriangle,
   Truck,
   Factory,
-  Cog,
+  BarChart3,
 } from "lucide-react";
 
 export default function Header() {
@@ -69,6 +70,16 @@ export default function Header() {
                 >
                   Comandă Nouă
                 </Link>
+                {/* Link pentru utilizatori cu rolul management */}
+                {!loading && profile?.rol === 'management' && (
+                  <Link
+                    to="/dashboard-executiv"
+                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                  >
+                    <BarChart3 className="h-4 w-4 mr-1" />
+                    Dashboard Executiv
+                  </Link>
+                )}
                 {/* Link doar pentru utilizatori cu rolul productie */}
                 {!loading && profile?.rol === 'productie' && (
                   <Link
@@ -139,6 +150,15 @@ export default function Header() {
                       <span>Profil</span>
                     </Link>
                   </DropdownMenuItem>
+                  {/* Link dropdown Dashboard Executiv doar pt rol management */}
+                  {!loading && profile?.rol === 'management' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/dashboard-executiv">
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        <span>Dashboard Executiv</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   {/* Link dropdown Producție doar pt rol productie */}
                   {!loading && profile?.rol === 'productie' && (
                     <DropdownMenuItem asChild>

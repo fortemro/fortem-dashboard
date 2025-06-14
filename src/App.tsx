@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/hooks/useAuth';
@@ -18,6 +19,7 @@ import AdminValidarePreturi from '@/pages/AdminValidarePreturi';
 import CentralizatorComenzi from '@/pages/CentralizatorComenzi';
 import PortalLogistica from '@/pages/PortalLogistica';
 import Productie from '@/pages/Productie';
+import DashboardExecutiv from '@/pages/DashboardExecutiv';
 
 const queryClient = new QueryClient();
 
@@ -101,6 +103,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Productie />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard-executiv"
+                  element={
+                    <ProtectedRoute>
+                      <DashboardExecutiv />
                     </ProtectedRoute>
                   }
                 />
