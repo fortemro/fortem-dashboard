@@ -26,36 +26,29 @@ async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
 
   if (produseError) throw new Error(produseError.message);
 
-  // 2. Query explicit cu hint la relația corectă pentru a evita ambiguitatea
+  // 2. Query explicit cu hint la relația
   const { data: necesare, error: necesarError } = await supabase
     .from("itemi_comanda")
     .select("produs_id, cantitate, comanda:comanda_id(status)");
 
   if (necesarError) throw new Error(necesarError.message);
 
-  // Filter only well-formed items (defensive against type errors/Supabase oddities)
-  const necesarList: ItemComandaWithStatus[] = Array.isArray(necesare)
-    ? necesare.filter(
-        (item): item is ItemComandaWithStatus =>
-          typeof item === "object" &&
-          typeof item.produs_id === "string" &&
-          ("cantitate" in item) &&
-          item.comanda &&
-          typeof item.comanda === "object" &&
-          "status" in item.comanda
-      )
-    : [];
-
+  // Defensive: sum only for well-formed items
   const necesarMap: Record<string, number> = {};
-  for (const item of necesarList) {
-    // status din schema: 'in_asteptare', 'in_procesare'
-    if (
-      item.comanda?.status === "in_asteptare" ||
-      item.comanda?.status === "in_procesare"
-    ) {
-      const pid = item.produs_id;
-      if (!necesarMap[pid]) necesarMap[pid] = 0;
-      necesarMap[pid] += item.cantitate ?? 0;
+  if (Array.isArray(necesare)) {
+    for (const item of necesare) {
+      // Check shape: produs_id (string), comanda (object), comanda.status (string|null)
+      const produsId = typeof item?.produs_id === "string" ? item.produs_id : null;
+      const cantitate = typeof item?.cantitate === "number" ? item.cantitate : 0;
+      const status = item?.comanda && typeof item.comanda === "object" ? item.comanda.status : undefined;
+
+      if (
+        produsId &&
+        (status === "in_asteptare" || status === "in_procesare")
+      ) {
+        if (!necesarMap[produsId]) necesarMap[produsId] = 0;
+        necesarMap[produsId] += cantitate ?? 0;
+      }
     }
   }
 
