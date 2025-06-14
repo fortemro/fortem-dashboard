@@ -101,7 +101,7 @@ export function ComenziLogisticaTable() {
   };
 
   const handleMarcheazaLivrat = async (comanda: Comanda) => {
-    await updateComandaStatus(comanda.id, 'livrata');
+    await updateComandaStatus(comanda.id, 'livrata', false, true);
   };
 
   if (loading) {

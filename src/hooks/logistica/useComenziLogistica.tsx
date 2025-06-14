@@ -71,7 +71,7 @@ export function useComenziLogistica() {
     }
   });
 
-  const updateComandaStatus = async (comandaId: string, newStatus: string, setExpeditionDate: boolean = false) => {
+  const updateComandaStatus = async (comandaId: string, newStatus: string, setExpeditionDate: boolean = false, setDeliveryDate: boolean = false) => {
     try {
       console.log('Updating comanda status:', comandaId, 'to:', newStatus);
       
@@ -85,6 +85,11 @@ export function useComenziLogistica() {
         updateData.data_expediere = new Date().toISOString();
       }
 
+      // If marking as 'livrata' (delivered), set the delivery date
+      if (setDeliveryDate && newStatus === 'livrata') {
+        updateData.data_livrare = new Date().toISOString();
+      }
+
       const { error } = await supabase
         .from('comenzi')
         .update(updateData)
@@ -96,9 +101,17 @@ export function useComenziLogistica() {
       queryClient.invalidateQueries({ queryKey: ['comenzi-logistica'] });
       queryClient.invalidateQueries({ queryKey: ['logistica-stats'] });
 
+      let successMessage = `Statusul comenzii a fost schimbat în "${newStatus}"`;
+      if (setExpeditionDate) {
+        successMessage += ' și data expedierii a fost înregistrată';
+      }
+      if (setDeliveryDate) {
+        successMessage += ' și data livrării a fost înregistrată';
+      }
+
       toast({
         title: "Status actualizat",
-        description: `Statusul comenzii a fost schimbat în "${newStatus}"${setExpeditionDate ? ' și data expedierii a fost înregistrată' : ''}`
+        description: successMessage
       });
     } catch (error) {
       console.error('Error updating comanda status:', error);
