@@ -9,11 +9,13 @@ interface AdminFiltersProps {
   dateTo: string;
   selectedMzv: string;
   selectedDistributor: string;
+  transportatorFilter: string;
   stats: AdminStats | null;
   onDateFromChange: (value: string) => void;
   onDateToChange: (value: string) => void;
   onMzvChange: (value: string) => void;
   onDistributorChange: (value: string) => void;
+  onTransportatorChange: (value: string) => void;
 }
 
 export function AdminFilters({
@@ -21,11 +23,13 @@ export function AdminFilters({
   dateTo,
   selectedMzv,
   selectedDistributor,
+  transportatorFilter,
   stats,
   onDateFromChange,
   onDateToChange,
   onMzvChange,
-  onDistributorChange
+  onDistributorChange,
+  onTransportatorChange
 }: AdminFiltersProps) {
   return (
     <Card className="mb-6">
@@ -33,7 +37,7 @@ export function AdminFilters({
         <CardTitle>Filtre</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">Data început</label>
             <Input
@@ -85,6 +89,15 @@ export function AdminFilters({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Transportator</label>
+            <Input
+              type="text"
+              placeholder="Filtrează după transportator"
+              value={transportatorFilter}
+              onChange={(e) => onTransportatorChange(e.target.value)}
+            />
           </div>
         </div>
       </CardContent>

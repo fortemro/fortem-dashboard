@@ -24,6 +24,7 @@ export default function AdminDashboard() {
   const [dateTo, setDateTo] = useState<string>('');
   const [selectedMzv, setSelectedMzv] = useState<string>('');
   const [selectedDistributor, setSelectedDistributor] = useState<string>('');
+  const [transportatorFilter, setTransportatorFilter] = useState<string>('');
 
   const { stats, loading } = useAdminStats(dateFrom, dateTo);
 
@@ -56,6 +57,9 @@ export default function AdminDashboard() {
     if (selectedDistributor && comanda.distribuitor_id !== selectedDistributor) return false;
     if (dateFrom && comanda.data_comanda < dateFrom) return false;
     if (dateTo && comanda.data_comanda > dateTo) return false;
+    if (transportatorFilter && 
+        (!comanda.nume_transportator || 
+         !comanda.nume_transportator.toLowerCase().includes(transportatorFilter.toLowerCase()))) return false;
     return true;
   });
 
@@ -89,11 +93,13 @@ export default function AdminDashboard() {
           dateTo={dateTo}
           selectedMzv={selectedMzv}
           selectedDistributor={selectedDistributor}
+          transportatorFilter={transportatorFilter}
           stats={stats}
           onDateFromChange={setDateFrom}
           onDateToChange={setDateTo}
           onMzvChange={setSelectedMzv}
           onDistributorChange={setSelectedDistributor}
+          onTransportatorChange={setTransportatorFilter}
         />
 
         <AdminStatsCards
