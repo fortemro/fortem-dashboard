@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Navigate } from 'react-router-dom';
 import { Truck, Package, MapPin, Clock } from 'lucide-react';
 import { ComenziLogisticaTable } from '@/components/logistica/ComenziLogisticaTable';
+import { SituatieStocuriTable } from '@/components/logistica/SituatieStocuriTable';
 import { useLogisticaStats } from '@/hooks/logistica/useLogisticaStats';
 
 export default function PortalLogistica() {
@@ -111,34 +112,9 @@ export default function PortalLogistica() {
           <ComenziLogisticaTable />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Comenzi Recente</CardTitle>
-              <CardDescription>
-                Ultimele comenzi care necesită procesare logistică
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                Nu există comenzi de procesat în acest moment
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Statusul Flotei</CardTitle>
-              <CardDescription>
-                Monitorizarea vehiculelor și șoferilor
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                Nu există date despre flotă disponibile
-              </div>
-            </CardContent>
-          </Card>
+        {/* Tabelul cu situația stocurilor */}
+        <div className="mb-8">
+          <SituatieStocuriTable />
         </div>
       </div>
     </div>
