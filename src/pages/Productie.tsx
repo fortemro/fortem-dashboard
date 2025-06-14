@@ -1,6 +1,12 @@
 
 import React from "react";
 import { ProductieProduseTable } from "@/components/ProductieProduseTable";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/components/ui/tabs";
 
 export default function Productie() {
   return (
@@ -10,10 +16,26 @@ export default function Productie() {
         Producție
       </h1>
       <div className="bg-white rounded-lg shadow p-8 min-h-[300px]">
-        <p className="text-lg text-gray-700 mb-6">
-          Bine ai venit în portalul Producție!
-        </p>
-        <ProductieProduseTable />
+        <Tabs defaultValue="dashboard" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="dashboard">Dashboard Producție</TabsTrigger>
+            <TabsTrigger value="produse">Producție produse</TabsTrigger>
+          </TabsList>
+          <TabsContent value="dashboard">
+            <div className="text-lg text-gray-700 mb-6 animate-fade-in">
+              <b>Dashboard Producție</b> – aici vor apărea grafice, KPI-uri și sumar rapid despre ce s-a produs și statisticile ultimei perioade.
+              <div className="mt-4 text-sm text-gray-500">
+                (Momentan secțiunea este goală — spune-mi ce vrei să apară!)
+              </div>
+            </div>
+          </TabsContent>
+          <TabsContent value="produse">
+            <p className="text-lg text-gray-700 mb-6">
+              Bine ai venit în portalul Producție!
+            </p>
+            <ProductieProduseTable />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
