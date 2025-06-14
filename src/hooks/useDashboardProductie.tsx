@@ -41,15 +41,21 @@ async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
       const produsId = typeof item?.produs_id === "string" ? item.produs_id : null;
       const cantitate = typeof item?.cantitate === "number" ? item.cantitate : 0;
 
-      // Extract comanda to a variable and check it explicitly
+      // Extract comanda and use explicit type guard
       const comanda = item?.comanda;
+      
+      // Type guard function to check if comanda is valid
+      const isValidComanda = (cmd: any): cmd is { status: string } => {
+        return cmd !== null && 
+               cmd !== undefined && 
+               typeof cmd === "object" && 
+               "status" in cmd &&
+               typeof cmd.status === "string";
+      };
       
       if (
         produsId && 
-        comanda !== null && 
-        comanda !== undefined &&
-        typeof comanda === "object" && 
-        "status" in comanda &&
+        isValidComanda(comanda) &&
         (comanda.status === "in_asteptare" || comanda.status === "in_procesare")
       ) {
         if (!necesarMap[produsId]) necesarMap[produsId] = 0;
