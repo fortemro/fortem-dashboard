@@ -22,11 +22,16 @@ import {
 
 export default function Header() {
   const { user, signOut } = useAuth();
-  const { profile } = useProfile();
+  const { profile, loading } = useProfile();
 
   const handleSignOut = async () => {
     await signOut();
   };
+
+  // Debug log pentru a vedea datele profilului
+  console.log('Header - Profile data:', profile);
+  console.log('Header - Profile loading:', loading);
+  console.log('Header - Profile rol:', profile?.rol);
 
   return (
     <header className="bg-white shadow-sm border-b fixed top-0 w-full z-50">
@@ -63,7 +68,7 @@ export default function Header() {
                 >
                   Comandă Nouă
                 </Link>
-                {profile?.rol === 'logistica' && (
+                {!loading && profile?.rol === 'logistica' && (
                   <Link
                     to="/portal-logistica"
                     className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center"
@@ -72,7 +77,7 @@ export default function Header() {
                     Portal Logistică
                   </Link>
                 )}
-                {profile?.rol === 'Admin' && (
+                {!loading && profile?.rol === 'Admin' && (
                   <>
                     <Link
                       to="/admin-dashboard"
@@ -123,7 +128,7 @@ export default function Header() {
                       <span>Profil</span>
                     </Link>
                   </DropdownMenuItem>
-                  {profile?.rol === 'logistica' && (
+                  {!loading && profile?.rol === 'logistica' && (
                     <DropdownMenuItem asChild>
                       <Link to="/portal-logistica">
                         <Truck className="mr-2 h-4 w-4" />
@@ -131,7 +136,7 @@ export default function Header() {
                       </Link>
                     </DropdownMenuItem>
                   )}
-                  {profile?.rol === 'Admin' && (
+                  {!loading && profile?.rol === 'Admin' && (
                     <>
                       <DropdownMenuItem asChild>
                         <Link to="/admin-dashboard">
