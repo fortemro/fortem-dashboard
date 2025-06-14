@@ -9,8 +9,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Edit } from 'lucide-react';
+import { MoreHorizontal, Edit, Filter } from 'lucide-react';
 import { useComenziLogistica } from '@/hooks/logistica/useComenziLogistica';
 import { ComandaDetailsModal } from './ComandaDetailsModal';
 import { ComandaEditModal } from './ComandaEditModal';
@@ -23,6 +30,7 @@ export function ComenziLogisticaTable() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedComandaEdit, setSelectedComandaEdit] = useState<Comanda | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('toate');
 
   const statusOptions = [
     { value: 'in_procesare', label: 'în procesare' },
@@ -31,6 +39,21 @@ export function ComenziLogisticaTable() {
     { value: 'livrata', label: 'livrată' },
     { value: 'anulata', label: 'anulată' }
   ];
+
+  const filterOptions = [
+    { value: 'toate', label: 'Toate comenzile' },
+    { value: 'in_asteptare', label: 'În așteptare' },
+    { value: 'in_procesare', label: 'În procesare' },
+    { value: 'pregatit_pentru_livrare', label: 'Pregătit pentru livrare' },
+    { value: 'in_tranzit', label: 'În tranzit' },
+    { value: 'livrata', label: 'Livrată' },
+    { value: 'anulata', label: 'Anulată' }
+  ];
+
+  // Filter comenzi based on selected status
+  const filteredComenzi = statusFilter === 'toate' 
+    ? comenzi 
+    : comenzi.filter(comanda => (comanda.status || 'in_asteptare') === statusFilter);
 
   const handleStatusUpdate = async (comandaId: string, newStatus: string) => {
     await updateComandaStatus(comandaId, newStatus);
@@ -80,14 +103,34 @@ export function ComenziLogisticaTable() {
       <Card>
         <CardHeader>
           <CardTitle>Comenzi în Așteptare</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Comenzile care necesită procesare logistică ({comenzi.length} comenzi)
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Comenzile care necesită procesare logistică ({filteredComenzi.length} din {comenzi.length} comenzi)
+            </p>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[200px] bg-white">
+                  <SelectValue placeholder="Filtrează după status" />
+                </SelectTrigger>
+                <SelectContent className="bg-white z-50">
+                  {filterOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          {comenzi.length === 0 ? (
+          {filteredComenzi.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              Nu există comenzi în așteptare în acest moment
+              {statusFilter === 'toate' 
+                ? 'Nu există comenzi în acest moment'
+                : `Nu există comenzi cu statusul "${filterOptions.find(opt => opt.value === statusFilter)?.label}"`
+              }
             </div>
           ) : (
             <div className="rounded-md border">
@@ -103,7 +146,7 @@ export function ComenziLogisticaTable() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {comenzi.map((comanda) => (
+                  {filteredComenzi.map((comanda) => (
                     <TableRow key={comanda.id}>
                       <TableCell className="font-medium">
                         {comanda.numar_comanda}
