@@ -49,7 +49,10 @@ async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
 
       if (
         produsId &&
-        (status === "in_asteptare" || status === "in_procesare")
+        item?.comanda &&
+        typeof item.comanda === "object" &&
+        "status" in item.comanda &&
+        (item.comanda.status === "in_asteptare" || item.comanda.status === "in_procesare")
       ) {
         if (!necesarMap[produsId]) necesarMap[produsId] = 0;
         necesarMap[produsId] += cantitate ?? 0;
