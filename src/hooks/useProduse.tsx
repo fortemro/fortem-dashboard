@@ -14,26 +14,71 @@ async function fetchProduse(): Promise<Produs[]> {
     throw new Error(produseError.message);
   }
 
-  // Fetch real stock data using the new function
-  const { data: stocuriReale, error: stocuriError } = await supabase
-    .rpc('get_stocuri_reale_pentru_produse');
+  // Fetch items and commands separately to avoid relationship ambiguity
+  const { data: itemsData, error: itemsError } = await supabase
+    .from("itemi_comanda")
+    .select("produs_id, cantitate, comanda_id");
 
-  if (stocuriError) {
-    throw new Error(stocuriError.message);
+  if (itemsError) {
+    throw new Error(itemsError.message);
   }
 
-  // Create a map of product ID to real stock for efficient lookup
-  const stocuriMap = new Map(
-    stocuriReale?.map(item => [item.produs_id, item.stoc_real]) || []
-  );
+  // Fetch commands data separately
+  const comandaIds = Array.from(new Set(itemsData?.map(item => item.comanda_id).filter(Boolean) || []));
+  
+  let comenziData: any[] = [];
+  if (comandaIds.length > 0) {
+    const { data: comenziResult, error: comenziError } = await supabase
+      .from("comenzi")
+      .select("id, status")
+      .in("id", comandaIds);
 
-  // Combine product data with real stock values
-  const produseWithRealStock = produseData?.map(produs => ({
-    ...produs,
-    stoc_disponibil: stocuriMap.get(produs.id) ?? 0
-  })) || [];
+    if (comenziError) {
+      throw new Error(comenziError.message);
+    }
+    comenziData = comenziResult || [];
+  }
 
-  return produseWithRealStock;
+  // Create a map of comanda_id to status
+  const comenziMap: Record<string, string> = {};
+  comenziData.forEach(comanda => {
+    comenziMap[comanda.id] = comanda.status;
+  });
+
+  // Calculate allocated stock per product
+  const stocAlocatMap: Record<string, number> = {};
+  if (Array.isArray(itemsData)) {
+    for (const item of itemsData) {
+      const produsId = typeof item?.produs_id === "string" ? item.produs_id : null;
+      const cantitate = typeof item?.cantitate === "number" ? item.cantitate : 0;
+      const comandaId = typeof item?.comanda_id === "string" ? item.comanda_id : null;
+
+      if (produsId && comandaId) {
+        const status = comenziMap[comandaId];
+        
+        if (status === "in_asteptare" || status === "in_procesare" || status === "in_tranzit") {
+          if (!stocAlocatMap[produsId]) stocAlocatMap[produsId] = 0;
+          stocAlocatMap[produsId] += cantitate;
+        }
+      }
+    }
+  }
+
+  // Combine product data with calculated stock values
+  const produseWithCalculatedStock = (produseData || []).map((produs) => {
+    const stocFizic = typeof produs.stoc_disponibil === "number" ? produs.stoc_disponibil : 0;
+    const stocAlocat = stocAlocatMap[produs.id] ?? 0;
+    const stocRealDisponibil = stocFizic - stocAlocat;
+
+    return {
+      ...produs,
+      stoc_fizic: stocFizic,
+      stoc_alocat: stocAlocat,
+      stoc_disponibil: stocRealDisponibil
+    };
+  });
+
+  return produseWithCalculatedStock;
 }
 
 export function useProduse() {

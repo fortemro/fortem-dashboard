@@ -80,8 +80,8 @@ export function ProduseGrid() {
                   {produs.stoc_disponibil || 0}
                 </div>
                 <div className="text-xs text-gray-500 mt-1 space-y-0.5">
-                  <div>Fizic în depozit: {produs.stoc_disponibil || 0}</div>
-                  <div>Alocat comenzilor: 0</div>
+                  <div>Fizic în depozit: {(produs as any).stoc_fizic || 0}</div>
+                  <div>Alocat comenzilor: {(produs as any).stoc_alocat || 0}</div>
                 </div>
               </div>
             </div>
