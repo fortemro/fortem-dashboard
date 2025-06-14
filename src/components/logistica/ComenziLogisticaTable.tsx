@@ -124,13 +124,17 @@ export function ComenziLogisticaTable() {
     if (stockAvailable) {
       return (
         <div className="flex items-center justify-center">
-          <Check className="h-5 w-5 text-green-600" title="Stoc disponibil pentru toată comanda" />
+          <div title="Stoc disponibil pentru toată comanda">
+            <Check className="h-5 w-5 text-green-600" />
+          </div>
         </div>
       );
     } else {
       return (
         <div className="flex items-center justify-center">
-          <AlertTriangle className="h-5 w-5 text-red-600" title="Stoc insuficient pentru unul sau mai multe produse" />
+          <div title="Stoc insuficient pentru unul sau mai multe produse">
+            <AlertTriangle className="h-5 w-5 text-red-600" />
+          </div>
         </div>
       );
     }
