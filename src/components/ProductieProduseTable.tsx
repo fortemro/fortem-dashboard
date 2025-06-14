@@ -24,6 +24,9 @@ export function ProductieProduseTable() {
   const [editingPragId, setEditingPragId] = useState<string | null>(null);
   const [pragValues, setPragValues] = useState<Record<string, number>>({});
 
+  // LOG: la fiecare randare, vezi ce produse există după fetch/refetch
+  console.log("[ProductieProduseTable] produse din useProduse", produse);
+
   const handleInputChange = (id: string, value: string) => {
     setAmounts((prev) => ({
       ...prev,
@@ -33,6 +36,7 @@ export function ProductieProduseTable() {
 
   const handleAddQuantity = async (produsId: string, currentStoc: number = 0) => {
     const addValue = amounts[produsId];
+    console.log(`[handleAddQuantity] Incearca sa adauge la produs ${produsId}. Valoare introdusa:`, addValue, "Stoc curent:", currentStoc);
     if (!addValue || addValue <= 0) {
       toast({
         title: "Introduceți o cantitate validă!",
@@ -46,6 +50,7 @@ export function ProductieProduseTable() {
       { produsId, nouStoc: currentStoc + addValue },
       {
         onSuccess: () => {
+          console.log(`[handleAddQuantity][onSuccess] Stoc modificat pentru produsul: ${produsId}. Adaugat:`, addValue, "Noul stoc:", currentStoc + addValue);
           toast({
             title: "Stoc actualizat cu succes!",
             description: `Au fost adăugate ${addValue} unități.`,
@@ -55,10 +60,11 @@ export function ProductieProduseTable() {
             ...prev,
             [produsId]: 0,
           }));
-          // Refacem fetch-ul produselor pentru a afișa noul stoc imediat
+          console.log("[handleAddQuantity][onSuccess] Apelez refetch dupa update stoc.");
           refetch();
         },
         onError: (error: any) => {
+          console.error(`[handleAddQuantity][onError] Eroare la update stoc produs ${produsId}:`, error);
           toast({
             title: "Eroare la actualizare stoc",
             description: error.message,
@@ -67,12 +73,12 @@ export function ProductieProduseTable() {
         },
         onSettled: () => {
           setLoadingIds((prev) => prev.filter((id) => id !== produsId));
+          console.log(`[handleAddQuantity][onSettled] loadingIds dupa update:`, loadingIds);
         },
       }
     );
   };
 
-  // Prag Alertă logica (rămâne neschimbată – folosește direct supabase momentan)
   const handleEditPragClick = (produsId: string, currentValue: number | undefined | null) => {
     setEditingPragId(produsId);
     setPragValues((prev) => ({
@@ -90,6 +96,7 @@ export function ProductieProduseTable() {
 
   const handleSavePrag = async (produsId: string) => {
     const newValue = pragValues[produsId];
+    console.log(`[handleSavePrag] Incearca sa salveze pragul pentru ${produsId}:`, newValue, typeof newValue);
     setLoadingIds((prev) => [...prev, produsId]);
 
     const { error } = await supabase
@@ -98,18 +105,22 @@ export function ProductieProduseTable() {
       .eq("id", produsId);
 
     if (error) {
+      console.error(`[handleSavePrag][onError] Eroare la update prag_alerta_stoc produs ${produsId}:`, error);
       toast({
         title: "Eroare la actualizare prag alertă",
         description: error.message,
         variant: "destructive",
       });
     } else {
+      console.log(`[handleSavePrag][onSuccess] Prag alertă modificat pentru produsul: ${produsId}. Nou prag:`, newValue);
       toast({
         title: "Pragul de alertă a fost actualizat!",
         description: `Noua valoare: ${newValue}`,
         variant: "default",
       });
-      refetch(); // asigură sincronizarea și pentru prag
+      // log inainte de refetch
+      console.log("[handleSavePrag][onSuccess] Apelez refetch dupa update prag_alerta_stoc.");
+      refetch();
     }
     setEditingPragId(null);
     setLoadingIds((prev) => prev.filter((id) => id !== produsId));
@@ -252,3 +263,4 @@ export function ProductieProduseTable() {
     </div>
   );
 }
+
