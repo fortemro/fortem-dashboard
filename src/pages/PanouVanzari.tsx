@@ -20,8 +20,8 @@ export default function PanouVanzari() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="animate-spin rounded-full h-16 w-16 sm:h-32 sm:w-32 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -31,25 +31,25 @@ export default function PanouVanzari() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 mt-16">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Panou Vânzări (General)</h1>
-        <p className="text-gray-600">Comenzile tuturor agenților de vânzări</p>
+    <div className="container mx-auto px-4 py-4 sm:py-8 mt-16">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Panou Vânzări (General)</h1>
+        <p className="text-sm sm:text-base text-gray-600">Comenzile tuturor agenților de vânzări</p>
       </div>
 
       {/* Filtru pentru agent */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Filtrare pe Agent</CardTitle>
+      <Card className="mb-4 sm:mb-6">
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="text-lg sm:text-xl">Filtrare pe Agent</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-4">
-            <label className="text-sm font-medium">Agent MZV:</label>
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+            <label className="text-sm font-medium whitespace-nowrap">Agent MZV:</label>
             <Select value={selectedAgent} onValueChange={setSelectedAgent}>
-              <SelectTrigger className="w-64">
+              <SelectTrigger className="w-full sm:w-64">
                 <SelectValue placeholder="Selectează agentul" />
               </SelectTrigger>
-              <SelectContent className="bg-white">
+              <SelectContent className="bg-white z-50">
                 <SelectItem value="toti">Toți agenții</SelectItem>
                 {agenti.map((agent) => (
                   <SelectItem key={agent.user_id} value={agent.user_id}>
