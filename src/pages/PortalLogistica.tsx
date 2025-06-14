@@ -1,27 +1,23 @@
-
 import { useProfile } from '@/hooks/useProfile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigate } from 'react-router-dom';
 import { Truck, Package, MapPin, Clock } from 'lucide-react';
-
 export default function PortalLogistica() {
-  const { profile, loading } = useProfile();
-
+  const {
+    profile,
+    loading
+  } = useProfile();
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
+    return <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
+      </div>;
   }
 
   // Verifică dacă utilizatorul are rolul 'logistica'
   if (profile?.rol !== 'logistica') {
     return <Navigate to="/" replace />;
   }
-
-  return (
-    <div className="min-h-screen bg-gray-50 pt-20">
+  return <div className="min-h-screen bg-gray-50 pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
@@ -112,7 +108,7 @@ export default function PortalLogistica() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Statusul Flotiței</CardTitle>
+              <CardTitle>Statusul Flotei</CardTitle>
               <CardDescription>
                 Monitorizarea vehiculelor și șoferilor
               </CardDescription>
@@ -125,6 +121,5 @@ export default function PortalLogistica() {
           </Card>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
