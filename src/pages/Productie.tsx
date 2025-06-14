@@ -1,5 +1,6 @@
 
 import React from "react";
+import { ProductieProduseTable } from "@/components/ProductieProduseTable";
 
 export default function Productie() {
   return (
@@ -9,8 +10,10 @@ export default function Productie() {
         Producție
       </h1>
       <div className="bg-white rounded-lg shadow p-8 min-h-[300px]">
-        <p className="text-lg text-gray-700">Bine ai venit în portalul Producție!</p>
-        {/* Aici se poate dezvolta funcționalitatea paginii de producție */}
+        <p className="text-lg text-gray-700 mb-6">
+          Bine ai venit în portalul Producție!
+        </p>
+        <ProductieProduseTable />
       </div>
     </div>
   );
