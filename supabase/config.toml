@@ -55,3 +55,6 @@ enable_confirmations = false
 
 [functions.send-order-email]
 verify_jwt = false
+
+[functions.verifica-si-notifica-stoc]
+verify_jwt = false
