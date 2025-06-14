@@ -23,6 +23,7 @@ export function useComandaEdit() {
           nume_transportator: numeTransportator.trim() || null,
           nume_sofer: numeSofer.trim() || null,
           telefon_sofer: telefonSofer.trim() || null,
+          status: 'in_procesare', // Automatically set status to 'in_procesare'
           updated_at: new Date().toISOString()
         })
         .eq('id', comandaId);
@@ -31,7 +32,7 @@ export function useComandaEdit() {
 
       toast({
         title: "Succes",
-        description: "Detaliile de transport au fost actualizate"
+        description: "Detaliile de transport au fost actualizate și statusul a fost schimbat în 'în procesare'"
       });
 
       return true;
