@@ -13,6 +13,9 @@ export type Comanda = Tables<'comenzi'> & {
   items?: ItemComanda[];
   calculated_paleti?: number;
   distribuitor?: Tables<'distribuitori'>;
+  user_profile?: {
+    nume_complet: string;
+  };
 };
 
 export type ComandaInsert = Omit<TablesInsert<'comenzi'>, 'user_id' | 'numar_comanda' | 'id' | 'created_at' | 'updated_at' | 'data_comanda'>;
