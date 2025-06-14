@@ -13,13 +13,16 @@ import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Edit } from 'lucide-react';
 import { useComenziLogistica } from '@/hooks/logistica/useComenziLogistica';
 import { ComandaDetailsModal } from './ComandaDetailsModal';
+import { ComandaEditModal } from './ComandaEditModal';
 import { useState } from 'react';
 import type { Comanda } from '@/types/comanda';
 
 export function ComenziLogisticaTable() {
-  const { comenzi, loading, updateComandaStatus } = useComenziLogistica();
+  const { comenzi, loading, updateComandaStatus, refetch } = useComenziLogistica();
   const [selectedComanda, setSelectedComanda] = useState<Comanda | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedComandaEdit, setSelectedComandaEdit] = useState<Comanda | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const statusOptions = [
     { value: 'in_procesare', label: 'în procesare' },
@@ -33,14 +36,28 @@ export function ComenziLogisticaTable() {
     await updateComandaStatus(comandaId, newStatus);
   };
 
-  const handleEditClick = (comanda: Comanda) => {
+  const handleViewClick = (comanda: Comanda) => {
     setSelectedComanda(comanda);
-    setIsModalOpen(true);
+    setIsViewModalOpen(true);
   };
 
-  const handleModalClose = () => {
-    setIsModalOpen(false);
+  const handleViewModalClose = () => {
+    setIsViewModalOpen(false);
     setSelectedComanda(null);
+  };
+
+  const handleEditClick = (comanda: Comanda) => {
+    setSelectedComandaEdit(comanda);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditModalClose = () => {
+    setIsEditModalOpen(false);
+    setSelectedComandaEdit(null);
+  };
+
+  const handleEditSuccess = () => {
+    refetch();
   };
 
   if (loading) {
@@ -148,8 +165,15 @@ export function ComenziLogisticaTable() {
       
       <ComandaDetailsModal
         comanda={selectedComanda}
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
+        isOpen={isViewModalOpen}
+        onClose={handleViewModalClose}
+      />
+
+      <ComandaEditModal
+        comanda={selectedComandaEdit}
+        isOpen={isEditModalOpen}
+        onClose={handleEditModalClose}
+        onSuccess={handleEditSuccess}
       />
     </>
   );
