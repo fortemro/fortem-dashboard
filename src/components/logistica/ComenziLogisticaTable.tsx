@@ -41,12 +41,10 @@ export function ComenziLogisticaTable() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Numărul Comenzii</TableHead>
-                  <TableHead>Client</TableHead>
+                  <TableHead>Număr Comandă</TableHead>
+                  <TableHead>Dată Plasare</TableHead>
                   <TableHead>Distribuitor</TableHead>
-                  <TableHead>Paleti</TableHead>
-                  <TableHead>Data Comandă</TableHead>
-                  <TableHead>Adresa Livrare</TableHead>
+                  <TableHead>Oraș Livrare</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
@@ -57,22 +55,13 @@ export function ComenziLogisticaTable() {
                       {comanda.numar_comanda}
                     </TableCell>
                     <TableCell>
-                      {comanda.user_profile?.nume_complet || 'N/A'}
+                      {format(new Date(comanda.data_comanda), 'dd.MM.yyyy HH:mm')}
                     </TableCell>
                     <TableCell>
                       {comanda.distribuitor?.nume_companie || comanda.distribuitor_id}
                     </TableCell>
                     <TableCell>
-                      {comanda.calculated_paleti || comanda.numar_paleti}
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(comanda.data_comanda), 'dd.MM.yyyy HH:mm')}
-                    </TableCell>
-                    <TableCell>
-                      <div className="max-w-xs truncate">
-                        {comanda.adresa_livrare}, {comanda.oras_livrare}
-                        {comanda.judet_livrare && `, ${comanda.judet_livrare}`}
-                      </div>
+                      {comanda.oras_livrare}
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">
