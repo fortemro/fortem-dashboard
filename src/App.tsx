@@ -17,6 +17,7 @@ import ComenziMele from '@/pages/ComenziMele';
 import AdminDashboard from '@/pages/AdminDashboard';
 import AdminValidarePreturi from '@/pages/AdminValidarePreturi';
 import CentralizatorComenzi from '@/pages/CentralizatorComenzi';
+import PortalLogistica from '@/pages/PortalLogistica';
 
 const queryClient = new QueryClient();
 
@@ -68,6 +69,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <CentralizatorComenzi />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/portal-logistica"
+                  element={
+                    <ProtectedRoute>
+                      <PortalLogistica />
                     </ProtectedRoute>
                   }
                 />
