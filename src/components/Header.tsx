@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -115,16 +114,6 @@ export default function Header() {
                   </DropdownMenu>
                 )}
 
-                {/* Link pentru utilizatori cu rolul management (păstrat pentru compatibilitate) */}
-                {!loading && profile?.rol === 'management' && (
-                  <Link
-                    to="/dashboard-executiv"
-                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center"
-                  >
-                    <BarChart3 className="h-4 w-4 mr-1" />
-                    Dashboard Executiv
-                  </Link>
-                )}
                 {/* Link doar pentru utilizatori cu rolul productie */}
                 {!loading && profile?.rol === 'productie' && (
                   <Link
