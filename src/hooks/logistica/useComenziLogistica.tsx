@@ -2,10 +2,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Comanda } from '@/types/comanda';
+import { useToast } from '@/hooks/use-toast';
 
 export function useComenziLogistica() {
   const [comenzi, setComenzi] = useState<Comanda[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchComenziLogistica();
@@ -82,14 +84,53 @@ export function useComenziLogistica() {
       setComenzi(comenziWithDetails);
     } catch (error) {
       console.error('Error fetching comenzi for logistica:', error);
+      toast({
+        title: "Eroare",
+        description: "Nu s-au putut încărca comenzile",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateComandaStatus = async (comandaId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('comenzi')
+        .update({ status: newStatus })
+        .eq('id', comandaId);
+
+      if (error) throw error;
+
+      // Update local state
+      setComenzi(prevComenzi => 
+        prevComenzi.map(comanda => 
+          comanda.id === comandaId 
+            ? { ...comanda, status: newStatus }
+            : comanda
+        ).filter(comanda => comanda.status === 'in_asteptare') // Remove from list if status changed from 'in_asteptare'
+      );
+
+      toast({
+        title: "Status actualizat",
+        description: "Statusul comenzii a fost actualizat cu succes",
+      });
+
+    } catch (error) {
+      console.error('Error updating comanda status:', error);
+      toast({
+        title: "Eroare",
+        description: "Nu s-a putut actualiza statusul comenzii",
+        variant: "destructive",
+      });
     }
   };
 
   return {
     comenzi,
     loading,
-    refreshComenzi: fetchComenziLogistica
+    refreshComenzi: fetchComenziLogistica,
+    updateComandaStatus
   };
 }
