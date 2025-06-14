@@ -15,6 +15,7 @@ export type Database = {
           created_at: string
           data_comanda: string
           data_expediere: string | null
+          data_livrare: string | null
           distribuitor_id: string
           distribuitor_uuid: string | null
           id: string
@@ -39,6 +40,7 @@ export type Database = {
           created_at?: string
           data_comanda?: string
           data_expediere?: string | null
+          data_livrare?: string | null
           distribuitor_id: string
           distribuitor_uuid?: string | null
           id?: string
@@ -63,6 +65,7 @@ export type Database = {
           created_at?: string
           data_comanda?: string
           data_expediere?: string | null
+          data_livrare?: string | null
           distribuitor_id?: string
           distribuitor_uuid?: string | null
           id?: string
