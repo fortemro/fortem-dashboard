@@ -1,3 +1,4 @@
+
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -112,30 +113,26 @@ export function ComenziLogisticaTable() {
     await updateComandaStatus(comanda.id, 'anulata');
   };
 
-  const renderStockAvailabilityIndicator = (stockAvailable: boolean | undefined) => {
+  const renderStatusStoc = (stockAvailable: boolean | undefined) => {
     if (stockAvailable === undefined) {
       return (
-        <div className="flex items-center justify-center">
-          <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" title="Se verifică disponibilitatea" />
-        </div>
+        <Badge variant="secondary">
+          Se verifică...
+        </Badge>
       );
     }
     
     if (stockAvailable) {
       return (
-        <div className="flex items-center justify-center">
-          <div title="Stoc disponibil pentru toată comanda">
-            <Check className="h-5 w-5 text-green-600" />
-          </div>
-        </div>
+        <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">
+          Disponibil
+        </Badge>
       );
     } else {
       return (
-        <div className="flex items-center justify-center">
-          <div title="Stoc insuficient pentru unul sau mai multe produse">
-            <AlertTriangle className="h-5 w-5 text-red-600" />
-          </div>
-        </div>
+        <Badge variant="destructive">
+          Insuficient
+        </Badge>
       );
     }
   };
@@ -210,7 +207,7 @@ export function ComenziLogisticaTable() {
                     <TableHead>Dată Plasare</TableHead>
                     <TableHead>Distribuitor</TableHead>
                     <TableHead>Oraș Livrare</TableHead>
-                    <TableHead>Disponibilitate Stoc</TableHead>
+                    <TableHead>Status Stoc</TableHead>
                     <TableHead>Nume Transportator</TableHead>
                     <TableHead>Număr Mașină</TableHead>
                     <TableHead>Data Expediere</TableHead>
@@ -242,7 +239,7 @@ export function ComenziLogisticaTable() {
                           {comanda.oras_livrare}
                         </TableCell>
                         <TableCell>
-                          {renderStockAvailabilityIndicator((comanda as ComandaWithStockStatus).stockAvailable)}
+                          {renderStatusStoc((comanda as ComandaWithStockStatus).stockAvailable)}
                         </TableCell>
                         <TableCell>
                           {comanda.nume_transportator || '-'}
