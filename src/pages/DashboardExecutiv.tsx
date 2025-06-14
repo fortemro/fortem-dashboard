@@ -5,22 +5,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { BarChart3, Users, Package, TrendingUp, AlertTriangle, Calendar } from "lucide-react";
 import { useState } from "react";
+import { DateRange } from "react-day-picker";
+import { CustomDateRangePicker } from "@/components/CustomDateRangePicker";
+import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 
-type PeriodFilter = 'today' | 'yesterday' | 'last7days' | 'thisMonth';
+type PeriodFilter = 'today' | 'yesterday' | 'last7days' | 'thisMonth' | 'custom';
 
 const periodOptions: { value: PeriodFilter; label: string }[] = [
   { value: 'today', label: 'Astăzi' },
   { value: 'yesterday', label: 'Ieri' },
   { value: 'last7days', label: 'Ultimele 7 Zile' },
   { value: 'thisMonth', label: 'Luna Aceasta' },
+  { value: 'custom', label: 'Interval Personalizat' },
 ];
 
 export default function DashboardExecutiv() {
   const { profile, loading } = useProfile();
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>('today');
+  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
 
   // Simulare date diferite pentru fiecare perioadă
-  const getDataForPeriod = (period: PeriodFilter) => {
+  const getDataForPeriod = (period: PeriodFilter, dateRange?: DateRange) => {
     switch (period) {
       case 'today':
         return {
@@ -86,12 +91,51 @@ export default function DashboardExecutiv() {
             { nume: 'BCA FORTEM 250', cantitate: '456 bucăți', valoare: '164,160 RON', trend: '-3%' },
           ]
         };
+      case 'custom':
+        if (!dateRange?.from || !dateRange?.to) {
+          return getDataForPeriod('today');
+        }
+        
+        // Calculăm numărul de zile în intervalul personalizat
+        const days = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        const avgDailySales = 45000; // Vânzări medii pe zi
+        const totalSales = avgDailySales * days;
+        
+        return {
+          vanzariTotale: `${totalSales.toLocaleString('ro-RO')} RON`,
+          vanzariChange: `+${Math.floor(Math.random() * 20)}%`,
+          comenziActive: Math.floor(days * 1.5),
+          comenziChange: `+${Math.floor(days * 0.3)} în perioada`,
+          distributoriActivi: Math.min(Math.floor(days * 2), 200),
+          distributoriChange: 'activi în perioada',
+          alerteStoc: Math.floor(Math.random() * 10) + 1,
+          alerteChange: 'produse critice',
+          topProduse: [
+            { nume: 'BCA FORTEM 200', cantitate: `${Math.floor(days * 23)} bucăți`, valoare: `${(days * 8950).toLocaleString('ro-RO')} RON`, trend: `+${Math.floor(Math.random() * 20)}%` },
+            { nume: 'BCA FORTEM 150', cantitate: `${Math.floor(days * 18)} bucăți`, valoare: `${(days * 6720).toLocaleString('ro-RO')} RON`, trend: `+${Math.floor(Math.random() * 15)}%` },
+            { nume: 'BCA FORTEM 250', cantitate: `${Math.floor(days * 15)} bucăți`, valoare: `${(days * 5480).toLocaleString('ro-RO')} RON`, trend: `+${Math.floor(Math.random() * 10)}%` },
+          ]
+        };
       default:
         return getDataForPeriod('today');
     }
   };
 
-  const currentData = getDataForPeriod(selectedPeriod);
+  const currentData = getDataForPeriod(selectedPeriod, customDateRange);
+
+  const handlePeriodChange = (period: PeriodFilter) => {
+    setSelectedPeriod(period);
+    if (period !== 'custom') {
+      setCustomDateRange(undefined);
+    }
+  };
+
+  const getDisplayPeriod = () => {
+    if (selectedPeriod === 'custom' && customDateRange?.from && customDateRange?.to) {
+      return `${format(customDateRange.from, 'dd/MM/yyyy')} - ${format(customDateRange.to, 'dd/MM/yyyy')}`;
+    }
+    return periodOptions.find(p => p.value === selectedPeriod)?.label || 'Necunoscut';
+  };
 
   if (loading) {
     return (
@@ -118,22 +162,38 @@ export default function DashboardExecutiv() {
         <CardHeader className="pb-4">
           <CardTitle className="text-blue-800 flex items-center">
             <Calendar className="h-5 w-5 mr-2" />
-            Perioada Analizată
+            Perioada Analizată: {getDisplayPeriod()}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {periodOptions.map((option) => (
-              <Button
-                key={option.value}
-                variant={selectedPeriod === option.value ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedPeriod(option.value)}
-                className={selectedPeriod === option.value ? "bg-blue-600 hover:bg-blue-700" : ""}
-              >
-                {option.label}
-              </Button>
-            ))}
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {periodOptions.map((option) => (
+                <Button
+                  key={option.value}
+                  variant={selectedPeriod === option.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePeriodChange(option.value)}
+                  className={selectedPeriod === option.value ? "bg-blue-600 hover:bg-blue-700" : ""}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+            
+            {selectedPeriod === 'custom' && (
+              <div className="mt-4">
+                <CustomDateRangePicker
+                  dateRange={customDateRange}
+                  onDateRangeChange={setCustomDateRange}
+                />
+                {customDateRange?.from && customDateRange?.to && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    Perioada selectată: {format(customDateRange.from, 'dd MMMM yyyy')} - {format(customDateRange.to, 'dd MMMM yyyy')}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -199,7 +259,7 @@ export default function DashboardExecutiv() {
             <div className="h-64 flex items-center justify-center bg-gray-50 rounded">
               <div className="text-center text-gray-500">
                 <BarChart3 className="h-12 w-12 mx-auto mb-2" />
-                <p>Grafic vânzări pentru {periodOptions.find(p => p.value === selectedPeriod)?.label}</p>
+                <p>Grafic vânzări pentru {getDisplayPeriod()}</p>
                 <p className="text-sm">în dezvoltare</p>
               </div>
             </div>
