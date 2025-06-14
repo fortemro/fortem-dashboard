@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Factory } from "lucide-react";
+import { Factory, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
@@ -19,6 +19,8 @@ export function ProductieProduseTable() {
   const { produse, loading } = useProduse();
   const [amounts, setAmounts] = useState<Record<string, number>>({});
   const [loadingIds, setLoadingIds] = useState<string[]>([]);
+  const [editingPragId, setEditingPragId] = useState<string | null>(null);
+  const [pragValues, setPragValues] = useState<Record<string, number>>({});
 
   const handleInputChange = (id: string, value: string) => {
     setAmounts((prev) => ({
@@ -38,7 +40,6 @@ export function ProductieProduseTable() {
       return;
     }
     setLoadingIds((prev) => [...prev, produsId]);
-    // Update stoc in supabase
     const { error } = await supabase
       .from("produse")
       .update({ stoc_disponibil: (currentStoc || 0) + addValue })
@@ -62,6 +63,52 @@ export function ProductieProduseTable() {
       [produsId]: 0,
     }));
     setLoadingIds((prev) => prev.filter((id) => id !== produsId));
+  };
+
+  // In-place editable 'prag_alerta_stoc'
+  const handleEditPragClick = (produsId: string, currentValue: number | undefined | null) => {
+    setEditingPragId(produsId);
+    setPragValues((prev) => ({
+      ...prev,
+      [produsId]: typeof currentValue === "number" ? currentValue : 0,
+    }));
+  };
+
+  const handlePragValueChange = (produsId: string, value: string) => {
+    setPragValues((prev) => ({
+      ...prev,
+      [produsId]: Number(value),
+    }));
+  };
+
+  const handleSavePrag = async (produsId: string) => {
+    const newValue = pragValues[produsId];
+    setLoadingIds((prev) => [...prev, produsId]);
+
+    const { error } = await supabase
+      .from("produse")
+      .update({ prag_alerta_stoc: newValue })
+      .eq("id", produsId);
+
+    if (error) {
+      toast({
+        title: "Eroare la actualizare prag alertă",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Pragul de alertă a fost actualizat!",
+        description: `Noua valoare: ${newValue}`,
+        variant: "default",
+      });
+    }
+    setEditingPragId(null);
+    setLoadingIds((prev) => prev.filter((id) => id !== produsId));
+  };
+
+  const handleCancelEditPrag = () => {
+    setEditingPragId(null);
   };
 
   if (loading) {
@@ -102,9 +149,67 @@ export function ProductieProduseTable() {
                   : "-"}
               </TableCell>
               <TableCell className="text-center">
-                {typeof produs.prag_alerta_stoc === "number"
-                  ? produs.prag_alerta_stoc
-                  : "-"}
+                {editingPragId === produs.id ? (
+                  <div className="flex items-center gap-2 justify-center">
+                    <Input
+                      type="number"
+                      min={0}
+                      className="w-20"
+                      value={pragValues[produs.id] ?? ""}
+                      onChange={(e) =>
+                        handlePragValueChange(produs.id, e.target.value)
+                      }
+                      autoFocus
+                    />
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="p-1"
+                      onClick={() => handleSavePrag(produs.id)}
+                      disabled={loadingIds.includes(produs.id)}
+                      aria-label="Salvează prag alertă"
+                    >
+                      <Check className="w-4 h-4 text-green-600" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="p-1"
+                      onClick={handleCancelEditPrag}
+                      aria-label="Anulează editarea"
+                    >
+                      <X className="w-4 h-4 text-gray-500" />
+                    </Button>
+                  </div>
+                ) : (
+                  <span
+                    className="font-semibold cursor-pointer hover:underline"
+                    title="Click pentru a edita pragul de alertă"
+                    tabIndex={0}
+                    onClick={() =>
+                      handleEditPragClick(
+                        produs.id,
+                        typeof produs.prag_alerta_stoc === "number"
+                          ? produs.prag_alerta_stoc
+                          : 0
+                      )
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        handleEditPragClick(
+                          produs.id,
+                          typeof produs.prag_alerta_stoc === "number"
+                            ? produs.prag_alerta_stoc
+                            : 0
+                        );
+                      }
+                    }}
+                  >
+                    {typeof produs.prag_alerta_stoc === "number"
+                      ? produs.prag_alerta_stoc
+                      : "-"}
+                  </span>
+                )}
               </TableCell>
               <TableCell className="text-center">
                 <form
@@ -139,4 +244,3 @@ export function ProductieProduseTable() {
     </div>
   );
 }
-
