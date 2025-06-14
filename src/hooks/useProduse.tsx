@@ -1,37 +1,25 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Produs } from '@/data-types';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Produs } from "@/data-types";
+
+async function fetchProduse(): Promise<Produs[]> {
+  const { data, error } = await supabase
+    .from('produse')
+    .select('*')
+    .order('nume', { ascending: true });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data || [];
+}
 
 export function useProduse() {
-  const [produse, setProduse] = useState<Produs[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: produse = [], isLoading, isError, refetch } = useQuery<Produs[]>({
+    queryKey: ['produse'],
+    queryFn: fetchProduse,
+  });
 
-  useEffect(() => {
-    const fetchProduse = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('produse')
-          .select('*')
-          .order('nume', { ascending: true });
-
-        if (error) {
-          console.error('Eroare la preluarea produselor:', error);
-          setProduse([]);
-        } else {
-          setProduse(data || []);
-        }
-      } catch (e) {
-        console.error('O excepție a avut loc la preluarea produselor:', e);
-        setProduse([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProduse();
-  }, []);
-
-  return { produse, loading };
+  return { produse, loading: isLoading, error: isError, refetch };
 }

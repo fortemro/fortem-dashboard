@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { useProduse } from "@/hooks/useProduse";
+import { useUpdateStoc } from "@/hooks/useUpdateStoc";
 import {
   Table,
   TableHeader,
@@ -16,7 +17,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
 export function ProductieProduseTable() {
-  const { produse, loading } = useProduse();
+  const { produse, loading, refetch } = useProduse();
+  const updateStoc = useUpdateStoc();
   const [amounts, setAmounts] = useState<Record<string, number>>({});
   const [loadingIds, setLoadingIds] = useState<string[]>([]);
   const [editingPragId, setEditingPragId] = useState<string | null>(null);
@@ -40,32 +42,35 @@ export function ProductieProduseTable() {
       return;
     }
     setLoadingIds((prev) => [...prev, produsId]);
-    const { error } = await supabase
-      .from("produse")
-      .update({ stoc_disponibil: (currentStoc || 0) + addValue })
-      .eq("id", produsId);
-
-    if (error) {
-      toast({
-        title: "Eroare la actualizare stoc",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Stoc actualizat cu succes!",
-        description: `Au fost adăugate ${addValue} unități.`,
-        variant: "default",
-      });
-    }
-    setAmounts((prev) => ({
-      ...prev,
-      [produsId]: 0,
-    }));
-    setLoadingIds((prev) => prev.filter((id) => id !== produsId));
+    updateStoc.mutate(
+      { produsId, nouStoc: currentStoc + addValue },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Stoc actualizat cu succes!",
+            description: `Au fost adăugate ${addValue} unități.`,
+            variant: "default",
+          });
+          setAmounts((prev) => ({
+            ...prev,
+            [produsId]: 0,
+          }));
+        },
+        onError: (error: any) => {
+          toast({
+            title: "Eroare la actualizare stoc",
+            description: error.message,
+            variant: "destructive",
+          });
+        },
+        onSettled: () => {
+          setLoadingIds((prev) => prev.filter((id) => id !== produsId));
+        },
+      }
+    );
   };
 
-  // In-place editable 'prag_alerta_stoc'
+  // Prag Alertă logica (rămâne neschimbată – folosește direct supabase momentan)
   const handleEditPragClick = (produsId: string, currentValue: number | undefined | null) => {
     setEditingPragId(produsId);
     setPragValues((prev) => ({
@@ -102,6 +107,7 @@ export function ProductieProduseTable() {
         description: `Noua valoare: ${newValue}`,
         variant: "default",
       });
+      refetch(); // asigură sincronizarea și pentru prag
     }
     setEditingPragId(null);
     setLoadingIds((prev) => prev.filter((id) => id !== produsId));
@@ -231,7 +237,7 @@ export function ProductieProduseTable() {
                   <Button
                     type="submit"
                     size="sm"
-                    disabled={loadingIds.includes(produs.id)}
+                    disabled={loadingIds.includes(produs.id) || updateStoc.isPending}
                   >
                     {loadingIds.includes(produs.id) ? "Se salvează..." : "Adaugă"}
                   </Button>
