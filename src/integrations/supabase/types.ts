@@ -385,6 +385,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_stocuri_reale_pentru_produse: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          produs_id: string
+          stoc_real: number
+        }[]
+      }
     }
     Enums: {
       status_enum:
