@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2 } from 'lucide-react';
+import { Trash2, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Produs = Tables<'produse'>;
@@ -35,6 +36,8 @@ export function ProductItemForm({
   const selectedProduct = produse.find(p => p.id === item.produs_id);
   const bucatiPerPalet = selectedProduct?.bucati_per_palet || 0;
   const totalBucati = item.cantitate * bucatiPerPalet;
+  const stocDisponibil = selectedProduct?.stoc_disponibil || 0;
+  const depasesteStocul = item.cantitate > stocDisponibil && selectedProduct;
 
   return (
     <Card className="mb-4">
@@ -78,6 +81,7 @@ export function ProductItemForm({
               onChange={(e) => onUpdate(index, 'cantitate', parseInt(e.target.value) || 0)}
               placeholder="0"
               min="1"
+              className={depasesteStocul ? 'border-orange-500 focus:border-orange-500' : ''}
             />
             {bucatiPerPalet > 0 && (
               <p className="text-xs text-gray-500 mt-1">
@@ -107,6 +111,16 @@ export function ProductItemForm({
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
+
+        {depasesteStocul && (
+          <Alert className="mt-3 border-orange-500 bg-orange-50">
+            <AlertTriangle className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              <strong>Atenție:</strong> cantitatea depășește stocul disponibil! 
+              (Solicitat: {item.cantitate}, Disponibil: {stocDisponibil})
+            </AlertDescription>
+          </Alert>
+        )}
 
         {item.cantitate > 0 && item.pret_unitar > 0 && (
           <div className="mt-2 p-2 bg-gray-50 rounded">
