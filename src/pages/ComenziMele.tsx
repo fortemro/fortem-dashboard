@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit, Copy, Trash2, Mail, Search, Filter, Plus } from 'lucide-react';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Eye, Edit, Copy, Trash2, Mail, Search, Filter, Plus, Truck, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { OrderDetailsModal } from '@/components/OrderDetailsModal';
@@ -88,18 +89,60 @@ export default function ComenziMele() {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'in_asteptare': { label: 'În Așteptare', variant: 'secondary' },
-      'procesare': { label: 'Procesare', variant: 'default' },
-      'in_procesare': { label: 'În Procesare', variant: 'default' },
-      'pregatit_pentru_livrare': { label: 'Pregătit Livrare', variant: 'default' },
-      'in_tranzit': { label: 'În Tranzit', variant: 'default' },
-      'livrata': { label: 'Livrată', variant: 'default' },
-      'finalizata': { label: 'Finalizată', variant: 'default' },
-      'anulata': { label: 'Anulată', variant: 'destructive' }
+      'in_asteptare': { label: 'În Așteptare', variant: 'secondary', className: 'bg-gray-100 text-gray-800' },
+      'procesare': { label: 'Procesare', variant: 'default', className: 'bg-blue-100 text-blue-800' },
+      'in_procesare': { label: 'În Procesare', variant: 'default', className: 'bg-blue-100 text-blue-800' },
+      'pregatit_pentru_livrare': { label: 'Pregătit Livrare', variant: 'default', className: 'bg-yellow-100 text-yellow-800' },
+      'in_tranzit': { label: 'În Tranzit', variant: 'default', className: 'bg-orange-100 text-orange-800' },
+      'livrata': { label: 'Livrată', variant: 'default', className: 'bg-green-100 text-green-800' },
+      'finalizata': { label: 'Finalizată', variant: 'default', className: 'bg-green-100 text-green-800' },
+      'anulata': { label: 'Anulată', variant: 'destructive', className: 'bg-red-100 text-red-800' }
     };
     
-    const config = statusConfig[status] || { label: status, variant: 'secondary' };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    const config = statusConfig[status] || { label: status, variant: 'secondary', className: 'bg-gray-100 text-gray-800' };
+    return (
+      <Badge 
+        variant={config.variant}
+        className={config.className}
+      >
+        {config.label}
+      </Badge>
+    );
+  };
+
+  const getStatusBadgeWithTooltip = (comanda) => {
+    const status = comanda.status;
+    
+    if (status === 'in_tranzit') {
+      return (
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <div className="cursor-pointer">
+              {getStatusBadge(status)}
+            </div>
+          </HoverCardTrigger>
+          <HoverCardContent className="w-80 bg-white border shadow-lg">
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold">Detalii Transport</h4>
+              <div className="flex items-center space-x-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">
+                  <strong>Transportator:</strong> {comanda.nume_transportator || 'Nu este specificat'}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Truck className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">
+                  <strong>Mașina:</strong> {comanda.numar_masina || 'Nu este specificat'}
+                </span>
+              </div>
+            </div>
+          </HoverCardContent>
+        </HoverCard>
+      );
+    }
+    
+    return getStatusBadge(status);
   };
 
   // Funcție pentru a obține numele distribuitorului
@@ -219,7 +262,7 @@ export default function ComenziMele() {
                         </TableCell>
                         <TableCell>{comanda.oras_livrare}</TableCell>
                         <TableCell>
-                          {getStatusBadge(comanda.status)}
+                          {getStatusBadgeWithTooltip(comanda)}
                         </TableCell>
                         <TableCell>{comanda.numar_paleti}</TableCell>
                         <TableCell className="font-semibold">
