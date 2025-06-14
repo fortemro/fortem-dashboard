@@ -260,6 +260,7 @@ export type Database = {
           nume: string
           paleti_comandati: number | null
           paleti_per_camion: number | null
+          prag_alerta_stoc: number | null
           pret: number
           stoc_disponibil: number | null
           tip_produs: string | null
@@ -290,6 +291,7 @@ export type Database = {
           nume: string
           paleti_comandati?: number | null
           paleti_per_camion?: number | null
+          prag_alerta_stoc?: number | null
           pret: number
           stoc_disponibil?: number | null
           tip_produs?: string | null
@@ -320,6 +322,7 @@ export type Database = {
           nume?: string
           paleti_comandati?: number | null
           paleti_per_camion?: number | null
+          prag_alerta_stoc?: number | null
           pret?: number
           stoc_disponibil?: number | null
           tip_produs?: string | null
