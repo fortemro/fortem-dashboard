@@ -55,6 +55,8 @@ export function ProductieProduseTable() {
             ...prev,
             [produsId]: 0,
           }));
+          // Refacem fetch-ul produselor pentru a afișa noul stoc imediat
+          refetch();
         },
         onError: (error: any) => {
           toast({
