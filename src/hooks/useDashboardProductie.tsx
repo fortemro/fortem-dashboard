@@ -7,13 +7,14 @@ export interface DashboardProductieRow {
   nume: string;
   stoc_disponibil: number;
   necesar_comenzi: number;
+  prag_alerta_stoc: number;
 }
 
 async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
   // 1. Obține toate produsele
   const { data: produseData, error: produseError } = await supabase
     .from("produse")
-    .select("id, nume, stoc_disponibil")
+    .select("id, nume, stoc_disponibil, prag_alerta_stoc")
     .order("nume", { ascending: true });
 
   if (produseError) throw new Error(produseError.message);
@@ -72,6 +73,10 @@ async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
         ? produs.stoc_disponibil
         : 0,
     necesar_comenzi: necesarMap[produs.id] ?? 0,
+    prag_alerta_stoc:
+      typeof produs.prag_alerta_stoc === "number"
+        ? produs.prag_alerta_stoc
+        : 0,
   }));
 }
 
