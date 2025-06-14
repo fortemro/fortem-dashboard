@@ -41,14 +41,16 @@ async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
       const produsId = typeof item?.produs_id === "string" ? item.produs_id : null;
       const cantitate = typeof item?.cantitate === "number" ? item.cantitate : 0;
 
-      // Proper type guard for comanda object - check all conditions at once
+      // Extract comanda to a variable and check it explicitly
+      const comanda = item?.comanda;
+      
       if (
         produsId && 
-        item?.comanda !== null && 
-        item?.comanda !== undefined &&
-        typeof item.comanda === "object" && 
-        "status" in item.comanda &&
-        (item.comanda.status === "in_asteptare" || item.comanda.status === "in_procesare")
+        comanda !== null && 
+        comanda !== undefined &&
+        typeof comanda === "object" && 
+        "status" in comanda &&
+        (comanda.status === "in_asteptare" || comanda.status === "in_procesare")
       ) {
         if (!necesarMap[produsId]) necesarMap[produsId] = 0;
         necesarMap[produsId] += cantitate ?? 0;
