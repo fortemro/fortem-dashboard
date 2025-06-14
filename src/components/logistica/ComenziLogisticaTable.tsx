@@ -1,3 +1,4 @@
+
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -17,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, Edit, Filter, Search, Truck, Package, CheckCircle } from 'lucide-react';
+import { MoreHorizontal, Edit, Filter, Search, Truck, Package, CheckCircle, X } from 'lucide-react';
 import { useComenziLogistica } from '@/hooks/logistica/useComenziLogistica';
 import { ComandaDetailsModal } from './ComandaDetailsModal';
 import { ComandaEditModal } from './ComandaEditModal';
@@ -104,6 +105,10 @@ export function ComenziLogisticaTable() {
     await updateComandaStatus(comanda.id, 'livrata', false, true);
   };
 
+  const handleAnuleazaComanda = async (comanda: Comanda) => {
+    await updateComandaStatus(comanda.id, 'anulata');
+  };
+
   if (loading) {
     return (
       <Card>
@@ -186,6 +191,8 @@ export function ComenziLogisticaTable() {
                     const isInAsteptare = currentStatus === 'in_asteptare';
                     const isInProcesare = currentStatus === 'in_procesare';
                     const isInTranzit = currentStatus === 'in_tranzit';
+                    const isLivrata = currentStatus === 'livrata';
+                    const isAnulata = currentStatus === 'anulata';
                     
                     return (
                       <TableRow key={comanda.id}>
@@ -213,66 +220,65 @@ export function ComenziLogisticaTable() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {isInAsteptare ? (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="h-8"
-                              onClick={() => handleAlocaTransport(comanda)}
-                            >
-                              <Truck className="h-4 w-4 mr-2" />
-                              Alocă Transport
-                            </Button>
-                          ) : isInProcesare ? (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="h-8"
-                              onClick={() => handleMarcheazaExpediat(comanda)}
-                            >
-                              <Package className="h-4 w-4 mr-2" />
-                              Marchează ca Expediat
-                            </Button>
-                          ) : isInTranzit ? (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="h-8"
-                              onClick={() => handleMarcheazaLivrat(comanda)}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Marchează ca Livrat
-                            </Button>
+                          {(isLivrata || isAnulata) ? (
+                            <span className="text-sm text-muted-foreground">-</span>
                           ) : (
                             <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => handleEditClick(comanda)}
-                              >
-                                <Edit className="h-4 w-4" />
-                                <span className="sr-only">Editează comanda</span>
-                              </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" className="h-8 w-8 p-0">
-                                    <span className="sr-only">Deschide meniul</span>
-                                    <MoreHorizontal className="h-4 w-4" />
+                              {isInAsteptare && (
+                                <>
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    className="h-8"
+                                    onClick={() => handleAlocaTransport(comanda)}
+                                  >
+                                    <Truck className="h-4 w-4 mr-2" />
+                                    Alocă Transport
                                   </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="bg-white z-50">
-                                  {statusOptions.map((option) => (
-                                    <DropdownMenuItem
-                                      key={option.value}
-                                      onClick={() => handleStatusUpdate(comanda.id, option.value)}
-                                      className="cursor-pointer"
-                                    >
-                                      {option.label}
-                                    </DropdownMenuItem>
-                                  ))}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    className="h-8"
+                                    onClick={() => handleAnuleazaComanda(comanda)}
+                                  >
+                                    <X className="h-4 w-4 mr-2" />
+                                    Anulează
+                                  </Button>
+                                </>
+                              )}
+                              {isInProcesare && (
+                                <>
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    className="h-8"
+                                    onClick={() => handleMarcheazaExpediat(comanda)}
+                                  >
+                                    <Package className="h-4 w-4 mr-2" />
+                                    Marchează ca Expediat
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    className="h-8"
+                                    onClick={() => handleAnuleazaComanda(comanda)}
+                                  >
+                                    <X className="h-4 w-4 mr-2" />
+                                    Anulează
+                                  </Button>
+                                </>
+                              )}
+                              {isInTranzit && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="h-8"
+                                  onClick={() => handleMarcheazaLivrat(comanda)}
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  Marchează ca Livrat
+                                </Button>
+                              )}
                             </div>
                           )}
                         </TableCell>
