@@ -1,4 +1,3 @@
-
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -17,7 +16,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Edit, Filter } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { MoreHorizontal, Edit, Filter, Search } from 'lucide-react';
 import { useComenziLogistica } from '@/hooks/logistica/useComenziLogistica';
 import { ComandaDetailsModal } from './ComandaDetailsModal';
 import { ComandaEditModal } from './ComandaEditModal';
@@ -31,6 +31,7 @@ export function ComenziLogisticaTable() {
   const [selectedComandaEdit, setSelectedComandaEdit] = useState<Comanda | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('toate');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   const statusOptions = [
     { value: 'in_procesare', label: 'în procesare' },
@@ -50,10 +51,18 @@ export function ComenziLogisticaTable() {
     { value: 'anulata', label: 'Anulată' }
   ];
 
-  // Filter comenzi based on selected status
-  const filteredComenzi = statusFilter === 'toate' 
-    ? comenzi 
-    : comenzi.filter(comanda => (comanda.status || 'in_asteptare') === statusFilter);
+  // Filter comenzi based on selected status and search term
+  const filteredComenzi = comenzi.filter(comanda => {
+    // Filter by status
+    const matchesStatus = statusFilter === 'toate' || (comanda.status || 'in_asteptare') === statusFilter;
+    
+    // Filter by search term (order number or distributor name)
+    const matchesSearch = !searchTerm || 
+      comanda.numar_comanda.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (comanda.distribuitor?.nume_companie || comanda.distribuitor_id).toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return matchesStatus && matchesSearch;
+  });
 
   const handleStatusUpdate = async (comandaId: string, newStatus: string) => {
     await updateComandaStatus(comandaId, newStatus);
@@ -107,29 +116,41 @@ export function ComenziLogisticaTable() {
             <p className="text-sm text-muted-foreground">
               Comenzile care necesită procesare logistică ({filteredComenzi.length} din {comenzi.length} comenzi)
             </p>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[200px] bg-white">
-                  <SelectValue placeholder="Filtrează după status" />
-                </SelectTrigger>
-                <SelectContent className="bg-white z-50">
-                  {filterOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Caută după număr comandă sau distribuitor..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-[300px] bg-white"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[200px] bg-white">
+                    <SelectValue placeholder="Filtrează după status" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    {filterOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {filteredComenzi.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              {statusFilter === 'toate' 
+              {!searchTerm && statusFilter === 'toate' 
                 ? 'Nu există comenzi în acest moment'
-                : `Nu există comenzi cu statusul "${filterOptions.find(opt => opt.value === statusFilter)?.label}"`
+                : `Nu există comenzi care să se potrivească cu criteriile de filtrare`
               }
             </div>
           ) : (
