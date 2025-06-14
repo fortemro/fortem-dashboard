@@ -1,31 +1,16 @@
 
-
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { MoreHorizontal, Edit, Filter, Search, Truck, Package, CheckCircle, X, Check, AlertTriangle } from 'lucide-react';
 import { useComenziLogistica } from '@/hooks/logistica/useComenziLogistica';
 import { ComandaDetailsModal } from './ComandaDetailsModal';
 import { ComandaEditModal } from './ComandaEditModal';
-import { useState, useEffect } from 'react';
+import { TableFilters } from './TableFilters';
+import { StockStatusBadge, OrderStatusBadge } from './StatusBadges';
+import { ActionButtons } from './ActionButtons';
+import { useStockStatus } from '@/hooks/logistica/useStockStatus';
+import { useState } from 'react';
 import type { Comanda } from '@/types/comanda';
-import { supabase } from '@/integrations/supabase/client';
 
 interface ComandaWithStockStatus extends Comanda {
   stockStatus?: {
@@ -37,125 +22,13 @@ interface ComandaWithStockStatus extends Comanda {
 
 export function ComenziLogisticaTable() {
   const { comenzi, loading, updateComandaStatus, refetch } = useComenziLogistica();
+  const { comenziWithStockStatus } = useStockStatus(comenzi);
   const [selectedComanda, setSelectedComanda] = useState<ComandaWithStockStatus | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedComandaEdit, setSelectedComandaEdit] = useState<ComandaWithStockStatus | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('toate');
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [comenziWithStockStatus, setComenziWithStockStatus] = useState<ComandaWithStockStatus[]>([]);
-
-  // Updated status options to match database constraints
-  const statusOptions = [
-    { value: 'in_procesare', label: 'în procesare' },
-    { value: 'in_tranzit', label: 'în tranzit' },
-    { value: 'livrata', label: 'livrată' },
-    { value: 'anulata', label: 'anulată' }
-  ];
-
-  const filterOptions = [
-    { value: 'toate', label: 'Toate comenzile' },
-    { value: 'in_asteptare', label: 'În așteptare' },
-    { value: 'in_procesare', label: 'În procesare' },
-    { value: 'in_tranzit', label: 'În tranzit' },
-    { value: 'livrata', label: 'Livrată' },
-    { value: 'anulata', label: 'Anulată' }
-  ];
-
-  // Function to check stock status for a specific order
-  const checkStockStatusForOrder = async (comanda: Comanda): Promise<ComandaWithStockStatus['stockStatus']> => {
-    try {
-      // Get order items
-      const { data: itemsData, error: itemsError } = await supabase
-        .from('itemi_comanda')
-        .select('produs_id, cantitate')
-        .eq('comanda_id', comanda.id);
-
-      if (itemsError) {
-        console.error('Error fetching items for order:', comanda.id, itemsError);
-        return { type: 'loading' };
-      }
-
-      if (!itemsData || itemsData.length === 0) {
-        return { type: 'available' };
-      }
-
-      // Get real stock data
-      const { data: stocuriReale, error: stocuriError } = await supabase
-        .rpc('get_stocuri_reale_pentru_produse');
-
-      if (stocuriError) {
-        console.error('Error fetching real stock:', stocuriError);
-        return { type: 'loading' };
-      }
-
-      // Create a map of product ID to real stock
-      const stocuriMap = new Map(
-        stocuriReale?.map(item => [item.produs_id, item.stoc_real]) || []
-      );
-
-      // Check each item in the order
-      for (const item of itemsData) {
-        const realStock = stocuriMap.get(item.produs_id) || 0;
-        
-        if (realStock < item.cantitate) {
-          // Get product name for the insufficient stock item
-          const { data: productData, error: productError } = await supabase
-            .from('produse')
-            .select('nume')
-            .eq('id', item.produs_id)
-            .single();
-
-          const productName = productData?.nume || 'Produs necunoscut';
-          const missingQuantity = item.cantitate - realStock;
-
-          return {
-            type: 'insufficient',
-            productName,
-            missingQuantity
-          };
-        }
-      }
-
-      // All items have sufficient stock
-      return { type: 'available' };
-    } catch (error) {
-      console.error('Error checking stock for order:', comanda.id, error);
-      return { type: 'loading' };
-    }
-  };
-
-  // Effect to check stock status for all orders
-  useEffect(() => {
-    const checkAllStockStatuses = async () => {
-      if (!comenzi.length) {
-        setComenziWithStockStatus([]);
-        return;
-      }
-
-      // Initialize with loading status
-      const initialComenzi = comenzi.map(comanda => ({
-        ...comanda,
-        stockStatus: { type: 'loading' as const }
-      }));
-      setComenziWithStockStatus(initialComenzi);
-
-      // Check stock status for each order
-      const updatedComenzi = await Promise.all(
-        comenzi.map(async (comanda) => {
-          const stockStatus = await checkStockStatusForOrder(comanda);
-          return {
-            ...comanda,
-            stockStatus
-          };
-        })
-      );
-
-      setComenziWithStockStatus(updatedComenzi);
-    };
-
-    checkAllStockStatuses();
-  }, [comenzi]);
 
   // Filter comenzi based on selected status and search term
   const filteredComenzi = comenziWithStockStatus.filter(comanda => {
@@ -215,30 +88,6 @@ export function ComenziLogisticaTable() {
     await updateComandaStatus(comanda.id, 'anulata');
   };
 
-  const renderStatusStoc = (stockStatus: ComandaWithStockStatus['stockStatus']) => {
-    if (!stockStatus || stockStatus.type === 'loading') {
-      return (
-        <Badge variant="secondary">
-          Se verifică...
-        </Badge>
-      );
-    }
-    
-    if (stockStatus.type === 'available') {
-      return (
-        <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">
-          În Stoc
-        </Badge>
-      );
-    } else {
-      return (
-        <Badge variant="destructive">
-          Lipsă: {stockStatus.productName} (-{stockStatus.missingQuantity} buc)
-        </Badge>
-      );
-    }
-  };
-
   if (loading) {
     return (
       <Card>
@@ -259,38 +108,14 @@ export function ComenziLogisticaTable() {
       <Card>
         <CardHeader>
           <CardTitle>Comenzi în Așteptare</CardTitle>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              Comenzile care necesită procesare logistică ({filteredComenzi.length} din {comenziWithStockStatus.length} comenzi)
-            </p>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Caută după număr comandă sau distribuitor..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-[300px] bg-white"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[200px] bg-white">
-                    <SelectValue placeholder="Filtrează după status" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
-                    {filterOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
+          <TableFilters
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            totalCount={comenziWithStockStatus.length}
+            filteredCount={filteredComenzi.length}
+          />
         </CardHeader>
         <CardContent>
           {filteredComenzi.length === 0 ? (
@@ -318,111 +143,46 @@ export function ComenziLogisticaTable() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredComenzi.map((comanda) => {
-                    const currentStatus = comanda.status || 'in_asteptare';
-                    const isInAsteptare = currentStatus === 'in_asteptare';
-                    const isInProcesare = currentStatus === 'in_procesare';
-                    const isInTranzit = currentStatus === 'in_tranzit';
-                    const isLivrata = currentStatus === 'livrata';
-                    const isAnulata = currentStatus === 'anulata';
-                    
-                    return (
-                      <TableRow key={comanda.id}>
-                        <TableCell className="font-medium">
-                          {comanda.numar_comanda}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(comanda.data_comanda), 'dd.MM.yyyy HH:mm')}
-                        </TableCell>
-                        <TableCell>
-                          {comanda.distribuitor?.nume_companie || comanda.distribuitor_id}
-                        </TableCell>
-                        <TableCell>
-                          {comanda.oras_livrare}
-                        </TableCell>
-                        <TableCell>
-                          {renderStatusStoc(comanda.stockStatus)}
-                        </TableCell>
-                        <TableCell>
-                          {comanda.nume_transportator || '-'}
-                        </TableCell>
-                        <TableCell>
-                          {comanda.numar_masina || '-'}
-                        </TableCell>
-                        <TableCell>
-                          {comanda.data_expediere ? format(new Date(comanda.data_expediere), 'dd.MM.yyyy HH:mm') : '-'}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">
-                            {currentStatus}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {(isLivrata || isAnulata) ? (
-                            <span className="text-sm text-muted-foreground">-</span>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              {isInAsteptare && (
-                                <>
-                                  <Button
-                                    variant="default"
-                                    size="sm"
-                                    className="h-8"
-                                    onClick={() => handleAlocaTransport(comanda)}
-                                  >
-                                    <Truck className="h-4 w-4 mr-2" />
-                                    Alocă Transport
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    className="h-8"
-                                    onClick={() => handleAnuleazaComanda(comanda)}
-                                  >
-                                    <X className="h-4 w-4 mr-2" />
-                                    Anulează
-                                  </Button>
-                                </>
-                              )}
-                              {isInProcesare && (
-                                <>
-                                  <Button
-                                    variant="default"
-                                    size="sm"
-                                    className="h-8"
-                                    onClick={() => handleMarcheazaExpediat(comanda)}
-                                  >
-                                    <Package className="h-4 w-4 mr-2" />
-                                    Marchează ca Expediat
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    className="h-8"
-                                    onClick={() => handleAnuleazaComanda(comanda)}
-                                  >
-                                    <X className="h-4 w-4 mr-2" />
-                                    Anulează
-                                  </Button>
-                                </>
-                              )}
-                              {isInTranzit && (
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  className="h-8"
-                                  onClick={() => handleMarcheazaLivrat(comanda)}
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Marchează ca Livrat
-                                </Button>
-                              )}
-                            </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {filteredComenzi.map((comanda) => (
+                    <TableRow key={comanda.id}>
+                      <TableCell className="font-medium">
+                        {comanda.numar_comanda}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(comanda.data_comanda), 'dd.MM.yyyy HH:mm')}
+                      </TableCell>
+                      <TableCell>
+                        {comanda.distribuitor?.nume_companie || comanda.distribuitor_id}
+                      </TableCell>
+                      <TableCell>
+                        {comanda.oras_livrare}
+                      </TableCell>
+                      <TableCell>
+                        <StockStatusBadge stockStatus={comanda.stockStatus} />
+                      </TableCell>
+                      <TableCell>
+                        {comanda.nume_transportator || '-'}
+                      </TableCell>
+                      <TableCell>
+                        {comanda.numar_masina || '-'}
+                      </TableCell>
+                      <TableCell>
+                        {comanda.data_expediere ? format(new Date(comanda.data_expediere), 'dd.MM.yyyy HH:mm') : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <OrderStatusBadge orderStatus={comanda.status || 'in_asteptare'} />
+                      </TableCell>
+                      <TableCell>
+                        <ActionButtons
+                          comanda={comanda}
+                          onAlocaTransport={handleAlocaTransport}
+                          onMarcheazaExpediat={handleMarcheazaExpediat}
+                          onMarcheazaLivrat={handleMarcheazaLivrat}
+                          onAnuleazaComanda={handleAnuleazaComanda}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
@@ -445,4 +205,3 @@ export function ComenziLogisticaTable() {
     </>
   );
 }
-
