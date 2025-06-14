@@ -93,45 +93,23 @@ export function DeliveryForm({ form }: DeliveryFormProps) {
             )}
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="observatii"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm sm:text-base">Observații</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      value={field.value || ''} 
-                      className="text-sm sm:text-base"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="numar_paleti"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm sm:text-base">Număr Paleți</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      {...field} 
-                      value={field.value || 0}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                      className="text-sm sm:text-base"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name="observatii"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm sm:text-base">Observații</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    value={field.value || ''} 
+                    className="text-sm sm:text-base"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
       </CardContent>
     </Card>
