@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, Edit, Filter, Search } from 'lucide-react';
+import { MoreHorizontal, Edit, Filter, Search, Truck } from 'lucide-react';
 import { useComenziLogistica } from '@/hooks/logistica/useComenziLogistica';
 import { ComandaDetailsModal } from './ComandaDetailsModal';
 import { ComandaEditModal } from './ComandaEditModal';
@@ -90,6 +90,11 @@ export function ComenziLogisticaTable() {
 
   const handleEditSuccess = () => {
     refetch();
+  };
+
+  const handleAlocaTransport = (comanda: Comanda) => {
+    setSelectedComandaEdit(comanda);
+    setIsEditModalOpen(true);
   };
 
   if (loading) {
@@ -167,59 +172,76 @@ export function ComenziLogisticaTable() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredComenzi.map((comanda) => (
-                    <TableRow key={comanda.id}>
-                      <TableCell className="font-medium">
-                        {comanda.numar_comanda}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(comanda.data_comanda), 'dd.MM.yyyy HH:mm')}
-                      </TableCell>
-                      <TableCell>
-                        {comanda.distribuitor?.nume_companie || comanda.distribuitor_id}
-                      </TableCell>
-                      <TableCell>
-                        {comanda.oras_livrare}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">
-                          {comanda.status || 'in_asteptare'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleEditClick(comanda)}
-                          >
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Editează comanda</span>
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Deschide meniul</span>
-                                <MoreHorizontal className="h-4 w-4" />
+                  {filteredComenzi.map((comanda) => {
+                    const currentStatus = comanda.status || 'in_asteptare';
+                    const isInAsteptare = currentStatus === 'in_asteptare';
+                    
+                    return (
+                      <TableRow key={comanda.id}>
+                        <TableCell className="font-medium">
+                          {comanda.numar_comanda}
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(comanda.data_comanda), 'dd.MM.yyyy HH:mm')}
+                        </TableCell>
+                        <TableCell>
+                          {comanda.distribuitor?.nume_companie || comanda.distribuitor_id}
+                        </TableCell>
+                        <TableCell>
+                          {comanda.oras_livrare}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">
+                            {currentStatus}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {isInAsteptare ? (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-8"
+                              onClick={() => handleAlocaTransport(comanda)}
+                            >
+                              <Truck className="h-4 w-4 mr-2" />
+                              Alocă Transport
+                            </Button>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleEditClick(comanda)}
+                              >
+                                <Edit className="h-4 w-4" />
+                                <span className="sr-only">Editează comanda</span>
                               </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-white z-50">
-                              {statusOptions.map((option) => (
-                                <DropdownMenuItem
-                                  key={option.value}
-                                  onClick={() => handleStatusUpdate(comanda.id, option.value)}
-                                  className="cursor-pointer"
-                                >
-                                  {option.label}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" className="h-8 w-8 p-0">
+                                    <span className="sr-only">Deschide meniul</span>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="bg-white z-50">
+                                  {statusOptions.map((option) => (
+                                    <DropdownMenuItem
+                                      key={option.value}
+                                      onClick={() => handleStatusUpdate(comanda.id, option.value)}
+                                      className="cursor-pointer"
+                                    >
+                                      {option.label}
+                                    </DropdownMenuItem>
+                                  ))}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
