@@ -43,7 +43,8 @@ async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
 
       // Proper type guard for comanda object
       const comanda = item?.comanda;
-      const isValidComanda = comanda && 
+      const isValidComanda = comanda !== null && 
+        comanda !== undefined &&
         typeof comanda === "object" && 
         "status" in comanda &&
         (comanda.status === "in_asteptare" || comanda.status === "in_procesare");
