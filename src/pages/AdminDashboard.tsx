@@ -6,12 +6,15 @@ import { useAdminStats } from '@/hooks/useAdminStats';
 import { useComenzi } from '@/hooks/useComenzi';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, TrendingUp, Users, Package, AlertTriangle, Clock, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { AdminFilters } from '@/components/admin/AdminFilters';
+import { AdminStatsCards } from '@/components/admin/AdminStatsCards';
+import { AdminOrdersTable } from '@/components/admin/AdminOrdersTable';
+import { AdminMzvTable } from '@/components/admin/AdminMzvTable';
+import { AdminDistributorsTable } from '@/components/admin/AdminDistributorsTable';
+import { AdminProductsTable } from '@/components/admin/AdminProductsTable';
+import { AdminValidationCard } from '@/components/admin/AdminValidationCard';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -56,15 +59,6 @@ export default function AdminDashboard() {
     return true;
   });
 
-  // Calculate additional stats for processing and in transit orders
-  const comenziInProcesare = filteredComenzi.filter(comanda => 
-    comanda.status === 'in_procesare'
-  ).length;
-
-  const comenziInTranzit = filteredComenzi.filter(comanda => 
-    comanda.status === 'in_tranzit'
-  ).length;
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ro-RO', {
       style: 'currency',
@@ -90,142 +84,23 @@ export default function AdminDashboard() {
           </p>
         </div>
 
-        {/* Filtre */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Filtre</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Data început</label>
-                <Input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Data sfârșit</label>
-                <Input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">MZV</label>
-                <Select value={selectedMzv} onValueChange={setSelectedMzv}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selectează MZV" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="toate">Toți MZV-ii</SelectItem>
-                    {stats?.mzvPerformance
-                      ?.filter(mzv => mzv.mzv_id && mzv.mzv_id.trim() !== '')
-                      ?.map((mzv) => (
-                      <SelectItem key={mzv.mzv_id} value={mzv.mzv_id}>
-                        {mzv.mzv_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Distribuitor</label>
-                <Select value={selectedDistributor} onValueChange={setSelectedDistributor}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selectează distribuitor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="toti">Toți distribuitorii</SelectItem>
-                    {stats?.distributorStats
-                      ?.filter(dist => dist.distribuitor_id && dist.distribuitor_id.trim() !== '')
-                      ?.map((dist) => (
-                      <SelectItem key={dist.distribuitor_id} value={dist.distribuitor_id}>
-                        {dist.distribuitor_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <AdminFilters
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          selectedMzv={selectedMzv}
+          selectedDistributor={selectedDistributor}
+          stats={stats}
+          onDateFromChange={setDateFrom}
+          onDateToChange={setDateTo}
+          onMzvChange={setSelectedMzv}
+          onDistributorChange={setSelectedDistributor}
+        />
 
-        {/* Statistici generale */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Comenzi</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalOrders || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Filtrate: {filteredComenzi.length}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Valoare Totală</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(stats?.totalValue || 0)}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">În Procesare</CardTitle>
-              <Clock className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{comenziInProcesare}</div>
-              <p className="text-xs text-muted-foreground">
-                Comenzi în procesare
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">În Tranzit</CardTitle>
-              <Truck className="h-4 w-4 text-orange-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{comenziInTranzit}</div>
-              <p className="text-xs text-muted-foreground">
-                Comenzi în tranzit
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">MZV Activi</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.mzvPerformance.length || 0}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Produse Vândute</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.productStats.length || 0}</div>
-            </CardContent>
-          </Card>
-        </div>
+        <AdminStatsCards
+          stats={stats}
+          filteredComenzi={filteredComenzi}
+          formatCurrency={formatCurrency}
+        />
 
         {/* Tabs pentru diferite vizualizări */}
         <Tabs defaultValue="comenzi" className="space-y-4">
@@ -237,175 +112,23 @@ export default function AdminDashboard() {
           </TabsList>
 
           <TabsContent value="comenzi">
-            <Card>
-              <CardHeader>
-                <CardTitle>Toate Comenzile</CardTitle>
-                <CardDescription>
-                  Lista completă a comenzilor cu posibilități de filtrare
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Număr Comandă</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead>MZV</TableHead>
-                        <TableHead>Distribuitor</TableHead>
-                        <TableHead>Transportator</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredComenzi.map((comanda) => (
-                        <TableRow key={comanda.id}>
-                          <TableCell className="font-medium">{comanda.numar_comanda}</TableCell>
-                          <TableCell>{new Date(comanda.data_comanda).toLocaleDateString('ro-RO')}</TableCell>
-                          <TableCell>MZV</TableCell>
-                          <TableCell>Distribuitor</TableCell>
-                          <TableCell>{comanda.nume_transportator || '-'}</TableCell>
-                          <TableCell>
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              comanda.status === 'Finalizata' 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {comanda.status}
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
+            <AdminOrdersTable filteredComenzi={filteredComenzi} />
           </TabsContent>
 
           <TabsContent value="mzv">
-            <Card>
-              <CardHeader>
-                <CardTitle>Performanța MZV</CardTitle>
-                <CardDescription>
-                  Statistici detaliate pentru fiecare MZV
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>MZV</TableHead>
-                        <TableHead>Număr Comenzi</TableHead>
-                        <TableHead>Valoare Totală</TableHead>
-                        <TableHead>Medie pe Comandă</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {stats?.mzvPerformance.map((mzv) => (
-                        <TableRow key={mzv.mzv_id}>
-                          <TableCell className="font-medium">{mzv.mzv_name}</TableCell>
-                          <TableCell>{mzv.orders_count}</TableCell>
-                          <TableCell>{formatCurrency(mzv.total_value)}</TableCell>
-                          <TableCell>
-                            {formatCurrency(mzv.total_value / mzv.orders_count)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
+            <AdminMzvTable stats={stats} formatCurrency={formatCurrency} />
           </TabsContent>
 
           <TabsContent value="distribuitori">
-            <Card>
-              <CardHeader>
-                <CardTitle>Statistici Distribuitori</CardTitle>
-                <CardDescription>
-                  Performanța pe distribuitori
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Distribuitor</TableHead>
-                        <TableHead>Număr Comenzi</TableHead>
-                        <TableHead>Valoare Totală</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {stats?.distributorStats.map((dist) => (
-                        <TableRow key={dist.distribuitor_id}>
-                          <TableCell className="font-medium">{dist.distribuitor_name}</TableCell>
-                          <TableCell>{dist.orders_count}</TableCell>
-                          <TableCell>{formatCurrency(dist.total_value)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
+            <AdminDistributorsTable stats={stats} formatCurrency={formatCurrency} />
           </TabsContent>
 
           <TabsContent value="produse">
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Produse</CardTitle>
-                <CardDescription>
-                  Cele mai vândute produse la nivel național
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Produs</TableHead>
-                        <TableHead>Cantitate Totală</TableHead>
-                        <TableHead>Valoare Totală</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {stats?.productStats.slice(0, 20).map((product) => (
-                        <TableRow key={product.produs_id}>
-                          <TableCell className="font-medium">{product.produs_name}</TableCell>
-                          <TableCell>{product.total_quantity}</TableCell>
-                          <TableCell>{formatCurrency(product.total_value)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
+            <AdminProductsTable stats={stats} formatCurrency={formatCurrency} />
           </TabsContent>
         </Tabs>
 
-        {/* Link către validarea prețurilor */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-orange-500" />
-              Validare Prețuri
-            </CardTitle>
-            <CardDescription>
-              Verificați consistența prețurilor cu grilele oficiale
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link to="/admin/validare-preturi">
-              <Button>
-                Accesează Validarea Prețurilor
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+        <AdminValidationCard />
       </main>
     </div>
   );
