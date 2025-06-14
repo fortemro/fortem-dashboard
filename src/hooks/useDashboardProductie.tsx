@@ -5,13 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 export interface DashboardProductieRow {
   id: string;
   nume: string;
-  stoc_disponibil: number;
-  necesar_comenzi: number;
+  stoc_fizic: number;
+  stoc_alocat: number;
+  stoc_real_disponibil: number;
   prag_alerta_stoc: number;
 }
 
 async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
-  // 1. Obține toate produsele
+  // 1. Obține toate produsele cu stocul fizic
   const { data: produseData, error: produseError } = await supabase
     .from("produse")
     .select("id, nume, stoc_disponibil, prag_alerta_stoc")
@@ -46,8 +47,8 @@ async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
     comenziMap[comanda.id] = comanda.status;
   });
 
-  // 5. Calculate necessary quantities per product
-  const necesarMap: Record<string, number> = {};
+  // 5. Calculate allocated stock per product
+  const stocAlocatMap: Record<string, number> = {};
   if (Array.isArray(itemsData)) {
     for (const item of itemsData) {
       const produsId = typeof item?.produs_id === "string" ? item.produs_id : null;
@@ -57,27 +58,28 @@ async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
       if (produsId && comandaId) {
         const status = comenziMap[comandaId];
         
-        if (status === "in_asteptare" || status === "in_procesare") {
-          if (!necesarMap[produsId]) necesarMap[produsId] = 0;
-          necesarMap[produsId] += cantitate;
+        if (status === "in_asteptare" || status === "in_procesare" || status === "in_tranzit") {
+          if (!stocAlocatMap[produsId]) stocAlocatMap[produsId] = 0;
+          stocAlocatMap[produsId] += cantitate;
         }
       }
     }
   }
 
-  return (produseData ?? []).map((produs) => ({
-    id: produs.id,
-    nume: produs.nume,
-    stoc_disponibil:
-      typeof produs.stoc_disponibil === "number"
-        ? produs.stoc_disponibil
-        : 0,
-    necesar_comenzi: necesarMap[produs.id] ?? 0,
-    prag_alerta_stoc:
-      typeof produs.prag_alerta_stoc === "number"
-        ? produs.prag_alerta_stoc
-        : 0,
-  }));
+  return (produseData ?? []).map((produs) => {
+    const stocFizic = typeof produs.stoc_disponibil === "number" ? produs.stoc_disponibil : 0;
+    const stocAlocat = stocAlocatMap[produs.id] ?? 0;
+    const stocRealDisponibil = stocFizic - stocAlocat;
+
+    return {
+      id: produs.id,
+      nume: produs.nume,
+      stoc_fizic: stocFizic,
+      stoc_alocat: stocAlocat,
+      stoc_real_disponibil: stocRealDisponibil,
+      prag_alerta_stoc: typeof produs.prag_alerta_stoc === "number" ? produs.prag_alerta_stoc : 0,
+    };
+  });
 }
 
 export function useDashboardProductie() {

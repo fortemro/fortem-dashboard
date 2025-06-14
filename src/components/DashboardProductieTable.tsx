@@ -33,24 +33,30 @@ export function DashboardProductieTable() {
     );
   }
 
+  // Convert data for AlerteStocCritic component (maintain compatibility)
+  const produseForAlerts = data.map(row => ({
+    ...row,
+    stoc_disponibil: row.stoc_real_disponibil,
+    necesar_comenzi: row.stoc_alocat
+  }));
+
   return (
     <div>
-      <AlerteStocCritic produse={data} />
+      <AlerteStocCritic produse={produseForAlerts} />
       
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="min-w-[200px]">Nume Produs</TableHead>
-              <TableHead className="text-center">Stoc Disponibil</TableHead>
-              <TableHead className="text-center">Necesar Comenzi</TableHead>
-              <TableHead className="text-center">Balanță</TableHead>
+              <TableHead className="text-center">Stoc Fizic</TableHead>
+              <TableHead className="text-center">Stoc Alocat Comenzilor</TableHead>
+              <TableHead className="text-center">Stoc Real Disponibil pt. Vânzare</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.map((row) => {
-              const balanta = row.stoc_disponibil - row.necesar_comenzi;
-              const isStocCritic = row.stoc_disponibil <= row.prag_alerta_stoc;
+              const isStocCritic = row.stoc_real_disponibil <= row.prag_alerta_stoc;
               
               return (
                 <TableRow key={row.id} className={isStocCritic ? "bg-red-50" : ""}>
@@ -60,19 +66,27 @@ export function DashboardProductieTable() {
                       <span className="ml-2 text-red-600 text-xs">⚠️</span>
                     )}
                   </TableCell>
-                  <TableCell className={`text-center ${isStocCritic ? "text-red-700 font-bold" : ""}`}>
-                    {row.stoc_disponibil}
+                  <TableCell className="text-center">
+                    <span className="font-medium text-blue-700">
+                      {row.stoc_fizic}
+                    </span>
                   </TableCell>
-                  <TableCell className="text-center">{row.necesar_comenzi}</TableCell>
+                  <TableCell className="text-center">
+                    <span className="font-medium text-orange-600">
+                      {row.stoc_alocat}
+                    </span>
+                  </TableCell>
                   <TableCell className="text-center">
                     <span
                       className={
-                        balanta < 0
+                        row.stoc_real_disponibil <= 0
                           ? "font-bold text-red-600"
+                          : isStocCritic
+                          ? "font-bold text-orange-600"
                           : "font-semibold text-green-700"
                       }
                     >
-                      {balanta}
+                      {row.stoc_real_disponibil}
                     </span>
                   </TableCell>
                 </TableRow>
