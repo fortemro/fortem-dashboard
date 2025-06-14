@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, Edit, Filter, Search, Truck, Package } from 'lucide-react';
+import { MoreHorizontal, Edit, Filter, Search, Truck, Package, CheckCircle } from 'lucide-react';
 import { useComenziLogistica } from '@/hooks/logistica/useComenziLogistica';
 import { ComandaDetailsModal } from './ComandaDetailsModal';
 import { ComandaEditModal } from './ComandaEditModal';
@@ -98,6 +98,10 @@ export function ComenziLogisticaTable() {
 
   const handleMarcheazaExpediat = async (comanda: Comanda) => {
     await updateComandaStatus(comanda.id, 'in_tranzit', true);
+  };
+
+  const handleMarcheazaLivrat = async (comanda: Comanda) => {
+    await updateComandaStatus(comanda.id, 'livrata');
   };
 
   if (loading) {
@@ -181,6 +185,7 @@ export function ComenziLogisticaTable() {
                     const currentStatus = comanda.status || 'in_asteptare';
                     const isInAsteptare = currentStatus === 'in_asteptare';
                     const isInProcesare = currentStatus === 'in_procesare';
+                    const isInTranzit = currentStatus === 'in_tranzit';
                     
                     return (
                       <TableRow key={comanda.id}>
@@ -227,6 +232,16 @@ export function ComenziLogisticaTable() {
                             >
                               <Package className="h-4 w-4 mr-2" />
                               Marchează ca Expediat
+                            </Button>
+                          ) : isInTranzit ? (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-8"
+                              onClick={() => handleMarcheazaLivrat(comanda)}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Marchează ca Livrat
                             </Button>
                           ) : (
                             <div className="flex items-center gap-2">
