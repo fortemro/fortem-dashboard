@@ -18,6 +18,7 @@ export type Database = {
           data_livrare: string | null
           distribuitor_id: string
           distribuitor_uuid: string | null
+          email_agent_vanzari: string | null
           id: string
           judet_livrare: string | null
           mzv_emitent: string | null
@@ -43,6 +44,7 @@ export type Database = {
           data_livrare?: string | null
           distribuitor_id: string
           distribuitor_uuid?: string | null
+          email_agent_vanzari?: string | null
           id?: string
           judet_livrare?: string | null
           mzv_emitent?: string | null
@@ -68,6 +70,7 @@ export type Database = {
           data_livrare?: string | null
           distribuitor_id?: string
           distribuitor_uuid?: string | null
+          email_agent_vanzari?: string | null
           id?: string
           judet_livrare?: string | null
           mzv_emitent?: string | null

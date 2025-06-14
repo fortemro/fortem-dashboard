@@ -7,40 +7,35 @@ export function useComandaEdit() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const updateComandaTransport = async (
-    comandaId: string, 
-    numarMasina: string, 
-    numeTransportator: string,
-    numeSofer: string,
-    telefonSofer: string
-  ) => {
+  const updateComanda = async (comandaId: string, updateData: any) => {
     setLoading(true);
     try {
+      console.log('Updating comanda:', comandaId, 'with data:', updateData);
+      
       const { error } = await supabase
         .from('comenzi')
         .update({
-          numar_masina: numarMasina.trim() || null,
-          nume_transportator: numeTransportator.trim() || null,
-          nume_sofer: numeSofer.trim() || null,
-          telefon_sofer: telefonSofer.trim() || null,
-          status: 'in_procesare', // Automatically set status to 'in_procesare'
+          ...updateData,
           updated_at: new Date().toISOString()
         })
         .eq('id', comandaId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating comanda:', error);
+        throw error;
+      }
 
       toast({
-        title: "Succes",
-        description: "Detaliile de transport au fost actualizate și statusul a fost schimbat în 'în procesare'"
+        title: "Comandă actualizată",
+        description: "Detaliile comenzii au fost actualizate cu succes"
       });
 
       return true;
     } catch (error) {
-      console.error('Error updating comanda transport details:', error);
+      console.error('Error updating comanda:', error);
       toast({
         title: "Eroare",
-        description: "Nu s-au putut actualiza detaliile de transport",
+        description: "Nu s-a putut actualiza comanda",
         variant: "destructive"
       });
       return false;
@@ -50,7 +45,7 @@ export function useComandaEdit() {
   };
 
   return {
-    updateComandaTransport,
+    updateComanda,
     loading
   };
 }
