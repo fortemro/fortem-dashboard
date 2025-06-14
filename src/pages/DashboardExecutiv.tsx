@@ -1,15 +1,15 @@
 
 import { useProfile } from "@/hooks/useProfile";
 import { Navigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { BarChart3, Users, Package, TrendingUp, AlertTriangle, Calendar } from "lucide-react";
 import { useState } from "react";
 import { DateRange } from "react-day-picker";
-import { CustomDateRangePicker } from "@/components/CustomDateRangePicker";
-import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns";
-
-type PeriodFilter = 'today' | 'yesterday' | 'last7days' | 'thisMonth' | 'custom';
+import { format } from "date-fns";
+import { PeriodFilterComponent, PeriodFilter } from "@/components/dashboard-executiv/PeriodFilter";
+import { StatsCards } from "@/components/dashboard-executiv/StatsCards";
+import { PerformanceCharts } from "@/components/dashboard-executiv/PerformanceCharts";
+import { TopProducts } from "@/components/dashboard-executiv/TopProducts";
+import { AlertsSection } from "@/components/dashboard-executiv/AlertsSection";
+import { useDashboardData } from "@/hooks/dashboard-executiv/useDashboardData";
 
 const periodOptions: { value: PeriodFilter; label: string }[] = [
   { value: 'today', label: 'Astăzi' },
@@ -23,103 +23,7 @@ export default function DashboardExecutiv() {
   const { profile, loading } = useProfile();
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>('today');
   const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
-
-  // Simulare date diferite pentru fiecare perioadă
-  const getDataForPeriod = (period: PeriodFilter, dateRange?: DateRange) => {
-    switch (period) {
-      case 'today':
-        return {
-          vanzariTotale: '45,678 RON',
-          vanzariChange: '+5%',
-          comenziActive: 12,
-          comenziChange: '+2 noi',
-          distributoriActivi: 8,
-          distributoriChange: 'activi azi',
-          alerteStoc: 3,
-          alerteChange: 'produse critice',
-          topProduse: [
-            { nume: 'BCA FORTEM 200', cantitate: '23 bucăți', valoare: '8,950 RON', trend: '+12%' },
-            { nume: 'BCA FORTEM 150', cantitate: '18 bucăți', valoare: '6,720 RON', trend: '+8%' },
-            { nume: 'BCA FORTEM 250', cantitate: '15 bucăți', valoare: '5,480 RON', trend: '-2%' },
-          ]
-        };
-      case 'yesterday':
-        return {
-          vanzariTotale: '52,340 RON',
-          vanzariChange: '+8%',
-          comenziActive: 15,
-          comenziChange: '+3 noi',
-          distributoriActivi: 12,
-          distributoriChange: 'activi ieri',
-          alerteStoc: 5,
-          alerteChange: 'produse critice',
-          topProduse: [
-            { nume: 'BCA FORTEM 150', cantitate: '28 bucăți', valoare: '10,440 RON', trend: '+15%' },
-            { nume: 'BCA FORTEM 200', cantitate: '25 bucăți', valoare: '9,750 RON', trend: '+10%' },
-            { nume: 'BCA FORTEM 100', cantitate: '20 bucăți', valoare: '7,200 RON', trend: '+5%' },
-          ]
-        };
-      case 'last7days':
-        return {
-          vanzariTotale: '324,567 RON',
-          vanzariChange: '+12%',
-          comenziActive: 89,
-          comenziChange: '+15 această săptămână',
-          distributoriActivi: 45,
-          distributoriChange: 'activi săptămâna aceasta',
-          alerteStoc: 7,
-          alerteChange: 'produse critice',
-          topProduse: [
-            { nume: 'BCA FORTEM 200', cantitate: '180 bucăți', valoare: '68,400 RON', trend: '+18%' },
-            { nume: 'BCA FORTEM 150', cantitate: '145 bucăți', valoare: '54,150 RON', trend: '+14%' },
-            { nume: 'BCA FORTEM 250', cantitate: '120 bucăți', valoare: '43,200 RON', trend: '+8%' },
-          ]
-        };
-      case 'thisMonth':
-        return {
-          vanzariTotale: '1,234,567 RON',
-          vanzariChange: '+12%',
-          comenziActive: 89,
-          comenziChange: '+25 această lună',
-          distributoriActivi: 156,
-          distributoriChange: 'activi luna aceasta',
-          alerteStoc: 7,
-          alerteChange: 'produse critice',
-          topProduse: [
-            { nume: 'BCA FORTEM 200', cantitate: '734 bucăți', valoare: '278,580 RON', trend: '+15%' },
-            { nume: 'BCA FORTEM 150', cantitate: '589 bucăți', valoare: '219,780 RON', trend: '+8%' },
-            { nume: 'BCA FORTEM 250', cantitate: '456 bucăți', valoare: '164,160 RON', trend: '-3%' },
-          ]
-        };
-      case 'custom':
-        if (!dateRange?.from || !dateRange?.to) {
-          return getDataForPeriod('today');
-        }
-        
-        // Calculăm numărul de zile în intervalul personalizat
-        const days = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-        const avgDailySales = 45000; // Vânzări medii pe zi
-        const totalSales = avgDailySales * days;
-        
-        return {
-          vanzariTotale: `${totalSales.toLocaleString('ro-RO')} RON`,
-          vanzariChange: `+${Math.floor(Math.random() * 20)}%`,
-          comenziActive: Math.floor(days * 1.5),
-          comenziChange: `+${Math.floor(days * 0.3)} în perioada`,
-          distributoriActivi: Math.min(Math.floor(days * 2), 200),
-          distributoriChange: 'activi în perioada',
-          alerteStoc: Math.floor(Math.random() * 10) + 1,
-          alerteChange: 'produse critice',
-          topProduse: [
-            { nume: 'BCA FORTEM 200', cantitate: `${Math.floor(days * 23)} bucăți`, valoare: `${(days * 8950).toLocaleString('ro-RO')} RON`, trend: `+${Math.floor(Math.random() * 20)}%` },
-            { nume: 'BCA FORTEM 150', cantitate: `${Math.floor(days * 18)} bucăți`, valoare: `${(days * 6720).toLocaleString('ro-RO')} RON`, trend: `+${Math.floor(Math.random() * 15)}%` },
-            { nume: 'BCA FORTEM 250', cantitate: `${Math.floor(days * 15)} bucăți`, valoare: `${(days * 5480).toLocaleString('ro-RO')} RON`, trend: `+${Math.floor(Math.random() * 10)}%` },
-          ]
-        };
-      default:
-        return getDataForPeriod('today');
-    }
-  };
+  const { getDataForPeriod } = useDashboardData();
 
   const currentData = getDataForPeriod(selectedPeriod, customDateRange);
 
@@ -145,7 +49,6 @@ export default function DashboardExecutiv() {
     );
   }
 
-  // Verifică dacă utilizatorul are rolul 'management'
   if (!profile || profile.rol !== 'management') {
     return <Navigate to="/" replace />;
   }
@@ -157,157 +60,21 @@ export default function DashboardExecutiv() {
         <p className="text-gray-600">Raport executiv și indicatori cheie de performanță</p>
       </div>
 
-      {/* Filtru de perioadă */}
-      <Card className="mb-8 border-blue-200 bg-blue-50">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-blue-800 flex items-center">
-            <Calendar className="h-5 w-5 mr-2" />
-            Perioada Analizată: {getDisplayPeriod()}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {periodOptions.map((option) => (
-                <Button
-                  key={option.value}
-                  variant={selectedPeriod === option.value ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handlePeriodChange(option.value)}
-                  className={selectedPeriod === option.value ? "bg-blue-600 hover:bg-blue-700" : ""}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
-            
-            {selectedPeriod === 'custom' && (
-              <div className="mt-4">
-                <CustomDateRangePicker
-                  dateRange={customDateRange}
-                  onDateRangeChange={setCustomDateRange}
-                />
-                {customDateRange?.from && customDateRange?.to && (
-                  <p className="text-sm text-gray-600 mt-2">
-                    Perioada selectată: {format(customDateRange.from, 'dd MMMM yyyy')} - {format(customDateRange.to, 'dd MMMM yyyy')}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <PeriodFilterComponent
+        selectedPeriod={selectedPeriod}
+        customDateRange={customDateRange}
+        onPeriodChange={handlePeriodChange}
+        onDateRangeChange={setCustomDateRange}
+      />
 
-      {/* Indicatori principali */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Vânzări Totale</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{currentData.vanzariTotale}</div>
-            <p className="text-xs text-muted-foreground">{currentData.vanzariChange} față de perioada anterioară</p>
-          </CardContent>
-        </Card>
+      <StatsCards data={currentData} />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Comenzi Active</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{currentData.comenziActive}</div>
-            <p className="text-xs text-muted-foreground">{currentData.comenziChange}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Distribuitori Activi</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{currentData.distributoriActivi}</div>
-            <p className="text-xs text-muted-foreground">{currentData.distributoriChange}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Alerte Stoc</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{currentData.alerteStoc}</div>
-            <p className="text-xs text-muted-foreground">{currentData.alerteChange}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Secțiuni principale */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <BarChart3 className="h-5 w-5 mr-2" />
-              Performanță Vânzări
-            </CardTitle>
-            <CardDescription>Evoluția vânzărilor pentru perioada selectată</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 flex items-center justify-center bg-gray-50 rounded">
-              <div className="text-center text-gray-500">
-                <BarChart3 className="h-12 w-12 mx-auto mb-2" />
-                <p>Grafic vânzări pentru {getDisplayPeriod()}</p>
-                <p className="text-sm">în dezvoltare</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Produse</CardTitle>
-            <CardDescription>Cele mai vândute produse în perioada selectată</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {currentData.topProduse.map((produs, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{produs.nume}</p>
-                    <p className="text-sm text-gray-500">{produs.cantitate}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">{produs.valoare}</p>
-                    <p className={`text-sm ${produs.trend.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
-                      {produs.trend}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <PerformanceCharts periodDisplay={getDisplayPeriod()} />
+        <TopProducts products={currentData.topProduse} />
       </div>
 
-      {/* Secțiune alertă */}
-      <Card className="border-orange-200 bg-orange-50">
-        <CardHeader>
-          <CardTitle className="text-orange-800 flex items-center">
-            <AlertTriangle className="h-5 w-5 mr-2" />
-            Atenție Necesară
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 text-orange-700">
-            <p>• {currentData.alerteStoc} produse au stocul sub pragul de alertă</p>
-            <p>• 3 distribuitori nu au plasat comenzi în perioada selectată</p>
-            <p>• 2 comenzi sunt în întârziere la livrare</p>
-          </div>
-        </CardContent>
-      </Card>
+      <AlertsSection alerteStoc={currentData.alerteStoc} />
     </div>
   );
 }
