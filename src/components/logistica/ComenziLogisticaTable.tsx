@@ -1,4 +1,3 @@
-
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -98,7 +97,7 @@ export function ComenziLogisticaTable() {
   };
 
   const handleMarcheazaExpediat = async (comanda: Comanda) => {
-    await handleStatusUpdate(comanda.id, 'in_tranzit');
+    await updateComandaStatus(comanda.id, 'in_tranzit', true);
   };
 
   if (loading) {

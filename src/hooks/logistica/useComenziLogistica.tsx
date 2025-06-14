@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,16 +71,23 @@ export function useComenziLogistica() {
     }
   });
 
-  const updateComandaStatus = async (comandaId: string, newStatus: string) => {
+  const updateComandaStatus = async (comandaId: string, newStatus: string, setExpeditionDate: boolean = false) => {
     try {
       console.log('Updating comanda status:', comandaId, 'to:', newStatus);
       
+      const updateData: any = { 
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      };
+
+      // If marking as 'in_tranzit' (expediated), set the expedition date
+      if (setExpeditionDate && newStatus === 'in_tranzit') {
+        updateData.data_expediere = new Date().toISOString();
+      }
+
       const { error } = await supabase
         .from('comenzi')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', comandaId);
 
       if (error) throw error;
@@ -90,7 +98,7 @@ export function useComenziLogistica() {
 
       toast({
         title: "Status actualizat",
-        description: `Statusul comenzii a fost schimbat în "${newStatus}"`
+        description: `Statusul comenzii a fost schimbat în "${newStatus}"${setExpeditionDate ? ' și data expedierii a fost înregistrată' : ''}`
       });
     } catch (error) {
       console.error('Error updating comanda status:', error);
