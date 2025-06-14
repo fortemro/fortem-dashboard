@@ -1,6 +1,6 @@
-
 import React from "react";
 import { ProductieProduseTable } from "@/components/ProductieProduseTable";
+import { DashboardProductieTable } from "@/components/DashboardProductieTable";
 import {
   Tabs,
   TabsList,
@@ -23,11 +23,9 @@ export default function Productie() {
           </TabsList>
           <TabsContent value="dashboard">
             <div className="text-lg text-gray-700 mb-6 animate-fade-in">
-              <b>Dashboard Producție</b> – aici vor apărea grafice, KPI-uri și sumar rapid despre ce s-a produs și statisticile ultimei perioade.
-              <div className="mt-4 text-sm text-gray-500">
-                (Momentan secțiunea este goală — spune-mi ce vrei să apară!)
-              </div>
+              <b>Dashboard Producție</b> – aici apare situația centralizată a stocului actual.
             </div>
+            <DashboardProductieTable />
           </TabsContent>
           <TabsContent value="produse">
             <p className="text-lg text-gray-700 mb-6">
