@@ -9,9 +9,9 @@ interface AlerteStocCriticProps {
 }
 
 export function AlerteStocCritic({ produse }: AlerteStocCriticProps) {
-  // Filtrează produsele cu stoc critic (stoc disponibil <= prag alertă)
+  // Filtrează produsele cu stoc critic (stoc real disponibil <= prag alertă)
   const produseStocCritic = produse.filter(
-    (produs) => produs.stoc_disponibil <= produs.prag_alerta_stoc
+    (produs) => produs.stoc_real_disponibil <= produs.prag_alerta_stoc
   );
 
   if (produseStocCritic.length === 0) {
@@ -52,10 +52,10 @@ export function AlerteStocCritic({ produse }: AlerteStocCriticProps) {
               </AlertTitle>
               <AlertDescription className="text-xs">
                 <div className="flex justify-between items-center mt-1">
-                  <span>Stoc: <strong>{produs.stoc_disponibil}</strong></span>
+                  <span>Stoc: <strong>{produs.stoc_real_disponibil}</strong></span>
                   <span>Prag: <strong>{produs.prag_alerta_stoc}</strong></span>
                 </div>
-                {produs.stoc_disponibil === 0 && (
+                {produs.stoc_real_disponibil === 0 && (
                   <div className="mt-1 text-red-700 font-medium">
                     ⚠️ STOC EPUIZAT
                   </div>
