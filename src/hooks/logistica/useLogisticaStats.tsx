@@ -37,10 +37,9 @@ export function useLogisticaStats() {
         };
       }
 
-      // Calculate comenzi în procesare (in_procesare + pregatit_pentru_livrare + in_asteptare)
+      // Calculate comenzi în procesare (in_procesare + in_asteptare)
       const comenziInProcesare = allComenzi.filter(comanda => 
         comanda.status === 'in_procesare' || 
-        comanda.status === 'pregatit_pentru_livrare' ||
         comanda.status === 'in_asteptare'
       ).length;
 

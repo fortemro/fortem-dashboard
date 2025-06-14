@@ -1,3 +1,4 @@
+
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -33,9 +34,9 @@ export function ComenziLogisticaTable() {
   const [statusFilter, setStatusFilter] = useState<string>('toate');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
+  // Updated status options to match database constraints
   const statusOptions = [
     { value: 'in_procesare', label: 'în procesare' },
-    { value: 'pregatit_pentru_livrare', label: 'pregătit pentru livrare' },
     { value: 'in_tranzit', label: 'în tranzit' },
     { value: 'livrata', label: 'livrată' },
     { value: 'anulata', label: 'anulată' }
@@ -45,7 +46,6 @@ export function ComenziLogisticaTable() {
     { value: 'toate', label: 'Toate comenzile' },
     { value: 'in_asteptare', label: 'În așteptare' },
     { value: 'in_procesare', label: 'În procesare' },
-    { value: 'pregatit_pentru_livrare', label: 'Pregătit pentru livrare' },
     { value: 'in_tranzit', label: 'În tranzit' },
     { value: 'livrata', label: 'Livrată' },
     { value: 'anulata', label: 'Anulată' }
