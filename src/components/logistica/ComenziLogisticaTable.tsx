@@ -1,4 +1,3 @@
-
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -18,18 +17,22 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, Edit, Filter, Search, Truck, Package, CheckCircle, X } from 'lucide-react';
+import { MoreHorizontal, Edit, Filter, Search, Truck, Package, CheckCircle, X, Check, AlertTriangle } from 'lucide-react';
 import { useComenziLogistica } from '@/hooks/logistica/useComenziLogistica';
 import { ComandaDetailsModal } from './ComandaDetailsModal';
 import { ComandaEditModal } from './ComandaEditModal';
 import { useState } from 'react';
 import type { Comanda } from '@/types/comanda';
 
+interface ComandaWithStockStatus extends Comanda {
+  stockAvailable?: boolean;
+}
+
 export function ComenziLogisticaTable() {
   const { comenzi, loading, updateComandaStatus, refetch } = useComenziLogistica();
-  const [selectedComanda, setSelectedComanda] = useState<Comanda | null>(null);
+  const [selectedComanda, setSelectedComanda] = useState<ComandaWithStockStatus | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [selectedComandaEdit, setSelectedComandaEdit] = useState<Comanda | null>(null);
+  const [selectedComandaEdit, setSelectedComandaEdit] = useState<ComandaWithStockStatus | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('toate');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -68,7 +71,7 @@ export function ComenziLogisticaTable() {
     await updateComandaStatus(comandaId, newStatus);
   };
 
-  const handleViewClick = (comanda: Comanda) => {
+  const handleViewClick = (comanda: ComandaWithStockStatus) => {
     setSelectedComanda(comanda);
     setIsViewModalOpen(true);
   };
@@ -78,7 +81,7 @@ export function ComenziLogisticaTable() {
     setSelectedComanda(null);
   };
 
-  const handleEditClick = (comanda: Comanda) => {
+  const handleEditClick = (comanda: ComandaWithStockStatus) => {
     setSelectedComandaEdit(comanda);
     setIsEditModalOpen(true);
   };
@@ -92,21 +95,45 @@ export function ComenziLogisticaTable() {
     refetch();
   };
 
-  const handleAlocaTransport = (comanda: Comanda) => {
+  const handleAlocaTransport = (comanda: ComandaWithStockStatus) => {
     setSelectedComandaEdit(comanda);
     setIsEditModalOpen(true);
   };
 
-  const handleMarcheazaExpediat = async (comanda: Comanda) => {
+  const handleMarcheazaExpediat = async (comanda: ComandaWithStockStatus) => {
     await updateComandaStatus(comanda.id, 'in_tranzit', true);
   };
 
-  const handleMarcheazaLivrat = async (comanda: Comanda) => {
+  const handleMarcheazaLivrat = async (comanda: ComandaWithStockStatus) => {
     await updateComandaStatus(comanda.id, 'livrata', false, true);
   };
 
-  const handleAnuleazaComanda = async (comanda: Comanda) => {
+  const handleAnuleazaComanda = async (comanda: ComandaWithStockStatus) => {
     await updateComandaStatus(comanda.id, 'anulata');
+  };
+
+  const renderStockAvailabilityIndicator = (stockAvailable: boolean | undefined) => {
+    if (stockAvailable === undefined) {
+      return (
+        <div className="flex items-center justify-center">
+          <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" title="Se verifică disponibilitatea" />
+        </div>
+      );
+    }
+    
+    if (stockAvailable) {
+      return (
+        <div className="flex items-center justify-center">
+          <Check className="h-5 w-5 text-green-600" title="Stoc disponibil pentru toată comanda" />
+        </div>
+      );
+    } else {
+      return (
+        <div className="flex items-center justify-center">
+          <AlertTriangle className="h-5 w-5 text-red-600" title="Stoc insuficient pentru unul sau mai multe produse" />
+        </div>
+      );
+    }
   };
 
   if (loading) {
@@ -179,6 +206,7 @@ export function ComenziLogisticaTable() {
                     <TableHead>Dată Plasare</TableHead>
                     <TableHead>Distribuitor</TableHead>
                     <TableHead>Oraș Livrare</TableHead>
+                    <TableHead>Disponibilitate Stoc</TableHead>
                     <TableHead>Nume Transportator</TableHead>
                     <TableHead>Număr Mașină</TableHead>
                     <TableHead>Data Expediere</TableHead>
@@ -208,6 +236,9 @@ export function ComenziLogisticaTable() {
                         </TableCell>
                         <TableCell>
                           {comanda.oras_livrare}
+                        </TableCell>
+                        <TableCell>
+                          {renderStockAvailabilityIndicator((comanda as ComandaWithStockStatus).stockAvailable)}
                         </TableCell>
                         <TableCell>
                           {comanda.nume_transportator || '-'}
