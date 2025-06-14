@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -176,6 +177,7 @@ export function ProfileForm() {
                 <SelectItem value="User">User</SelectItem>
                 <SelectItem value="logistica">Logistică</SelectItem>
                 <SelectItem value="productie">Producție</SelectItem>
+                <SelectItem value="management">Management</SelectItem>
               </SelectContent>
             </Select>
           </div>
