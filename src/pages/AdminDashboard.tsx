@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, TrendingUp, Users, Package, AlertTriangle } from 'lucide-react';
+import { BarChart3, TrendingUp, Users, Package, AlertTriangle, Clock, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function AdminDashboard() {
@@ -55,6 +55,15 @@ export default function AdminDashboard() {
     if (dateTo && comanda.data_comanda > dateTo) return false;
     return true;
   });
+
+  // Calculate additional stats for processing and in transit orders
+  const comenziInProcesare = filteredComenzi.filter(comanda => 
+    comanda.status === 'in_procesare'
+  ).length;
+
+  const comenziInTranzit = filteredComenzi.filter(comanda => 
+    comanda.status === 'in_tranzit'
+  ).length;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ro-RO', {
@@ -145,7 +154,7 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Statistici generale */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Comenzi</CardTitle>
@@ -168,6 +177,32 @@ export default function AdminDashboard() {
               <div className="text-2xl font-bold">
                 {formatCurrency(stats?.totalValue || 0)}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">În Procesare</CardTitle>
+              <Clock className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{comenziInProcesare}</div>
+              <p className="text-xs text-muted-foreground">
+                Comenzi în procesare
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">În Tranzit</CardTitle>
+              <Truck className="h-4 w-4 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">{comenziInTranzit}</div>
+              <p className="text-xs text-muted-foreground">
+                Comenzi în tranzit
+              </p>
             </CardContent>
           </Card>
 
@@ -218,6 +253,7 @@ export default function AdminDashboard() {
                         <TableHead>Data</TableHead>
                         <TableHead>MZV</TableHead>
                         <TableHead>Distribuitor</TableHead>
+                        <TableHead>Transportator</TableHead>
                         <TableHead>Status</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -228,6 +264,7 @@ export default function AdminDashboard() {
                           <TableCell>{new Date(comanda.data_comanda).toLocaleDateString('ro-RO')}</TableCell>
                           <TableCell>MZV</TableCell>
                           <TableCell>Distribuitor</TableCell>
+                          <TableCell>{comanda.nume_transportator || '-'}</TableCell>
                           <TableCell>
                             <span className={`px-2 py-1 rounded-full text-xs ${
                               comanda.status === 'Finalizata' 
