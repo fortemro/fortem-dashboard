@@ -17,14 +17,23 @@ export function useComandaDetails() {
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(comanda.distribuitor_id);
       
       if (isUUID) {
-        const { data: distributorData, error: distributorError } = await supabase
-          .from('distribuitori')
-          .select('*')
-          .eq('id', comanda.distribuitor_id)
-          .single();
+        try {
+          const { data: distributorData, error: distributorError } = await supabase
+            .from('distribuitori')
+            .select('*')
+            .eq('id', comanda.distribuitor_id)
+            .single();
 
-        if (!distributorError && distributorData) {
-          distributorDetails = distributorData;
+          // Only set distributorDetails if no error and data exists
+          if (!distributorError && distributorData) {
+            distributorDetails = distributorData;
+          } else if (distributorError && distributorError.code !== 'PGRST116') {
+            // Log only if it's not a "no rows found" error
+            console.warn('Error fetching distributor in details:', distributorError);
+          }
+        } catch (error) {
+          // Silently handle distributor fetch errors
+          console.warn('Failed to fetch distributor for comanda details:', comandaId);
         }
       }
 
