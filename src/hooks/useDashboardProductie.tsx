@@ -9,6 +9,15 @@ export interface DashboardProductieRow {
   necesar_comenzi: number;
 }
 
+// Definim tipul pentru rezultatul din itemi_comanda
+type ItemComandaWithStatus = {
+  produs_id: string;
+  cantitate: number | null;
+  comanda: {
+    status: string | null;
+  } | null;
+};
+
 async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
   // 1. Obține toate produsele
   const { data: produseData, error: produseError } = await supabase
@@ -18,18 +27,19 @@ async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
 
   if (produseError) throw new Error(produseError.message);
 
-  // 2. Pentru comenzile "în așteptare" sau "în procesare", agregăm cantitatea de produs
-  // Query toate itemi_comanda cu join la comanda pentru filtrare status și grupăm pe produs_id
+  // 2. Query explicit cu hint la relația corectă pentru a evita ambiguitatea
+  //    Acum comanda!comanda_id(status) va returna statusul corect
   const { data: necesare, error: necesarError } = await supabase
     .from("itemi_comanda")
-    .select("produs_id, cantitate, comanda:comanda_id(status)")
-    // statusul comenzii e în ['in_asteptare', 'in_procesare']  
-    // (DB: status default = 'in_asteptare', 'in procesare' ar trebui să fie exact în această formă, verificați dacă forma statusurilor e corectă)
-  
+    .select("produs_id, cantitate, comanda:comanda_id(status)");
+
   if (necesarError) throw new Error(necesarError.message);
 
+  // Castăm la tipul corect
+  const necesarList = (necesare ?? []) as ItemComandaWithStatus[];
+
   const necesarMap: Record<string, number> = {};
-  for (const item of necesare ?? []) {
+  for (const item of necesarList) {
     // status potențial: 'in_asteptare', 'in_procesare', fără diacritice!
     if (
       item.comanda?.status === "in_asteptare" ||
