@@ -175,6 +175,7 @@ export function ProfileForm() {
                 <SelectItem value="Manager">Manager</SelectItem>
                 <SelectItem value="User">User</SelectItem>
                 <SelectItem value="logistica">Logistică</SelectItem>
+                <SelectItem value="productie">Producție</SelectItem>
               </SelectContent>
             </Select>
           </div>
