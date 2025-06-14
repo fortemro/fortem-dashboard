@@ -10,6 +10,7 @@ import { PerformanceCharts } from "@/components/dashboard-executiv/PerformanceCh
 import { TopProducts } from "@/components/dashboard-executiv/TopProducts";
 import { AlertsSection } from "@/components/dashboard-executiv/AlertsSection";
 import { useExecutiveData } from "@/hooks/useExecutiveData";
+import { useDashboardData } from "@/hooks/dashboard-executiv/useDashboardData";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const periodOptions: { value: PeriodFilter; label: string }[] = [
@@ -25,6 +26,7 @@ export default function DashboardExecutiv() {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>('today');
   const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
   const { comenzi, isLoading } = useExecutiveData();
+  const { getDataForPeriod } = useDashboardData();
 
   const handlePeriodChange = (period: PeriodFilter) => {
     setSelectedPeriod(period);
@@ -40,23 +42,49 @@ export default function DashboardExecutiv() {
     return periodOptions.find(p => p.value === selectedPeriod)?.label || 'Necunoscut';
   };
 
-  // Mock data pentru demonstrare - în viitor va fi calculat din comenzi
-  const mockData = {
-    vanzariTotale: "2.580.000 RON",
-    vanzariChange: "+12.5%",
-    comenziActive: comenzi.length,
-    comenziChange: `${comenzi.length} comenzi în sistem`,
-    distributoriActivi: 15,
-    distributoriChange: "+2 față de luna trecută",
-    alerteStoc: 8,
-    alerteChange: "3 produse noi sub prag"
+  // Calculăm statisticile reale pe baza comenzilor din baza de date
+  const calculateRealStats = () => {
+    if (!comenzi.length) {
+      return {
+        vanzariTotale: "0 RON",
+        vanzariChange: "0%",
+        comenziActive: 0,
+        comenziChange: "0 comenzi în sistem",
+        distributoriActivi: 0,
+        distributoriChange: "0 distribuitori activi",
+        alerteStoc: 0,
+        alerteChange: "0 produse sub prag"
+      };
+    }
+
+    const totalVanzari = comenzi.reduce((sum, comanda) => sum + (comanda.total_comanda || 0), 0);
+    const comenziActuale = comenzi.length;
+    
+    // Calculăm distribuitorii unici
+    const distributoriUnici = new Set(comenzi.map(c => c.distribuitor_id)).size;
+
+    return {
+      vanzariTotale: `${totalVanzari.toLocaleString('ro-RO')} RON`,
+      vanzariChange: "+0%", // Ar trebui calculat comparativ cu perioada anterioară
+      comenziActive: comenziActuale,
+      comenziChange: `${comenziActuale} comenzi în sistem`,
+      distributoriActivi: distributoriUnici,
+      distributoriChange: `${distributoriUnici} distribuitori activi`,
+      alerteStoc: 0, // Ar trebui calculat din stocuri
+      alerteChange: "Date indisponibile"
+    };
   };
 
-  const mockTopProducts = [
-    { nume: "BCA FORTEM 100", cantitate: "1,250 buc", valoare: "185.000 RON", trend: "+15%" },
-    { nume: "BCA FORTEM 200", cantitate: "980 buc", valoare: "147.000 RON", trend: "+8%" },
-    { nume: "BCA FORTEM 150", cantitate: "840 buc", valoare: "126.000 RON", trend: "+5%" }
-  ];
+  // Calculăm top produse pe baza comenzilor reale
+  const calculateTopProducts = () => {
+    if (!comenzi.length) {
+      return [];
+    }
+
+    // Pentru simplitate, folosim datele din useDashboardData pentru perioada selectată
+    const periodData = getDataForPeriod(selectedPeriod, customDateRange);
+    return periodData.topProduse || [];
+  };
 
   if (loading) {
     return (
@@ -69,6 +97,9 @@ export default function DashboardExecutiv() {
   if (!profile || profile.rol !== 'management') {
     return <Navigate to="/" replace />;
   }
+
+  const realData = calculateRealStats();
+  const topProducts = calculateTopProducts();
 
   return (
     <div className="container mx-auto px-4 py-8 mt-16">
@@ -134,14 +165,14 @@ export default function DashboardExecutiv() {
         </div>
       ) : (
         <>
-          <StatsCards data={mockData} />
+          <StatsCards data={realData} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <PerformanceCharts periodDisplay={getDisplayPeriod()} />
-            <TopProducts products={mockTopProducts} />
+            <TopProducts products={topProducts} />
           </div>
 
-          <AlertsSection alerteStoc={mockData.alerteStoc} />
+          <AlertsSection alerteStoc={realData.alerteStoc} />
         </>
       )}
     </div>
