@@ -40,18 +40,13 @@ async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
       // Check shape: produs_id (string), comanda (object or null), comanda.status (string|null)
       const produsId = typeof item?.produs_id === "string" ? item.produs_id : null;
       const cantitate = typeof item?.cantitate === "number" ? item.cantitate : 0;
-      const status =
-        item?.comanda &&
-        typeof item.comanda === "object" &&
-        "status" in item.comanda
-          ? item.comanda.status
-          : undefined;
 
       if (
         produsId &&
         item?.comanda &&
         typeof item.comanda === "object" &&
         "status" in item.comanda &&
+        item.comanda &&
         (item.comanda.status === "in_asteptare" || item.comanda.status === "in_procesare")
       ) {
         if (!necesarMap[produsId]) necesarMap[produsId] = 0;
