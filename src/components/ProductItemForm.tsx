@@ -52,7 +52,18 @@ export function ProductItemForm({
               <SelectContent>
                 {produse.map((produs) => (
                   <SelectItem key={produs.id} value={produs.id}>
-                    {produs.nume}
+                    <span className="flex items-center">
+                      <span>{produs.nume}</span>
+                      <span 
+                        className={`ml-2 text-sm ${
+                          produs.stoc_disponibil === 0 
+                            ? 'text-red-600 font-medium' 
+                            : 'text-gray-500'
+                        }`}
+                      >
+                        (Stoc: {produs.stoc_disponibil || 0})
+                      </span>
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
