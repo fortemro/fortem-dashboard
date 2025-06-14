@@ -59,17 +59,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Găsite ${produse.length} produse cu stoc critic`);
 
-    // Obține lista utilizatorilor cu rol admin/management pentru notificări
-    const { data: utilizatori, error: utilizatoriError } = await supabase
-      .from("profiluri_utilizatori")
-      .select("nume_complet, email")
-      .in("rol", ["admin", "management"])
-      .not("email", "is", null);
-
-    if (utilizatoriError) {
-      console.error("Eroare la obținerea utilizatorilor:", utilizatoriError);
-    }
-
     // Pregătește conținutul email-ului
     const produseStocCritic = produse as ProdusStocCritic[];
     const produseEpuizate = produseStocCritic.filter(p => p.stoc_disponibil === 0);
@@ -139,38 +128,31 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    // Trimite email-uri către utilizatorii relevanți
-    let emailuriTrimise = 0;
-    
-    if (utilizatori && utilizatori.length > 0) {
-      for (const utilizator of utilizatori) {
-        if (utilizator.email) {
-          try {
-            await resend.emails.send({
-              from: "Sistem Stocuri <onboarding@resend.dev>",
-              to: [utilizator.email],
-              subject: `🚨 Alertă Stoc Critic - ${produseStocCritic.length} produse necesită atenție`,
-              html: htmlContent,
-            });
-            emailuriTrimise++;
-            console.log(`Email trimis către: ${utilizator.email}`);
-          } catch (emailError) {
-            console.error(`Eroare la trimiterea email-ului către ${utilizator.email}:`, emailError);
-          }
-        }
-      }
+    // Trimite email către adresa predefinită
+    try {
+      await resend.emails.send({
+        from: "Sistem Stocuri <onboarding@resend.dev>",
+        to: ["lucian.cebuc@fortem.ro"],
+        subject: `🚨 Alertă Stoc Critic - ${produseStocCritic.length} produse necesită atenție`,
+        html: htmlContent,
+      });
+      
+      console.log("Email trimis cu succes către lucian.cebuc@fortem.ro");
+    } catch (emailError) {
+      console.error("Eroare la trimiterea email-ului:", emailError);
+      throw new Error(`Eroare la trimiterea email-ului: ${emailError.message}`);
     }
 
-    console.log(`Verificare completă. Trimise ${emailuriTrimise} email-uri.`);
+    console.log("Verificare completă și email trimis.");
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Verificare stoc completă",
+        message: "Verificare stoc completă și email trimis",
         produse_critice: produseStocCritic.length,
         produse_epuizate: produseEpuizate.length,
         produse_alerte: produseAlerte.length,
-        emailuri_trimise: emailuriTrimise,
+        email_trimis_catre: "lucian.cebuc@fortem.ro",
         produse: produseStocCritic.map(p => ({
           nume: p.nume,
           stoc_disponibil: p.stoc_disponibil,
