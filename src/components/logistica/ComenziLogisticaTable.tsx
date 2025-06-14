@@ -181,6 +181,7 @@ export function ComenziLogisticaTable() {
                     <TableHead>Oraș Livrare</TableHead>
                     <TableHead>Nume Transportator</TableHead>
                     <TableHead>Număr Mașină</TableHead>
+                    <TableHead>Data Expediere</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-[120px]">Acțiuni</TableHead>
                   </TableRow>
@@ -213,6 +214,9 @@ export function ComenziLogisticaTable() {
                         </TableCell>
                         <TableCell>
                           {comanda.numar_masina || '-'}
+                        </TableCell>
+                        <TableCell>
+                          {comanda.data_expediere ? format(new Date(comanda.data_expediere), 'dd.MM.yyyy HH:mm') : '-'}
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary">
