@@ -12,7 +12,6 @@ export type Database = {
       comenzi: {
         Row: {
           adresa_livrare: string
-          awb: string | null
           created_at: string
           data_comanda: string
           data_expediere: string | null
@@ -22,19 +21,21 @@ export type Database = {
           judet_livrare: string | null
           mzv_emitent: string | null
           numar_comanda: string
+          numar_masina: string | null
           numar_paleti: number
+          nume_sofer: string | null
           nume_transportator: string | null
           observatii: string | null
           oras_livrare: string
           status: string | null
           telefon_livrare: string | null
+          telefon_sofer: string | null
           total_comanda: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           adresa_livrare: string
-          awb?: string | null
           created_at?: string
           data_comanda?: string
           data_expediere?: string | null
@@ -44,19 +45,21 @@ export type Database = {
           judet_livrare?: string | null
           mzv_emitent?: string | null
           numar_comanda: string
+          numar_masina?: string | null
           numar_paleti?: number
+          nume_sofer?: string | null
           nume_transportator?: string | null
           observatii?: string | null
           oras_livrare: string
           status?: string | null
           telefon_livrare?: string | null
+          telefon_sofer?: string | null
           total_comanda?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           adresa_livrare?: string
-          awb?: string | null
           created_at?: string
           data_comanda?: string
           data_expediere?: string | null
@@ -66,12 +69,15 @@ export type Database = {
           judet_livrare?: string | null
           mzv_emitent?: string | null
           numar_comanda?: string
+          numar_masina?: string | null
           numar_paleti?: number
+          nume_sofer?: string | null
           nume_transportator?: string | null
           observatii?: string | null
           oras_livrare?: string
           status?: string | null
           telefon_livrare?: string | null
+          telefon_sofer?: string | null
           total_comanda?: number | null
           updated_at?: string
           user_id?: string

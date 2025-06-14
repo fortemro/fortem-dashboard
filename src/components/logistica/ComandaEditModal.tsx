@@ -29,24 +29,29 @@ export function ComandaEditModal({ comanda, isOpen, onClose, onSuccess }: Comand
   const { updateComandaTransport, loading } = useComandaEdit();
   const [comandaDetails, setCombandaDetails] = useState<Comanda | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
-  const [awb, setAwb] = useState('');
+  const [numarMasina, setNumarMasina] = useState('');
   const [numeTransportator, setNumeTransportator] = useState('');
+  const [numeSofer, setNumeSofer] = useState('');
+  const [telefonSofer, setTelefonSofer] = useState('');
 
   useEffect(() => {
     const loadComandaDetails = async () => {
-      if (comanda?.id && isOpen && !comandaDetails) { // Add check to prevent reload if already loaded
+      if (comanda?.id && isOpen && !comandaDetails) {
         setLoadingDetails(true);
         try {
           const details = await getComandaById(comanda.id);
           setCombandaDetails(details);
-          setAwb(details.awb || '');
+          setNumarMasina(details.numar_masina || '');
           setNumeTransportator(details.nume_transportator || '');
+          setNumeSofer(details.nume_sofer || '');
+          setTelefonSofer(details.telefon_sofer || '');
         } catch (error) {
           console.error('Error loading comanda details:', error);
-          // Set the current comanda as fallback to prevent infinite loading
           setCombandaDetails(comanda);
-          setAwb(comanda.awb || '');
+          setNumarMasina(comanda.numar_masina || '');
           setNumeTransportator(comanda.nume_transportator || '');
+          setNumeSofer(comanda.nume_sofer || '');
+          setTelefonSofer(comanda.telefon_sofer || '');
         } finally {
           setLoadingDetails(false);
         }
@@ -56,17 +61,24 @@ export function ComandaEditModal({ comanda, isOpen, onClose, onSuccess }: Comand
     if (isOpen && comanda) {
       loadComandaDetails();
     } else if (!isOpen) {
-      // Reset state when modal is closed
       setCombandaDetails(null);
-      setAwb('');
+      setNumarMasina('');
       setNumeTransportator('');
+      setNumeSofer('');
+      setTelefonSofer('');
     }
-  }, [comanda?.id, isOpen, getComandaById]); // Remove comandaDetails from dependencies to prevent loops
+  }, [comanda?.id, isOpen, getComandaById]);
 
   const handleSave = async () => {
     if (!comanda?.id) return;
     
-    const success = await updateComandaTransport(comanda.id, awb, numeTransportator);
+    const success = await updateComandaTransport(
+      comanda.id, 
+      numarMasina, 
+      numeTransportator, 
+      numeSofer, 
+      telefonSofer
+    );
     if (success) {
       onSuccess?.();
       onClose();
@@ -75,10 +87,11 @@ export function ComandaEditModal({ comanda, isOpen, onClose, onSuccess }: Comand
 
   const handleClose = () => {
     onClose();
-    // Reset form when closing
     setCombandaDetails(null);
-    setAwb('');
+    setNumarMasina('');
     setNumeTransportator('');
+    setNumeSofer('');
+    setTelefonSofer('');
   };
 
   if (!isOpen || !comanda) return null;
@@ -165,7 +178,7 @@ export function ComandaEditModal({ comanda, isOpen, onClose, onSuccess }: Comand
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Orașului Livrare</label>
+                  <label className="text-sm font-medium text-gray-500">Orașul Livrare</label>
                   <p>{detailsToShow.oras_livrare}</p>
                 </div>
                 {detailsToShow.judet_livrare && (
@@ -200,14 +213,14 @@ export function ComandaEditModal({ comanda, isOpen, onClose, onSuccess }: Comand
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="awb" className="text-sm font-medium text-gray-700 block mb-2">
-                    AWB
+                  <label htmlFor="numar_masina" className="text-sm font-medium text-gray-700 block mb-2">
+                    Număr Mașină
                   </label>
                   <Input
-                    id="awb"
-                    value={awb}
-                    onChange={(e) => setAwb(e.target.value)}
-                    placeholder="Numărul AWB"
+                    id="numar_masina"
+                    value={numarMasina}
+                    onChange={(e) => setNumarMasina(e.target.value)}
+                    placeholder="Numărul mașinii/camionului"
                     className="w-full"
                   />
                 </div>
@@ -220,6 +233,30 @@ export function ComandaEditModal({ comanda, isOpen, onClose, onSuccess }: Comand
                     value={numeTransportator}
                     onChange={(e) => setNumeTransportator(e.target.value)}
                     placeholder="Numele companiei de transport"
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="nume_sofer" className="text-sm font-medium text-gray-700 block mb-2">
+                    Nume Șofer
+                  </label>
+                  <Input
+                    id="nume_sofer"
+                    value={numeSofer}
+                    onChange={(e) => setNumeSofer(e.target.value)}
+                    placeholder="Numele șoferului"
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="telefon_sofer" className="text-sm font-medium text-gray-700 block mb-2">
+                    Telefon Șofer
+                  </label>
+                  <Input
+                    id="telefon_sofer"
+                    value={telefonSofer}
+                    onChange={(e) => setTelefonSofer(e.target.value)}
+                    placeholder="Numărul de telefon al șoferului"
                     className="w-full"
                   />
                 </div>

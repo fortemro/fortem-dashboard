@@ -165,7 +165,7 @@ export function ComandaDetailsModal({ comanda, isOpen, onClose }: ComandaDetails
             </Card>
 
             {/* Informații transport */}
-            {(detailsToShow.data_expediere || detailsToShow.nume_transportator || detailsToShow.awb) && (
+            {(detailsToShow.data_expediere || detailsToShow.nume_transportator || detailsToShow.numar_masina || detailsToShow.nume_sofer || detailsToShow.telefon_sofer) && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Informații Transport</CardTitle>
@@ -183,10 +183,22 @@ export function ComandaDetailsModal({ comanda, isOpen, onClose }: ComandaDetails
                       <p>{detailsToShow.nume_transportator}</p>
                     </div>
                   )}
-                  {detailsToShow.awb && (
+                  {detailsToShow.numar_masina && (
                     <div>
-                      <label className="text-sm font-medium text-gray-500">AWB</label>
-                      <p>{detailsToShow.awb}</p>
+                      <label className="text-sm font-medium text-gray-500">Număr Mașină</label>
+                      <p>{detailsToShow.numar_masina}</p>
+                    </div>
+                  )}
+                  {detailsToShow.nume_sofer && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Nume Șofer</label>
+                      <p>{detailsToShow.nume_sofer}</p>
+                    </div>
+                  )}
+                  {detailsToShow.telefon_sofer && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Telefon Șofer</label>
+                      <p>{detailsToShow.telefon_sofer}</p>
                     </div>
                   )}
                 </CardContent>

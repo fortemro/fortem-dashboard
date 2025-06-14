@@ -7,14 +7,22 @@ export function useComandaEdit() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const updateComandaTransport = async (comandaId: string, awb: string, numeTransportator: string) => {
+  const updateComandaTransport = async (
+    comandaId: string, 
+    numarMasina: string, 
+    numeTransportator: string,
+    numeSofer: string,
+    telefonSofer: string
+  ) => {
     setLoading(true);
     try {
       const { error } = await supabase
         .from('comenzi')
         .update({
-          awb: awb.trim() || null,
+          numar_masina: numarMasina.trim() || null,
           nume_transportator: numeTransportator.trim() || null,
+          nume_sofer: numeSofer.trim() || null,
+          telefon_sofer: telefonSofer.trim() || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', comandaId);
