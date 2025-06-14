@@ -17,7 +17,7 @@ export function useLogisticaStats() {
       // Query all relevant data - make sure we get ALL orders
       const { data: allComenzi, error } = await supabase
         .from('comenzi')
-        .select('id, status, data_expediere, awb, created_at, data_comanda')
+        .select('id, status, data_expediere, numar_masina, created_at, data_comanda')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -50,11 +50,11 @@ export function useLogisticaStats() {
         comanda.data_expediere.startsWith(todayStr)
       ).length;
 
-      // Calculate rute active (în tranzit cu AWB completat)
+      // Calculate rute active (în tranzit cu număr mașină completat)
       const ruteActive = allComenzi.filter(comanda => 
         comanda.status === 'in_tranzit' && 
-        comanda.awb && 
-        comanda.awb.trim() !== ''
+        comanda.numar_masina && 
+        comanda.numar_masina.trim() !== ''
       ).length;
 
       // Calculate eficiența livrărilor (ultimele 30 de zile)
