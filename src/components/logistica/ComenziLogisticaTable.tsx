@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MoreHorizontal, Edit, Filter, Search, Truck } from 'lucide-react';
+import { MoreHorizontal, Edit, Filter, Search, Truck, Package } from 'lucide-react';
 import { useComenziLogistica } from '@/hooks/logistica/useComenziLogistica';
 import { ComandaDetailsModal } from './ComandaDetailsModal';
 import { ComandaEditModal } from './ComandaEditModal';
@@ -97,6 +97,10 @@ export function ComenziLogisticaTable() {
     setIsEditModalOpen(true);
   };
 
+  const handleMarcheazaExpediat = async (comanda: Comanda) => {
+    await handleStatusUpdate(comanda.id, 'in_tranzit');
+  };
+
   if (loading) {
     return (
       <Card>
@@ -167,6 +171,8 @@ export function ComenziLogisticaTable() {
                     <TableHead>Dată Plasare</TableHead>
                     <TableHead>Distribuitor</TableHead>
                     <TableHead>Oraș Livrare</TableHead>
+                    <TableHead>Nume Transportator</TableHead>
+                    <TableHead>Număr Mașină</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-[120px]">Acțiuni</TableHead>
                   </TableRow>
@@ -175,6 +181,7 @@ export function ComenziLogisticaTable() {
                   {filteredComenzi.map((comanda) => {
                     const currentStatus = comanda.status || 'in_asteptare';
                     const isInAsteptare = currentStatus === 'in_asteptare';
+                    const isInProcesare = currentStatus === 'in_procesare';
                     
                     return (
                       <TableRow key={comanda.id}>
@@ -191,6 +198,12 @@ export function ComenziLogisticaTable() {
                           {comanda.oras_livrare}
                         </TableCell>
                         <TableCell>
+                          {comanda.nume_transportator || '-'}
+                        </TableCell>
+                        <TableCell>
+                          {comanda.numar_masina || '-'}
+                        </TableCell>
+                        <TableCell>
                           <Badge variant="secondary">
                             {currentStatus}
                           </Badge>
@@ -205,6 +218,16 @@ export function ComenziLogisticaTable() {
                             >
                               <Truck className="h-4 w-4 mr-2" />
                               Alocă Transport
+                            </Button>
+                          ) : isInProcesare ? (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-8"
+                              onClick={() => handleMarcheazaExpediat(comanda)}
+                            >
+                              <Package className="h-4 w-4 mr-2" />
+                              Marchează ca Expediat
                             </Button>
                           ) : (
                             <div className="flex items-center gap-2">
