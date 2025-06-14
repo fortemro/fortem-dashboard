@@ -12,7 +12,7 @@ export function useComandaDetails() {
 
       if (comandaError) throw comandaError;
 
-      // Get distribuitor details if available
+      // Get distribuitor details if available - with better error handling
       let distributorDetails = null;
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(comanda.distribuitor_id);
       
@@ -22,18 +22,15 @@ export function useComandaDetails() {
             .from('distribuitori')
             .select('*')
             .eq('id', comanda.distribuitor_id)
-            .single();
+            .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no data
 
-          // Only set distributorDetails if no error and data exists
-          if (!distributorError && distributorData) {
+          if (distributorData && !distributorError) {
             distributorDetails = distributorData;
-          } else if (distributorError && distributorError.code !== 'PGRST116') {
-            // Log only if it's not a "no rows found" error
-            console.warn('Error fetching distributor in details:', distributorError);
           }
+          // Don't log errors for missing distributors to avoid console spam
         } catch (error) {
-          // Silently handle distributor fetch errors
-          console.warn('Failed to fetch distributor for comanda details:', comandaId);
+          // Silently handle distributor fetch errors without logging
+          distributorDetails = null;
         }
       }
 
@@ -52,11 +49,7 @@ export function useComandaDetails() {
             .from('produse')
             .select('id, nume, dimensiuni, bucati_per_palet')
             .eq('id', item.produs_id)
-            .single();
-
-          if (productError) {
-            console.error('Error fetching product for item:', item.id, productError);
-          }
+            .maybeSingle(); // Use maybeSingle here too
 
           return {
             ...item,

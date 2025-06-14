@@ -34,7 +34,7 @@ export function ComandaEditModal({ comanda, isOpen, onClose, onSuccess }: Comand
 
   useEffect(() => {
     const loadComandaDetails = async () => {
-      if (comanda?.id && isOpen) {
+      if (comanda?.id && isOpen && !comandaDetails) { // Add check to prevent reload if already loaded
         setLoadingDetails(true);
         try {
           const details = await getComandaById(comanda.id);
@@ -43,14 +43,25 @@ export function ComandaEditModal({ comanda, isOpen, onClose, onSuccess }: Comand
           setNumeTransportator(details.nume_transportator || '');
         } catch (error) {
           console.error('Error loading comanda details:', error);
+          // Set the current comanda as fallback to prevent infinite loading
+          setCombandaDetails(comanda);
+          setAwb(comanda.awb || '');
+          setNumeTransportator(comanda.nume_transportator || '');
         } finally {
           setLoadingDetails(false);
         }
       }
     };
 
-    loadComandaDetails();
-  }, [comanda?.id, isOpen, getComandaById]);
+    if (isOpen && comanda) {
+      loadComandaDetails();
+    } else if (!isOpen) {
+      // Reset state when modal is closed
+      setCombandaDetails(null);
+      setAwb('');
+      setNumeTransportator('');
+    }
+  }, [comanda?.id, isOpen, getComandaById]); // Remove comandaDetails from dependencies to prevent loops
 
   const handleSave = async () => {
     if (!comanda?.id) return;
@@ -65,6 +76,7 @@ export function ComandaEditModal({ comanda, isOpen, onClose, onSuccess }: Comand
   const handleClose = () => {
     onClose();
     // Reset form when closing
+    setCombandaDetails(null);
     setAwb('');
     setNumeTransportator('');
   };
