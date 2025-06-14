@@ -37,10 +37,15 @@ async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
   const necesarMap: Record<string, number> = {};
   if (Array.isArray(necesare)) {
     for (const item of necesare) {
-      // Check shape: produs_id (string), comanda (object), comanda.status (string|null)
+      // Check shape: produs_id (string), comanda (object or null), comanda.status (string|null)
       const produsId = typeof item?.produs_id === "string" ? item.produs_id : null;
       const cantitate = typeof item?.cantitate === "number" ? item.cantitate : 0;
-      const status = item?.comanda && typeof item.comanda === "object" ? item.comanda.status : undefined;
+      const status =
+        item?.comanda &&
+        typeof item.comanda === "object" &&
+        "status" in item.comanda
+          ? item.comanda.status
+          : undefined;
 
       if (
         produsId &&
