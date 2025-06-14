@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useProduse } from '@/hooks/useProduse';
-import { Package, Ruler, Weight, Truck } from 'lucide-react';
+import { Package, Ruler, Weight, Truck, Warehouse } from 'lucide-react';
 import { ProductCartButton } from './ProductCartButton';
 
 export function ProduseGrid() {
@@ -40,6 +40,12 @@ export function ProduseGrid() {
     );
   }
 
+  const getStockColor = (stocReal: number, pragAlerta: number) => {
+    if (stocReal <= 0) return "text-red-600 font-bold";
+    if (stocReal <= pragAlerta) return "text-orange-600 font-semibold";
+    return "text-green-700 font-semibold";
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
       {produse.map((produs) => (
@@ -62,6 +68,23 @@ export function ProduseGrid() {
             {produs.descriere && (
               <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 line-clamp-3">{produs.descriere}</p>
             )}
+            
+            {/* Secțiunea nouă pentru stocul real */}
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg border-l-4 border-blue-500">
+              <div className="flex items-center mb-2">
+                <Warehouse className="h-4 w-4 mr-2 text-blue-600" />
+                <h4 className="text-sm font-semibold text-gray-800">Stoc Disponibil</h4>
+              </div>
+              <div className="text-center">
+                <div className={`text-2xl ${getStockColor(produs.stoc_disponibil || 0, produs.prag_alerta_stoc || 10)}`}>
+                  {produs.stoc_disponibil || 0}
+                </div>
+                <div className="text-xs text-gray-500 mt-1 space-y-0.5">
+                  <div>Fizic în depozit: {produs.stoc_disponibil || 0}</div>
+                  <div>Alocat comenzilor: 0</div>
+                </div>
+              </div>
+            </div>
             
             {/* Informații dimensiuni și greutate */}
             {(produs.dimensiuni || produs.kg_per_buc || produs.densitate) && (
