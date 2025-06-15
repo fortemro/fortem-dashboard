@@ -1,7 +1,6 @@
-
 import { useProfile } from './useProfile';
 
-export type UserRole = 'MZV' | 'Admin' | 'Manager' | 'User' | 'logistica' | 'productie' | 'management' | 'centralizator';
+export type UserRole = 'MZV' | 'admin' | 'management' | 'logistica' | 'productie' | 'centralizator';
 
 export interface Permission {
   canCreate: boolean;
@@ -15,7 +14,7 @@ export function usePermissions() {
   const { profile } = useProfile();
   
   const hasFullAccess = (role?: string): boolean => {
-    return role === 'Admin' || role === 'management';
+    return role === 'admin' || role === 'management';
   };
 
   const getPermissionsForDashboard = (dashboardType: string): Permission => {
@@ -57,7 +56,7 @@ export function usePermissions() {
 
   const getDashboardForRole = (role?: string): string => {
     switch (role) {
-      case 'Admin':
+      case 'admin':
         return '/admin-dashboard';
       case 'management':
         return '/dashboard-executiv';
@@ -68,8 +67,6 @@ export function usePermissions() {
       case 'centralizator':
         return '/centralizator-comenzi';
       case 'MZV':
-      case 'Manager':
-      case 'User':
       default:
         return '/';
     }
