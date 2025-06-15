@@ -85,11 +85,12 @@ export function useComenziLogistica() {
 
   const updateComandaStatus = async (comandaId: string, newStatus: string, setExpeditionDate: boolean = false, setDeliveryDate: boolean = false) => {
     try {
-      console.log('Starting status update for comanda:', comandaId, 'to status:', newStatus);
+      console.log('useComenziLogistica: Starting status update for comanda:', comandaId, 'to status:', newStatus);
       
+      // Use the direct update utility
       await updateComandaStatusDirect(comandaId, newStatus, setExpeditionDate, setDeliveryDate);
 
-      console.log('Status update successful');
+      console.log('useComenziLogistica: Status update successful');
 
       // Invalidate and refetch the query
       queryClient.invalidateQueries({ queryKey: ['comenzi-logistica'] });
@@ -108,10 +109,10 @@ export function useComenziLogistica() {
         description: successMessage
       });
     } catch (error) {
-      console.error('Error updating comanda status:', error);
+      console.error('useComenziLogistica: Error updating comanda status:', error);
       toast({
         title: "Eroare",
-        description: "Nu s-a putut actualiza statusul comenzii",
+        description: `Nu s-a putut actualiza statusul comenzii: ${error?.message || 'Eroare necunoscută'}`,
         variant: "destructive"
       });
     }
