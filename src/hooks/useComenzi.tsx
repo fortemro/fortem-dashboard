@@ -1,22 +1,25 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { Comanda } from '@/data-types';
 
 export function useComenzi() {
   const { user } = useAuth();
-  const [comenzi, setComenzi] = useState<Comanda[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const fetchComenzi = useCallback(async () => {
-    if (!user) {
-      setComenzi([]);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
+  const {
+    data: comenzi = [],
+    isLoading: loading,
+    refetch,
+    error
+  } = useQuery({
+    queryKey: ['comenzi', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      console.log('Fetching comenzi for user:', user.id);
+
       const { data: comenziData, error: comenziError } = await supabase
         .from('comenzi')
         .select('*')
@@ -25,49 +28,44 @@ export function useComenzi() {
 
       if (comenziError) {
         console.error('Eroare la preluarea comenzilor:', comenziError.message);
-        setComenzi([]);
-      } else {
-        const comenziWithDistributors = await Promise.all(
-          (comenziData || []).map(async (comanda) => {
-            let distributorInfo = null;
-            
-            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(comanda.distribuitor_id);
-            
-            if (isUUID) {
-              const { data: distributorData, error: distributorError } = await supabase
-                .from('distribuitori')
-                .select('*')
-                .eq('id', comanda.distribuitor_id)
-                .single();
-
-              if (!distributorError && distributorData) {
-                distributorInfo = distributorData;
-              }
-            }
-
-            return {
-              ...comanda,
-              distribuitori: distributorInfo
-            };
-          })
-        );
-
-        setComenzi(comenziWithDistributors as Comanda[]);
+        throw new Error(comenziError.message);
       }
-    } catch (e) {
-      console.error('Exceptie la preluarea comenzilor:', e);
-      setComenzi([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
 
-  useEffect(() => { 
-    fetchComenzi(); 
-  }, [fetchComenzi]);
-  
+      const comenziWithDistributors = await Promise.all(
+        (comenziData || []).map(async (comanda) => {
+          let distributorInfo = null;
+          
+          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(comanda.distribuitor_id);
+          
+          if (isUUID) {
+            const { data: distributorData, error: distributorError } = await supabase
+              .from('distribuitori')
+              .select('*')
+              .eq('id', comanda.distribuitor_id)
+              .single();
+
+            if (!distributorError && distributorData) {
+              distributorInfo = distributorData;
+            }
+          }
+
+          return {
+            ...comanda,
+            distribuitori: distributorInfo
+          };
+        })
+      );
+
+      console.log('Fetched comenzi:', comenziWithDistributors.length);
+      return comenziWithDistributors as Comanda[];
+    },
+    enabled: !!user,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+  });
+
   // Stable function for getting order by ID
-  const getComandaById = useCallback(async (id: string): Promise<Comanda | null> => {
+  const getComandaById = async (id: string): Promise<Comanda | null> => {
     if (!id) {
       console.log('No ID provided to getComandaById');
       return null;
@@ -147,7 +145,37 @@ export function useComenzi() {
       console.error('Excepție la preluarea comenzii după ID:', e);
       return null;
     }
-  }, []);
+  };
 
-  return { comenzi, loading, fetchComenzi, getComandaById };
+  // Force refresh function
+  const fetchComenzi = async () => {
+    console.log('Force refetching comenzi...');
+    await refetch();
+  };
+
+  // Optimistic delete function
+  const optimisticDeleteComanda = (comandaId: string) => {
+    console.log('Optimistic delete for comanda:', comandaId);
+    queryClient.setQueryData(['comenzi', user?.id], (oldData: Comanda[] | undefined) => {
+      if (!oldData) return [];
+      return oldData.filter(comanda => comanda.id !== comandaId);
+    });
+  };
+
+  // Revert optimistic delete on error
+  const revertOptimisticDelete = () => {
+    console.log('Reverting optimistic delete...');
+    refetch();
+  };
+
+  return { 
+    comenzi, 
+    loading, 
+    fetchComenzi, 
+    getComandaById,
+    refetch,
+    optimisticDeleteComanda,
+    revertOptimisticDelete,
+    error
+  };
 }

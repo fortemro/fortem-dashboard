@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Eye, Edit, Copy, Trash2, Mail, Search, Filter, Plus, Truck, User } from 'lucide-react';
+import { Eye, Edit, Copy, Trash2, Search, Filter, Plus, Truck, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { OrderDetailsModal } from '@/components/OrderDetailsModal';
@@ -17,7 +17,7 @@ import { ConfirmDeleteOrderDialog } from '@/components/ConfirmDeleteOrderDialog'
 
 export default function ComenziMele() {
   const { user } = useAuth();
-  const { comenzi, loading } = useComenzi();
+  const { comenzi, loading, refetch } = useComenzi();
   const { deleteComanda, isDeleting } = useDeleteComanda();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -96,11 +96,20 @@ export default function ComenziMele() {
     setShowDeleteDialog(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (selectedOrderForDelete) {
-      deleteComanda(selectedOrderForDelete.id);
-      setShowDeleteDialog(false);
-      setSelectedOrderForDelete(null);
+      try {
+        await deleteComanda(selectedOrderForDelete.id);
+        setShowDeleteDialog(false);
+        setSelectedOrderForDelete(null);
+        
+        // Force refresh to ensure consistency
+        setTimeout(() => {
+          refetch();
+        }, 500);
+      } catch (error) {
+        console.error('Delete error:', error);
+      }
     }
   };
 
@@ -322,6 +331,7 @@ export default function ComenziMele() {
                                   size="sm"
                                   onClick={() => handleDeleteOrder(comanda)}
                                   className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  disabled={isDeleting}
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
