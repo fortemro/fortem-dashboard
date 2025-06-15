@@ -6,11 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useProfile } from '@/hooks/useProfile';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
-import { User, Phone, MapPin, Calendar, UserCog } from 'lucide-react';
+import { User, Phone, MapPin, UserCog } from 'lucide-react';
+import { PermissionGuard } from './PermissionGuard';
 
 export function ProfileForm() {
   const { profile, createProfile, updateProfile, loading } = useProfile();
+  const { hasFullAccess } = usePermissions();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     nume: profile?.nume || '',
@@ -161,26 +164,46 @@ export function ProfileForm() {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="rol">
-              <UserCog className="h-4 w-4 inline mr-1" />
-              Rol
-            </Label>
-            <Select value={formData.rol} onValueChange={handleRolChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selectează rolul" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="MZV">MZV</SelectItem>
-                <SelectItem value="Admin">Admin</SelectItem>
-                <SelectItem value="Manager">Manager</SelectItem>
-                <SelectItem value="User">User</SelectItem>
-                <SelectItem value="logistica">Logistică</SelectItem>
-                <SelectItem value="productie">Producție</SelectItem>
-                <SelectItem value="management">Management</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <PermissionGuard 
+            dashboardType="profile" 
+            action="manage"
+            fallback={
+              <div className="space-y-2">
+                <Label htmlFor="rol">
+                  <UserCog className="h-4 w-4 inline mr-1" />
+                  Rol
+                </Label>
+                <Input
+                  value={formData.rol}
+                  readOnly
+                  className="bg-gray-50"
+                  placeholder="Rolul nu poate fi modificat"
+                />
+              </div>
+            }
+          >
+            <div className="space-y-2">
+              <Label htmlFor="rol">
+                <UserCog className="h-4 w-4 inline mr-1" />
+                Rol {hasFullAccess && "(Admin/Management pot modifica)"}
+              </Label>
+              <Select value={formData.rol} onValueChange={handleRolChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selectează rolul" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MZV">MZV</SelectItem>
+                  <SelectItem value="Admin">Admin</SelectItem>
+                  <SelectItem value="Manager">Manager</SelectItem>
+                  <SelectItem value="User">User</SelectItem>
+                  <SelectItem value="logistica">Logistică</SelectItem>
+                  <SelectItem value="productie">Producție</SelectItem>
+                  <SelectItem value="management">Management</SelectItem>
+                  <SelectItem value="centralizator">Centralizator</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </PermissionGuard>
 
           <div className="space-y-2">
             <Label htmlFor="telefon">

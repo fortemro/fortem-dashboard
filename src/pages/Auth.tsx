@@ -7,8 +7,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Lock, Building2 } from 'lucide-react';
+import { Mail, Lock, Building2, UserCog } from 'lucide-react';
+
+const availableRoles = [
+  { value: 'MZV', label: 'MZV (Membru Zonă Vânzări)' },
+  { value: 'management', label: 'Management' },
+  { value: 'Admin', label: 'Administrator' },
+  { value: 'logistica', label: 'Logistică' },
+  { value: 'productie', label: 'Producție' },
+  { value: 'centralizator', label: 'Centralizator Comenzi' }
+];
 
 export default function Auth() {
   const { user, signIn, signUp } = useAuth();
@@ -17,7 +27,8 @@ export default function Auth() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    role: 'MZV'
   });
 
   // Redirect authenticated users
@@ -29,6 +40,13 @@ export default function Auth() {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
+    }));
+  };
+
+  const handleRoleChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      role: value
     }));
   };
 
@@ -88,7 +106,7 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      const { error } = await signUp(formData.email, formData.password);
+      const { error } = await signUp(formData.email, formData.password, formData.role);
       
       if (error) {
         if (error.message === "User already registered") {
@@ -107,7 +125,7 @@ export default function Auth() {
       } else {
         toast({
           title: "Înregistrare reușită",
-          description: "Contul a fost creat cu succes. Poți să te autentifici acum.",
+          description: `Contul a fost creat cu succes cu rolul ${formData.role}. Poți să te autentifici acum.`,
         });
       }
     } catch (error) {
@@ -204,6 +222,26 @@ export default function Auth() {
                       />
                     </div>
                   </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-role">
+                      <UserCog className="h-4 w-4 inline mr-1" />
+                      Rol în organizație
+                    </Label>
+                    <Select value={formData.role} onValueChange={handleRoleChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selectează rolul" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableRoles.map((role) => (
+                          <SelectItem key={role.value} value={role.value}>
+                            {role.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Parolă</Label>
                     <div className="relative">
