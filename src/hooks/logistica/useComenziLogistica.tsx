@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { updateComandaStatusDirect } from '@/utils/updateComandaStatusDirect';
 import type { Comanda } from '@/types/comanda';
 
 interface ComandaWithStockStatus extends Comanda {
@@ -18,7 +19,7 @@ export function useComenziLogistica() {
     queryFn: async () => {
       console.log('Fetching comenzi for logistica...');
       
-      // Simple query to get all orders - no joins to avoid distribuitori table
+      // Simple query to get all orders
       const { data: comenziData, error: comenziError } = await supabase
         .from('comenzi')
         .select('*')
@@ -86,35 +87,7 @@ export function useComenziLogistica() {
     try {
       console.log('Starting status update for comanda:', comandaId, 'to status:', newStatus);
       
-      const updateData: any = { 
-        status: newStatus,
-        updated_at: new Date().toISOString()
-      };
-
-      // If marking as 'in_tranzit' (expediated), set the expedition date
-      if (setExpeditionDate && newStatus === 'in_tranzit') {
-        updateData.data_expediere = new Date().toISOString();
-        console.log('Setting expedition date');
-      }
-
-      // If marking as 'livrata' (delivered), set the delivery date
-      if (setDeliveryDate && newStatus === 'livrata') {
-        updateData.data_livrare = new Date().toISOString();
-        console.log('Setting delivery date');
-      }
-
-      console.log('Update payload:', updateData);
-
-      // Simple update query with no joins or selects
-      const { error } = await supabase
-        .from('comenzi')
-        .update(updateData)
-        .eq('id', comandaId);
-
-      if (error) {
-        console.error('Database update error:', error);
-        throw error;
-      }
+      await updateComandaStatusDirect(comandaId, newStatus, setExpeditionDate, setDeliveryDate);
 
       console.log('Status update successful');
 
