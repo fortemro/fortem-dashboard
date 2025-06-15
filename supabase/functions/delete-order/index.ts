@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { comandaId } = await req.json();
+    const { comandaId, motivAnulare } = await req.json();
 
     if (!comandaId) {
       return new Response(JSON.stringify({ error: 'ID comandă lipsește' }), {
@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log('Attempting to delete order:', comandaId, 'for user:', user.id);
+    console.log('Attempting to cancel order:', comandaId, 'for user:', user.id);
 
     // Verificăm dacă comanda aparține utilizatorului și are status in_asteptare
     const { data: comanda, error: comandaError } = await supabaseClient
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
 
     if (comandaError || !comanda) {
       console.error('Order fetch error:', comandaError);
-      return new Response(JSON.stringify({ error: 'Comanda nu a fost găsită sau nu aveți permisiunea să o ștergeți' }), {
+      return new Response(JSON.stringify({ error: 'Comanda nu a fost găsită sau nu aveți permisiunea să o anulați' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -81,50 +81,39 @@ Deno.serve(async (req) => {
 
     if (comanda.status !== 'in_asteptare') {
       return new Response(JSON.stringify({ 
-        error: `Doar comenzile cu statusul "în așteptare" pot fi șterse. Status actual: ${comanda.status}` 
+        error: `Doar comenzile cu statusul "în așteptare" pot fi anulate. Status actual: ${comanda.status}` 
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Șterge itemii comenzii mai întâi
-    const { error: itemsDeleteError } = await supabaseClient
-      .from('itemi_comanda')
-      .delete()
-      .eq('comanda_id', comandaId);
-
-    if (itemsDeleteError) {
-      console.error('Items delete error:', itemsDeleteError);
-      return new Response(JSON.stringify({ 
-        error: `Eroare la ștergerea itemilor comenzii: ${itemsDeleteError.message}` 
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Acum șterge comanda
-    const { error: comandaDeleteError } = await supabaseClient
+    // Marchează comanda ca anulată în loc să o șteargă
+    const { error: updateError } = await supabaseClient
       .from('comenzi')
-      .delete()
+      .update({
+        status: 'anulata',
+        data_anulare: new Date().toISOString(),
+        motiv_anulare: motivAnulare || 'Anulată de utilizator',
+        anulat_de: user.id
+      })
       .eq('id', comandaId);
 
-    if (comandaDeleteError) {
-      console.error('Order delete error:', comandaDeleteError);
+    if (updateError) {
+      console.error('Order cancel error:', updateError);
       return new Response(JSON.stringify({ 
-        error: `Eroare la ștergerea comenzii: ${comandaDeleteError.message}` 
+        error: `Eroare la anularea comenzii: ${updateError.message}` 
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log('Order deleted successfully:', comandaId);
+    console.log('Order cancelled successfully:', comandaId);
 
     return new Response(JSON.stringify({ 
       success: true, 
-      message: `Comanda ${comanda.numar_comanda} a fost ștearsă cu succes` 
+      message: `Comanda ${comanda.numar_comanda} a fost anulată cu succes` 
     }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -133,7 +122,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Unexpected error:', error);
     return new Response(JSON.stringify({ 
-      error: 'Eroare internă la ștergerea comenzii' 
+      error: 'Eroare internă la anularea comenzii' 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

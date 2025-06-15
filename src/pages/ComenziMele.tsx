@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useComenzi } from '@/hooks/useComenzi';
+import { useComenziAnulate } from '@/hooks/useComenziAnulate';
 import { useDeleteComanda } from '@/hooks/useDeleteComanda';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Eye, Edit, Copy, Trash2, Search, Filter, Plus, Truck, User } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Eye, Edit, Copy, Trash2, Search, Filter, Plus, Truck, User, XCircle, Calendar, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { OrderDetailsModal } from '@/components/OrderDetailsModal';
@@ -17,7 +19,8 @@ import { ConfirmDeleteOrderDialog } from '@/components/ConfirmDeleteOrderDialog'
 
 export default function ComenziMele() {
   const { user } = useAuth();
-  const { comenzi, loading, refetch } = useComenzi();
+  const { comenzi, loading } = useComenzi();
+  const { comenziAnulate, loading: loadingAnulate } = useComenziAnulate();
   const { deleteComanda, isDeleting } = useDeleteComanda();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -31,7 +34,7 @@ export default function ComenziMele() {
   const [selectedOrderForDelete, setSelectedOrderForDelete] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  // Filter orders based on search criteria
+  // Filter active orders based on search criteria
   const filteredComenzi = useMemo(() => {
     return comenzi.filter(comanda => {
       if (searchTerm && !comanda.numar_comanda.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -45,19 +48,30 @@ export default function ComenziMele() {
     });
   }, [comenzi, searchTerm, statusFilter, dateFrom, dateTo]);
 
+  // Filter cancelled orders
+  const filteredComenziAnulate = useMemo(() => {
+    return comenziAnulate.filter(comanda => {
+      if (searchTerm && !comanda.numar_comanda.toLowerCase().includes(searchTerm.toLowerCase()) &&
+          !comanda.oras_livrare.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+      if (dateFrom && comanda.data_comanda < dateFrom) return false;
+      if (dateTo && comanda.data_comanda > dateTo) return false;
+      return true;
+    });
+  }, [comenziAnulate, searchTerm, dateFrom, dateTo]);
+
   const handleViewOrder = (comanda) => {
     setSelectedOrder(comanda);
     setShowDetailsModal(true);
   };
 
   const handleDuplicateOrder = (comanda) => {
-    // Get distributor name properly
     const distributorName = getDistributorName(comanda);
     
-    // Store order data for duplication with distributor_name
     localStorage.setItem('duplicateOrderData', JSON.stringify({
       distribuitor_id: comanda.distribuitor_id,
-      distribuitor_name: distributorName, // Add distributor name for proper handling
+      distribuitor_name: distributorName,
       oras_livrare: comanda.oras_livrare,
       adresa_livrare: comanda.adresa_livrare,
       judet_livrare: comanda.judet_livrare,
@@ -73,7 +87,6 @@ export default function ComenziMele() {
   };
 
   const handleEditOrder = (comanda) => {
-    // Check if order can be edited
     if (comanda.status !== 'in_asteptare') {
       toast({
         title: "Nu se poate edita",
@@ -83,7 +96,6 @@ export default function ComenziMele() {
       return;
     }
 
-    // Navigate to edit mode
     navigate(`/comanda?edit=${comanda.id}`);
     toast({
       title: "Editare comandă",
@@ -96,17 +108,12 @@ export default function ComenziMele() {
     setShowDeleteDialog(true);
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = async (motivAnulare?: string) => {
     if (selectedOrderForDelete) {
       try {
-        await deleteComanda(selectedOrderForDelete.id);
+        await deleteComanda(selectedOrderForDelete.id, motivAnulare);
         setShowDeleteDialog(false);
         setSelectedOrderForDelete(null);
-        
-        // Force refresh to ensure consistency
-        setTimeout(() => {
-          refetch();
-        }, 500);
       } catch (error) {
         console.error('Delete error:', error);
       }
@@ -178,12 +185,11 @@ export default function ComenziMele() {
     return getStatusBadge(status);
   };
 
-  // Funcție pentru a obține numele distribuitorului
   const getDistributorName = (comanda) => {
     if (comanda.distribuitori && comanda.distribuitori.nume_companie) {
       return comanda.distribuitori.nume_companie;
     }
-    return comanda.distribuitor_id; // fallback la ID dacă nu există numele
+    return comanda.distribuitor_id;
   };
 
   if (loading) {
@@ -243,7 +249,6 @@ export default function ComenziMele() {
                   <SelectItem value="in_tranzit">În Tranzit</SelectItem>
                   <SelectItem value="livrata">Livrată</SelectItem>
                   <SelectItem value="finalizata">Finalizată</SelectItem>
-                  <SelectItem value="anulata">Anulată</SelectItem>
                 </SelectContent>
               </Select>
               <Input
@@ -262,99 +267,213 @@ export default function ComenziMele() {
           </CardContent>
         </Card>
 
-        {/* Orders Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Comenzi ({filteredComenzi.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {filteredComenzi.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Număr Comandă</TableHead>
-                      <TableHead>Distribuitor</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Orașul Livrare</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Paleti</TableHead>
-                      <TableHead>Total (RON)</TableHead>
-                      <TableHead>Acțiuni</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredComenzi.map((comanda) => (
-                      <TableRow key={comanda.id}>
-                        <TableCell className="font-medium font-mono">
-                          {comanda.numar_comanda}
-                        </TableCell>
-                        <TableCell>{getDistributorName(comanda)}</TableCell>
-                        <TableCell>
-                          {new Date(comanda.data_comanda).toLocaleDateString('ro-RO')}
-                        </TableCell>
-                        <TableCell>{comanda.oras_livrare}</TableCell>
-                        <TableCell>
-                          {getStatusBadgeWithTooltip(comanda)}
-                        </TableCell>
-                        <TableCell>{comanda.numar_paleti}</TableCell>
-                        <TableCell className="font-semibold">
-                          {(comanda.total_comanda || 0).toFixed(2)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewOrder(comanda)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDuplicateOrder(comanda)}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                            {comanda.status === 'in_asteptare' && (
-                              <>
-                                <Button 
-                                  variant="ghost" 
+        {/* Tabs for Active and Cancelled Orders */}
+        <Tabs defaultValue="active" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="active" className="flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              Comenzi Active ({filteredComenzi.length})
+            </TabsTrigger>
+            <TabsTrigger value="cancelled" className="flex items-center gap-2">
+              <XCircle className="h-4 w-4" />
+              Comenzi Anulate ({filteredComenziAnulate.length})
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="active" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Comenzi Active</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {filteredComenzi.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Număr Comandă</TableHead>
+                          <TableHead>Distribuitor</TableHead>
+                          <TableHead>Data</TableHead>
+                          <TableHead>Orașul Livrare</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Paleti</TableHead>
+                          <TableHead>Total (RON)</TableHead>
+                          <TableHead>Acțiuni</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredComenzi.map((comanda) => (
+                          <TableRow key={comanda.id}>
+                            <TableCell className="font-medium font-mono">
+                              {comanda.numar_comanda}
+                            </TableCell>
+                            <TableCell>{getDistributorName(comanda)}</TableCell>
+                            <TableCell>
+                              {new Date(comanda.data_comanda).toLocaleDateString('ro-RO')}
+                            </TableCell>
+                            <TableCell>{comanda.oras_livrare}</TableCell>
+                            <TableCell>
+                              {getStatusBadgeWithTooltip(comanda)}
+                            </TableCell>
+                            <TableCell>{comanda.numar_paleti}</TableCell>
+                            <TableCell className="font-semibold">
+                              {(comanda.total_comanda || 0).toFixed(2)}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
                                   size="sm"
-                                  onClick={() => handleEditOrder(comanda)}
+                                  onClick={() => handleViewOrder(comanda)}
                                 >
-                                  <Edit className="h-4 w-4" />
+                                  <Eye className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleDeleteOrder(comanda)}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  disabled={isDeleting}
+                                  onClick={() => handleDuplicateOrder(comanda)}
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Copy className="h-4 w-4" />
                                 </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500 mb-4">Nu ai comenzi care să corespundă criteriilor de filtrare</p>
-                <Button onClick={() => navigate('/comanda')}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Creează Prima Comandă
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                                {comanda.status === 'in_asteptare' && (
+                                  <>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => handleEditOrder(comanda)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDeleteOrder(comanda)}
+                                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                      disabled={isDeleting}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">Nu ai comenzi active care să corespundă criteriilor de filtrare</p>
+                    <Button onClick={() => navigate('/comanda')}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Creează Prima Comandă
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="cancelled" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <XCircle className="h-5 w-5 text-red-600" />
+                  Comenzi Anulate
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingAnulate ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : filteredComenziAnulate.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Număr Comandă</TableHead>
+                          <TableHead>Distribuitor</TableHead>
+                          <TableHead>Data Comandă</TableHead>
+                          <TableHead>Data Anulare</TableHead>
+                          <TableHead>Anulat De</TableHead>
+                          <TableHead>Motiv</TableHead>
+                          <TableHead>Paleti</TableHead>
+                          <TableHead>Total (RON)</TableHead>
+                          <TableHead>Acțiuni</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredComenziAnulate.map((comanda) => (
+                          <TableRow key={comanda.id} className="bg-red-50">
+                            <TableCell className="font-medium font-mono">
+                              {comanda.numar_comanda}
+                            </TableCell>
+                            <TableCell>{getDistributorName(comanda)}</TableCell>
+                            <TableCell>
+                              {new Date(comanda.data_comanda).toLocaleDateString('ro-RO')}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-4 w-4 text-red-600" />
+                                {new Date(comanda.data_anulare).toLocaleDateString('ro-RO', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {comanda.profile_anulat_de?.nume_complet || 'Utilizator'}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1 max-w-[200px]">
+                                <FileText className="h-4 w-4 text-gray-500" />
+                                <span className="truncate text-sm">
+                                  {comanda.motiv_anulare || 'Nu este specificat'}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>{comanda.numar_paleti}</TableCell>
+                            <TableCell className="font-semibold text-red-600">
+                              {(comanda.total_comanda || 0).toFixed(2)}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleViewOrder(comanda)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDuplicateOrder(comanda)}
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <XCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">Nu ai comenzi anulate</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Order Details Modal */}
         {selectedOrder && (

@@ -10,9 +10,9 @@ export function useDeleteComanda() {
   const { user } = useAuth();
 
   const mutation = useMutation({
-    mutationFn: async (comandaId: string) => {
+    mutationFn: async ({ comandaId, motivAnulare }: { comandaId: string; motivAnulare?: string }) => {
       const { data, error } = await supabase.functions.invoke('delete-order', {
-        body: { comandaId }
+        body: { comandaId, motivAnulare }
       });
 
       if (error) {
@@ -20,42 +20,37 @@ export function useDeleteComanda() {
       }
 
       if (!data.success) {
-        throw new Error(data.error || 'Eroare necunoscută la ștergerea comenzii');
+        throw new Error(data.error || 'Eroare necunoscută la anularea comenzii');
       }
 
       return data;
     },
-    onMutate: async (comandaId) => {
-      // Cancel any outgoing refetches
+    onMutate: async ({ comandaId }) => {
       await queryClient.cancelQueries({ queryKey: ['comenzi', user?.id] });
 
-      // Snapshot the previous value
       const previousComenzi = queryClient.getQueryData(['comenzi', user?.id]);
 
-      // Optimistically remove the order
       queryClient.setQueryData(['comenzi', user?.id], (old: any[]) => {
         if (!old) return [];
         return old.filter(comanda => comanda.id !== comandaId);
       });
 
-      // Return a context object with the snapshotted value
       return { previousComenzi };
     },
-    onError: (error: Error, comandaId, context) => {
-      // Revert the optimistic update
+    onError: (error: Error, { comandaId }, context) => {
       if (context?.previousComenzi) {
         queryClient.setQueryData(['comenzi', user?.id], context.previousComenzi);
       }
 
       toast({
-        title: "Eroare la ștergerea comenzii",
+        title: "Eroare la anularea comenzii",
         description: error.message,
         variant: "destructive"
       });
     },
     onSuccess: (data) => {
-      // Invalidate and refetch all relevant cache
       queryClient.invalidateQueries({ queryKey: ['comenzi'] });
+      queryClient.invalidateQueries({ queryKey: ['comenzi-anulate'] });
       queryClient.invalidateQueries({ queryKey: ['comenzi-logistica'] });
       queryClient.invalidateQueries({ queryKey: ['produse'] });
       queryClient.invalidateQueries({ queryKey: ['stocuri-reale'] });
@@ -64,19 +59,19 @@ export function useDeleteComanda() {
       queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
 
       toast({
-        title: "Comandă ștearsă",
+        title: "Comandă anulată",
         description: data.message,
         variant: "default"
       });
     },
     onSettled: () => {
-      // Always refetch after error or success to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['comenzi', user?.id] });
     }
   });
 
   return {
-    deleteComanda: mutation.mutate,
+    deleteComanda: (comandaId: string, motivAnulare?: string) => 
+      mutation.mutate({ comandaId, motivAnulare }),
     isDeleting: mutation.isPending,
     error: mutation.error
   };

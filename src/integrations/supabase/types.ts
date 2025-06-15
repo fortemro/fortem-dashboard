@@ -12,7 +12,9 @@ export type Database = {
       comenzi: {
         Row: {
           adresa_livrare: string
+          anulat_de: string | null
           created_at: string
+          data_anulare: string | null
           data_comanda: string
           data_expediere: string | null
           data_livrare: string | null
@@ -21,6 +23,7 @@ export type Database = {
           email_agent_vanzari: string | null
           id: string
           judet_livrare: string | null
+          motiv_anulare: string | null
           mzv_emitent: string | null
           numar_comanda: string
           numar_masina: string | null
@@ -38,7 +41,9 @@ export type Database = {
         }
         Insert: {
           adresa_livrare: string
+          anulat_de?: string | null
           created_at?: string
+          data_anulare?: string | null
           data_comanda?: string
           data_expediere?: string | null
           data_livrare?: string | null
@@ -47,6 +52,7 @@ export type Database = {
           email_agent_vanzari?: string | null
           id?: string
           judet_livrare?: string | null
+          motiv_anulare?: string | null
           mzv_emitent?: string | null
           numar_comanda: string
           numar_masina?: string | null
@@ -64,7 +70,9 @@ export type Database = {
         }
         Update: {
           adresa_livrare?: string
+          anulat_de?: string | null
           created_at?: string
+          data_anulare?: string | null
           data_comanda?: string
           data_expediere?: string | null
           data_livrare?: string | null
@@ -73,6 +81,7 @@ export type Database = {
           email_agent_vanzari?: string | null
           id?: string
           judet_livrare?: string | null
+          motiv_anulare?: string | null
           mzv_emitent?: string | null
           numar_comanda?: string
           numar_masina?: string | null

@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -20,10 +19,12 @@ export function useComenzi() {
 
       console.log('Fetching comenzi for user:', user.id);
 
+      // Exclude cancelled orders from main orders list
       const { data: comenziData, error: comenziError } = await supabase
         .from('comenzi')
         .select('*')
         .eq('user_id', user.id)
+        .neq('status', 'anulata')
         .order('created_at', { ascending: false });
 
       if (comenziError) {
@@ -60,8 +61,8 @@ export function useComenzi() {
       return comenziWithDistributors as Comanda[];
     },
     enabled: !!user,
-    staleTime: 30000, // Consider data fresh for 30 seconds
-    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    staleTime: 30000,
+    gcTime: 5 * 60 * 1000,
   });
 
   // Stable function for getting order by ID

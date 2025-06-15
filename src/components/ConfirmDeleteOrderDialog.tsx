@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,12 +9,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { AlertTriangle } from 'lucide-react';
 
 interface ConfirmDeleteOrderDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (motivAnulare?: string) => void;
   isDeleting: boolean;
   comanda: {
     numar_comanda: string;
@@ -30,12 +32,20 @@ export function ConfirmDeleteOrderDialog({
   isDeleting, 
   comanda 
 }: ConfirmDeleteOrderDialogProps) {
+  const [motivAnulare, setMotivAnulare] = useState('');
+
   if (!comanda) return null;
 
   const handleClose = () => {
     if (!isDeleting) {
+      setMotivAnulare('');
       onClose();
     }
+  };
+
+  const handleConfirm = () => {
+    onConfirm(motivAnulare.trim() || undefined);
+    setMotivAnulare('');
   };
 
   return (
@@ -43,11 +53,11 @@ export function ConfirmDeleteOrderDialog({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
-            Confirmare ștergere comandă
+            <AlertTriangle className="h-5 w-5 text-yellow-500" />
+            Confirmare anulare comandă
           </DialogTitle>
           <DialogDescription>
-            Această acțiune va șterge definitiv comanda și nu poate fi anulată.
+            Această acțiune va marca comanda ca anulată și va elibera stocul alocat.
           </DialogDescription>
         </DialogHeader>
         
@@ -59,13 +69,25 @@ export function ConfirmDeleteOrderDialog({
             <p><strong>Status:</strong> {comanda.status}</p>
           </div>
           
-          <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+          <div className="space-y-2">
+            <Label htmlFor="motiv">Motiv anulare (opțional)</Label>
+            <Textarea
+              id="motiv"
+              value={motivAnulare}
+              onChange={(e) => setMotivAnulare(e.target.value)}
+              placeholder="Introduceți motivul anulării comenzii..."
+              className="min-h-[80px]"
+              disabled={isDeleting}
+            />
+          </div>
+          
+          <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
             <div className="flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
-              <div className="text-sm text-yellow-800">
-                <p className="font-medium">Atenție:</p>
-                <p>Ștergerea acestei comenzi va elibera instant cantitățile de produse alocate, 
-                   iar stocul disponibil se va actualiza în toate portalurile aplicației.</p>
+              <AlertTriangle className="h-4 w-4 text-blue-600 mt-0.5" />
+              <div className="text-sm text-blue-800">
+                <p className="font-medium">Informație:</p>
+                <p>Comanda anulată va rămâne în sistem pentru evidență și va fi vizibilă 
+                   în secțiunea de comenzi anulate din portalurile administrative.</p>
               </div>
             </div>
           </div>
@@ -77,14 +99,14 @@ export function ConfirmDeleteOrderDialog({
             onClick={handleClose} 
             disabled={isDeleting}
           >
-            Anulează
+            Renunță
           </Button>
           <Button 
             variant="destructive" 
-            onClick={onConfirm} 
+            onClick={handleConfirm} 
             disabled={isDeleting}
           >
-            {isDeleting ? 'Se șterge...' : 'Șterge comanda'}
+            {isDeleting ? 'Se anulează...' : 'Anulează comanda'}
           </Button>
         </DialogFooter>
       </DialogContent>
