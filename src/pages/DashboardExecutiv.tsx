@@ -1,4 +1,3 @@
-
 import { useProfile } from "@/hooks/useProfile";
 import { Navigate } from "react-router-dom";
 import { useState } from "react";
@@ -10,10 +9,13 @@ import { StatsCards } from "@/components/dashboard-executiv/StatsCards";
 import { PerformanceCharts } from "@/components/dashboard-executiv/PerformanceCharts";
 import { TopProducts } from "@/components/dashboard-executiv/TopProducts";
 import { AlertsSection } from "@/components/dashboard-executiv/AlertsSection";
+import { NotificationBell } from "@/components/dashboard-executiv/NotificationBell";
+import { AdvancedCharts } from "@/components/dashboard-executiv/AdvancedCharts";
+import { ExecutiveReporting } from "@/components/dashboard-executiv/ExecutiveReporting";
 import { ComenziAnulateTable } from "@/components/shared/ComenziAnulateTable";
 import { useComenziAnulateGlobal } from "@/hooks/useComenziAnulateGlobal";
 import { useExecutiveDashboardData } from "@/hooks/dashboard-executiv/useExecutiveDashboardData";
-import { TrendingUp, XCircle, AlertTriangle, RefreshCw } from "lucide-react";
+import { TrendingUp, XCircle, AlertTriangle, RefreshCw, BarChart3, FileText, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
@@ -94,15 +96,18 @@ export default function DashboardExecutiv() {
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Dashboard Executiv</h1>
             <p className="text-sm sm:text-base text-gray-600">Raport executiv și indicatori cheie de performanță</p>
           </div>
-          <Button 
-            onClick={handleRefresh} 
-            variant="outline" 
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Actualizează
-          </Button>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <Button 
+              onClick={handleRefresh} 
+              variant="outline" 
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Actualizează
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -114,14 +119,22 @@ export default function DashboardExecutiv() {
       />
 
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsList className="grid w-full grid-cols-4 mb-6">
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
-            Dashboard Principal
+            Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Analytics
+          </TabsTrigger>
+          <TabsTrigger value="reports" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Rapoarte
           </TabsTrigger>
           <TabsTrigger value="cancelled" className="flex items-center gap-2">
             <XCircle className="h-4 w-4" />
-            Comenzi Anulate ({comenziAnulate.length})
+            Anulate ({comenziAnulate.length})
           </TabsTrigger>
         </TabsList>
         
@@ -134,6 +147,30 @@ export default function DashboardExecutiv() {
           </div>
 
           <AlertsSection />
+        </TabsContent>
+        
+        <TabsContent value="analytics">
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Zap className="h-5 w-5 text-purple-600" />
+              <h2 className="text-xl font-semibold">Analytics Avansate</h2>
+            </div>
+            <p className="text-gray-600">Grafice interactive și insights detaliate pentru perioada selectată</p>
+          </div>
+          
+          <AdvancedCharts />
+        </TabsContent>
+        
+        <TabsContent value="reports">
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <FileText className="h-5 w-5 text-blue-600" />
+              <h2 className="text-xl font-semibold">Sistem de Raportare Executive</h2>
+            </div>
+            <p className="text-gray-600">Generare și programare rapoarte executive pentru management</p>
+          </div>
+          
+          <ExecutiveReporting />
         </TabsContent>
         
         <TabsContent value="cancelled">
