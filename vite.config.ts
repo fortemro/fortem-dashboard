@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -8,6 +9,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    watch: {
+      usePolling: false,
+      ignored: ['**/node_modules/**', '**/dist/**', '**/.git/**', '**/coverage/**', '**/build/**']
+    },
     proxy: {
       '/api': {
         target: 'https://fortem-dashboard.lovable.app',
@@ -27,5 +32,12 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    exclude: ['fsevents'],
+  },
+  build: {
+    rollupOptions: {
+      external: ['fsevents']
+    }
+  }
 }));
-
