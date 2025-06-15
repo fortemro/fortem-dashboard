@@ -2,14 +2,18 @@
 import { useProfile } from '@/hooks/useProfile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigate } from 'react-router-dom';
-import { Truck, Package, MapPin, Clock, AlertTriangle, Users } from 'lucide-react';
+import { Truck, Package, MapPin, Clock, AlertTriangle, Users, XCircle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ComenziLogisticaTable } from '@/components/logistica/ComenziLogisticaTable';
 import { SituatieStocuriTable } from '@/components/logistica/SituatieStocuriTable';
+import { ComenziAnulateTable } from '@/components/shared/ComenziAnulateTable';
 import { useLogisticaStats } from '@/hooks/logistica/useLogisticaStats';
+import { useComenziAnulateGlobal } from '@/hooks/useComenziAnulateGlobal';
 
 export default function PortalLogistica() {
   const { profile, loading } = useProfile();
   const { stats, loading: statsLoading } = useLogisticaStats();
+  const { comenziAnulate, loading: loadingAnulate } = useComenziAnulateGlobal();
 
   if (loading) {
     return (
@@ -97,30 +101,55 @@ export default function PortalLogistica() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Stoc Critic
+                Comenzi Anulate
               </CardTitle>
-              <AlertTriangle className="h-4 w-4 text-red-500" />
+              <XCircle className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
-                {statsLoading ? '...' : stats.stocCritic}
+                {loadingAnulate ? '...' : comenziAnulate.length}
               </div>
               <p className="text-xs text-muted-foreground">
-                produse sub pragul de alertă
+                comenzi anulate total
               </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Tabelul principal cu comenzile în așteptare */}
-        <div className="mb-8">
-          <ComenziLogisticaTable />
-        </div>
-
-        {/* Tabelul cu situația stocurilor */}
-        <div className="mb-8">
-          <SituatieStocuriTable />
-        </div>
+        {/* Tabs pentru comenzi active, stocuri și comenzi anulate */}
+        <Tabs defaultValue="active" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="active" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Comenzi Active
+            </TabsTrigger>
+            <TabsTrigger value="stocks" className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Situație Stocuri
+            </TabsTrigger>
+            <TabsTrigger value="cancelled" className="flex items-center gap-2">
+              <XCircle className="h-4 w-4" />
+              Comenzi Anulate ({comenziAnulate.length})
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="active" className="mt-6">
+            <ComenziLogisticaTable />
+          </TabsContent>
+          
+          <TabsContent value="stocks" className="mt-6">
+            <SituatieStocuriTable />
+          </TabsContent>
+          
+          <TabsContent value="cancelled" className="mt-6">
+            <ComenziAnulateTable
+              comenziAnulate={comenziAnulate}
+              loading={loadingAnulate}
+              showUserColumn={true}
+              title="Comenzi Anulate - Portal Logistică"
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

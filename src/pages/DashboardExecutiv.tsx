@@ -4,14 +4,18 @@ import { Navigate } from "react-router-dom";
 import { useState } from "react";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PeriodFilterComponent, PeriodFilter } from "@/components/dashboard-executiv/PeriodFilter";
 import { StatsCards } from "@/components/dashboard-executiv/StatsCards";
 import { PerformanceCharts } from "@/components/dashboard-executiv/PerformanceCharts";
 import { TopProducts } from "@/components/dashboard-executiv/TopProducts";
 import { AlertsSection } from "@/components/dashboard-executiv/AlertsSection";
+import { ComenziAnulateTable } from "@/components/shared/ComenziAnulateTable";
 import { useExecutiveData } from "@/hooks/useExecutiveData";
 import { useDashboardData } from "@/hooks/dashboard-executiv/useDashboardData";
+import { useComenziAnulateGlobal } from "@/hooks/useComenziAnulateGlobal";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BarChart3, XCircle, TrendingUp } from "lucide-react";
 
 const periodOptions: { value: PeriodFilter; label: string }[] = [
   { value: 'today', label: 'Astăzi' },
@@ -27,6 +31,7 @@ export default function DashboardExecutiv() {
   const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
   const { comenzi, isLoading } = useExecutiveData();
   const { getDataForPeriod } = useDashboardData();
+  const { comenziAnulate, loading: loadingAnulate } = useComenziAnulateGlobal();
 
   const handlePeriodChange = (period: PeriodFilter) => {
     setSelectedPeriod(period);
@@ -115,66 +120,91 @@ export default function DashboardExecutiv() {
         onDateRangeChange={setCustomDateRange}
       />
 
-      {isLoading ? (
-        <div className="space-y-6 sm:space-y-8">
-          {/* Loading skeleton pentru stats cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white rounded-lg border p-4 sm:p-6">
-                <Skeleton className="h-4 w-24 mb-2" />
-                <Skeleton className="h-6 sm:h-8 w-32 mb-2" />
-                <Skeleton className="h-3 w-40" />
-              </div>
-            ))}
-          </div>
-
-          {/* Loading skeleton pentru charts și top products */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            <div className="bg-white rounded-lg border p-4 sm:p-6">
-              <Skeleton className="h-6 w-48 mb-4" />
-              <Skeleton className="h-48 sm:h-64 w-full" />
-            </div>
-            <div className="bg-white rounded-lg border p-4 sm:p-6">
-              <Skeleton className="h-6 w-32 mb-4" />
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex justify-between">
-                    <div>
-                      <Skeleton className="h-4 w-32 mb-1" />
-                      <Skeleton className="h-3 w-20" />
-                    </div>
-                    <div className="text-right">
-                      <Skeleton className="h-4 w-24 mb-1" />
-                      <Skeleton className="h-3 w-12" />
-                    </div>
+      {/* Tabs pentru dashboard și comenzi anulate */}
+      <Tabs defaultValue="dashboard" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="dashboard" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Dashboard Principal
+          </TabsTrigger>
+          <TabsTrigger value="cancelled" className="flex items-center gap-2">
+            <XCircle className="h-4 w-4" />
+            Comenzi Anulate ({começiAnulate.length})
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="dashboard">
+          {isLoading ? (
+            <div className="space-y-6 sm:space-y-8">
+              {/* Loading skeleton pentru stats cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="bg-white rounded-lg border p-4 sm:p-6">
+                    <Skeleton className="h-4 w-24 mb-2" />
+                    <Skeleton className="h-6 sm:h-8 w-32 mb-2" />
+                    <Skeleton className="h-3 w-40" />
                   </div>
                 ))}
               </div>
+
+              {/* Loading skeleton pentru charts și top products */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <div className="bg-white rounded-lg border p-4 sm:p-6">
+                  <Skeleton className="h-6 w-48 mb-4" />
+                  <Skeleton className="h-48 sm:h-64 w-full" />
+                </div>
+                <div className="bg-white rounded-lg border p-4 sm:p-6">
+                  <Skeleton className="h-6 w-32 mb-4" />
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex justify-between">
+                        <div>
+                          <Skeleton className="h-4 w-32 mb-1" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
+                        <div className="text-right">
+                          <Skeleton className="h-4 w-24 mb-1" />
+                          <Skeleton className="h-3 w-12" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Loading skeleton pentru alerts */}
+              <div className="bg-orange-50 rounded-lg border border-orange-200 p-4 sm:p-6">
+                <Skeleton className="h-6 w-48 mb-4" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <>
+              <StatsCards data={realData} />
 
-          {/* Loading skeleton pentru alerts */}
-          <div className="bg-orange-50 rounded-lg border border-orange-200 p-4 sm:p-6">
-            <Skeleton className="h-6 w-48 mb-4" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-2/3" />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <>
-          <StatsCards data={realData} />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                <PerformanceCharts periodDisplay={getDisplayPeriod()} />
+                <TopProducts products={topProducts} />
+              </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-            <PerformanceCharts periodDisplay={getDisplayPeriod()} />
-            <TopProducts products={topProducts} />
-          </div>
-
-          <AlertsSection alerteStoc={realData.alerteStoc} />
-        </>
-      )}
+              <AlertsSection alerteStoc={realData.alerteStoc} />
+            </>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="cancelled">
+          <ComenziAnulateTable
+            comenziAnulate={começiAnulate}
+            loading={loadingAnulate}
+            showUserColumn={true}
+            title="Comenzi Anulate - Dashboard Executiv"
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
