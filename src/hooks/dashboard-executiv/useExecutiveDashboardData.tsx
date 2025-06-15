@@ -122,24 +122,29 @@ export function useExecutiveDashboardData(
 
       if (precedenteError) throw new Error(precedenteError.message);
 
-      // 3. Fetch itemi_comanda pentru perioada curentă cu produse - using proper foreign key reference
+      // 3. Fetch itemi_comanda pentru perioada curentă
       const { data: itemsCurente, error: itemsError } = await supabase
         .from('itemi_comanda')
         .select(`
           cantitate,
           total_item,
           produs_id,
-          comanda_id,
-          produse:produs_id (
-            nume,
-            categorie
-          )
+          comanda_id
         `)
         .in('comanda_id', (comenziCurente || []).map(c => c.id));
 
       if (itemsError) throw new Error(itemsError.message);
 
-      // 4. Fetch datele despre stocuri pentru alerte
+      // 4. Fetch produse separately to avoid relationship issues
+      const produseIds = [...new Set(itemsCurente?.map(item => item.produs_id) || [])];
+      const { data: produseData, error: produseError } = await supabase
+        .from('produse')
+        .select('id, nume, categorie')
+        .in('id', produseIds);
+
+      if (produseError) throw new Error(produseError.message);
+
+      // 5. Fetch datele despre stocuri pentru alerte
       const { data: stocuriData, error: stocuriError } = await supabase
         .from('produse')
         .select('id, nume, stoc_disponibil, prag_alerta_stoc')
@@ -147,7 +152,7 @@ export function useExecutiveDashboardData(
 
       if (stocuriError) throw new Error(stocuriError.message);
 
-      // 5. Calculează KPI-urile
+      // 6. Calculează KPI-urile
       const vanzariTotale = comenziCurente?.reduce((sum, c) => sum + (c.total_comanda || 0), 0) || 0;
       const vanzariTotalePrecedent = comenziPrecedente?.reduce((sum, c) => sum + (c.total_comanda || 0), 0) || 0;
       
@@ -163,21 +168,23 @@ export function useExecutiveDashboardData(
       const alerteStoc = stocuriData?.filter(p => p.stoc_disponibil <= p.prag_alerta_stoc).length || 0;
       const produseStocZero = stocuriData?.filter(p => p.stoc_disponibil === 0).length || 0;
 
-      // 6. Calculează top produse din perioada curentă
-      const produseMap = new Map<string, TopProduct>();
+      // 7. Create a map of products for easy lookup
+      const produseMap = new Map(produseData?.map(p => [p.id, p]) || []);
+
+      // 8. Calculează top produse din perioada curentă
+      const topProduseMap = new Map<string, TopProduct>();
       
       itemsCurente?.forEach(item => {
-        // Type assertion since we know the structure from our query
-        const produs = item.produse as { nume: string; categorie: string } | null;
+        const produs = produseMap.get(item.produs_id);
         const produsNume = produs?.nume || 'Produs necunoscut';
         const key = item.produs_id;
-        const existing = produseMap.get(key);
+        const existing = topProduseMap.get(key);
         
         if (existing) {
           existing.cantitate += item.cantitate;
           existing.valoare += item.total_item || 0;
         } else {
-          produseMap.set(key, {
+          topProduseMap.set(key, {
             nume: produsNume,
             cantitate: item.cantitate,
             valoare: item.total_item || 0,
@@ -187,7 +194,7 @@ export function useExecutiveDashboardData(
         }
       });
 
-      const topProducts = Array.from(produseMap.values())
+      const topProducts = Array.from(topProduseMap.values())
         .sort((a, b) => b.valoare - a.valoare)
         .slice(0, 5)
         .map(product => ({
