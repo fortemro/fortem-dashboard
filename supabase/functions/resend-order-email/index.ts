@@ -39,21 +39,39 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Error fetching order: ${comandaError.message}`);
     }
 
-    // Get order items
+    // Get order items first
     const { data: items, error: itemsError } = await supabase
       .from('itemi_comanda')
-      .select(`
-        *,
-        produs:produse(nume)
-      `)
+      .select('*')
       .eq('comanda_id', comandaId);
 
     if (itemsError) {
       throw new Error(`Error fetching order items: ${itemsError.message}`);
     }
 
+    // Get products details separately to avoid relationship ambiguity
+    const itemsWithProducts = [];
+    if (items && items.length > 0) {
+      for (const item of items) {
+        const { data: productData, error: productError } = await supabase
+          .from('produse')
+          .select('nume')
+          .eq('id', item.produs_id)
+          .single();
+
+        if (productError) {
+          console.error(`Error fetching product for item ${item.id}:`, productError);
+        }
+
+        itemsWithProducts.push({
+          ...item,
+          nume_produs: productData?.nume || 'Produs necunoscut'
+        });
+      }
+    }
+
     // Calculate total
-    const total_comanda = items?.reduce((sum, item) => sum + item.total_item, 0) || 0;
+    const total_comanda = itemsWithProducts.reduce((sum, item) => sum + item.total_item, 0);
 
     // Prepare email data
     const emailData = {
@@ -63,12 +81,12 @@ const handler = async (req: Request): Promise<Response> => {
       oras_livrare: comanda.oras_livrare,
       adresa_livrare: comanda.adresa_livrare,
       telefon_livrare: comanda.telefon_livrare,
-      items: items?.map(item => ({
-        nume_produs: item.produs?.nume || 'Produs necunoscut',
+      items: itemsWithProducts.map(item => ({
+        nume_produs: item.nume_produs,
         cantitate: item.cantitate,
         pret_unitar: item.pret_unitar,
         total_item: item.total_item
-      })) || [],
+      })),
       total_comanda,
       data_comanda: comanda.data_comanda
     };
