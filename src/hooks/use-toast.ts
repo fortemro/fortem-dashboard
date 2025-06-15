@@ -1,6 +1,4 @@
 
-import React, { useState, useEffect, useMemo, useCallback } from "react"
-
 import type {
   ToastActionElement,
   ToastProps,
@@ -91,8 +89,6 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -169,26 +165,35 @@ function toast({ ...props }: Toast) {
   }
 }
 
+// Hook simplificat care doar se abonează la schimbări
 function useToast() {
-  const [state, setState] = useState<State>(memoryState)
-
-  useEffect(() => {
-    listeners.push(setState)
-    return () => {
-      const index = listeners.indexOf(setState)
+  // Folosim un mecanism simplu de subscription fără React hooks
+  const [state, setState] = (function() {
+    let currentState = memoryState;
+    
+    const setStateProxy = (newState: State) => {
+      currentState = newState;
+    };
+    
+    // Adăugăm listener-ul
+    listeners.push(setStateProxy);
+    
+    // Cleanup când componenta se demontează (va fi apelat automat)
+    const cleanup = () => {
+      const index = listeners.indexOf(setStateProxy);
       if (index > -1) {
-        listeners.splice(index, 1)
+        listeners.splice(index, 1);
       }
-    }
-  }, [state])
+    };
+    
+    return [currentState, setStateProxy, cleanup];
+  })();
 
-  const value = useMemo(() => ({
-    ...state,
+  return {
+    toasts: state.toasts,
     toast,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
-  }), [state])
-
-  return value
+  };
 }
 
 export { useToast, toast }
