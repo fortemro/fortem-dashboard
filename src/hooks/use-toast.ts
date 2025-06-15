@@ -1,4 +1,5 @@
-import React from "react"
+
+import React, { useState, useEffect, useMemo, useCallback } from "react"
 
 import type {
   ToastActionElement,
@@ -169,9 +170,9 @@ function toast({ ...props }: Toast) {
 }
 
 function useToast() {
-  const [state, setState] = React.useState<State>(memoryState)
+  const [state, setState] = useState<State>(memoryState)
 
-  React.useEffect(() => {
+  useEffect(() => {
     listeners.push(setState)
     return () => {
       const index = listeners.indexOf(setState)
@@ -181,11 +182,13 @@ function useToast() {
     }
   }, [state])
 
-  return {
+  const value = useMemo(() => ({
     ...state,
     toast,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
-  }
+  }), [state])
+
+  return value
 }
 
 export { useToast, toast }
