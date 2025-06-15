@@ -165,35 +165,13 @@ function toast({ ...props }: Toast) {
   }
 }
 
-// Hook simplificat care doar se abonează la schimbări
+// Implementare simplă fără React hooks
 function useToast() {
-  // Folosim un mecanism simplu de subscription fără React hooks
-  const [state, setState] = (function() {
-    let currentState = memoryState;
-    
-    const setStateProxy = (newState: State) => {
-      currentState = newState;
-    };
-    
-    // Adăugăm listener-ul
-    listeners.push(setStateProxy);
-    
-    // Cleanup când componenta se demontează (va fi apelat automat)
-    const cleanup = () => {
-      const index = listeners.indexOf(setStateProxy);
-      if (index > -1) {
-        listeners.splice(index, 1);
-      }
-    };
-    
-    return [currentState, setStateProxy, cleanup];
-  })();
-
   return {
-    toasts: state.toasts,
+    toasts: memoryState.toasts,
     toast,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
-  };
+  }
 }
 
 export { useToast, toast }
