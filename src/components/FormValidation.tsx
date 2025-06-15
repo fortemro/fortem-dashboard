@@ -74,12 +74,23 @@ export function useFormValidation() {
       return false;
     }
 
-    // Verifică că toate itemii au preț manual introdus per palet
+    // ÎMBUNĂTĂȚIRE: Verifică că toate itemii au preț manual introdus per palet și că este > 0
     const itemsWithoutPrice = items.filter(item => !item.pret_unitar || item.pret_unitar <= 0);
     if (itemsWithoutPrice.length > 0) {
       toast({
         title: "Eroare",
-        description: "Toate produsele trebuie să aibă un preț de vânzare manual introdus per palet",
+        description: "Toate produsele trebuie să aibă un preț de vânzare manual introdus per palet mai mare decât 0 RON",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    // ÎMBUNĂTĂȚIRE: Verifică că prețurile sunt numere valide
+    const itemsWithInvalidPrice = items.filter(item => isNaN(item.pret_unitar) || item.pret_unitar < 0.01);
+    if (itemsWithInvalidPrice.length > 0) {
+      toast({
+        title: "Eroare",
+        description: "Toate prețurile trebuie să fie numere valide mai mari decât 0.01 RON",
         variant: "destructive"
       });
       return false;

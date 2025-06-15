@@ -8,6 +8,7 @@ import { OrderSummary } from './OrderSummary';
 import { OrderFormActions } from './OrderFormActions';
 import { OrderSuccessModal } from './OrderSuccessModal';
 import { useOrderSubmission } from './OrderSubmissionHandler';
+import { useFormValidation } from './FormValidation';
 import { useComandaForm } from '@/hooks/useComandaForm';
 
 export function ComandaForm() {
@@ -37,7 +38,8 @@ export function ComandaForm() {
     getComandaById
   } = useComandaForm();
 
-   const { submitOrder } = useOrderSubmission({
+  const { validateForm } = useFormValidation();
+  const { submitOrder } = useOrderSubmission({
     items,
     onSuccess: handleSuccess
   });
@@ -46,6 +48,12 @@ export function ComandaForm() {
     console.log('Form data on submit:', data);
     console.log('Selected distributor ID:', selectedDistributorId);
     console.log('Selected distributor name:', selectedDistributorName);
+    console.log('Items to validate:', items);
+    
+    // Validez formularul înainte de a-l trimite
+    if (!validateForm(data, items)) {
+      return; // Validarea a eșuat, nu continuez cu trimiterea
+    }
     
     const submitData = {
       ...data,

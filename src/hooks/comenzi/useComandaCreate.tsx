@@ -21,31 +21,38 @@ export function useComandaCreate() {
       const distributorId = await findOrCreateDistribuitor(distributorName);
       if (!distributorId) throw new Error(`Distribuitorul "${distributorName}" nu a putut fi procesat.`);
 
-      // Pregătesc itemii cu prețurile reale din baza de date
+      // Pregătesc itemii folosind prețurile introduse manual din formular
       const itemsWithPrices = await Promise.all(
         items.map(async (item) => {
           if (!item.produs_id) throw new Error('Produs ID lipsește pentru unul dintre itemii comenzii');
           
-          // Preiau prețul produsului din baza de date
+          // Verific că produsul există în baza de date și preiau numele
           const { data: produs, error: produsError } = await supabase
             .from('produse')
-            .select('pret, nume')
+            .select('nume')
             .eq('id', item.produs_id)
             .single();
 
           if (produsError || !produs) {
-            console.error('Eroare la preluarea prețului produsului:', produsError);
-            throw new Error(`Nu s-a putut prelua prețul pentru produsul ${item.produs_id}`);
+            console.error('Eroare la preluarea produsului:', produsError);
+            throw new Error(`Nu s-a putut prelua informații pentru produsul ${item.produs_id}`);
           }
 
-          const pretUnitar = produs.pret || 0;
+          // Folosesc prețul introdus manual din formular, NU cel din baza de date
+          const pretUnitar = item.pret_unitar || 0;
           const cantitate = item.cantitate || 0;
+          
+          // Validez că prețul manual este > 0
+          if (pretUnitar <= 0) {
+            throw new Error(`Prețul pentru produsul "${produs.nume}" trebuie să fie mai mare decât 0`);
+          }
+          
           const totalItem = pretUnitar * cantitate;
 
           return {
             produs_id: item.produs_id,
             cantitate: cantitate,
-            pret_unitar: pretUnitar,
+            pret_unitar: pretUnitar, // Folosesc prețul din formular
             total_item: totalItem,
             nume_produs: produs.nume,
           };
@@ -55,6 +62,8 @@ export function useComandaCreate() {
       // Calculez totalul comenzii
       const totalComanda = itemsWithPrices.reduce((sum, item) => sum + item.total_item, 0);
       const totalPaleti = itemsWithPrices.reduce((sum, item) => sum + item.cantitate, 0);
+
+      console.log('Calculare total comandă:', { totalComanda, totalPaleti, itemsWithPrices });
 
       const comandaPentruInserare = {
         ...restOfFormData,
