@@ -122,7 +122,7 @@ export function useExecutiveDashboardData(
 
       if (precedenteError) throw new Error(precedenteError.message);
 
-      // 3. Fetch itemi_comanda pentru perioada curentă cu produse
+      // 3. Fetch itemi_comanda pentru perioada curentă cu produse - using proper foreign key reference
       const { data: itemsCurente, error: itemsError } = await supabase
         .from('itemi_comanda')
         .select(`
@@ -130,7 +130,7 @@ export function useExecutiveDashboardData(
           total_item,
           produs_id,
           comanda_id,
-          produse!inner(
+          produse:produs_id (
             nume,
             categorie
           )
@@ -167,7 +167,9 @@ export function useExecutiveDashboardData(
       const produseMap = new Map<string, TopProduct>();
       
       itemsCurente?.forEach(item => {
-        const produsNume = item.produse?.nume || 'Produs necunoscut';
+        // Type assertion since we know the structure from our query
+        const produs = item.produse as { nume: string; categorie: string } | null;
+        const produsNume = produs?.nume || 'Produs necunoscut';
         const key = item.produs_id;
         const existing = produseMap.get(key);
         
