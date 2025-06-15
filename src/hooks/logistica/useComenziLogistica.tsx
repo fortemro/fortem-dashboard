@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,9 +44,12 @@ export function useComenziLogistica() {
         console.error('Error fetching distribuitori:', distributoriError);
       }
 
-      // Create a map of distributor UUID to company name
-      const distributoriMap = new Map(
+      // Create maps for both UUID and name matching
+      const distributoriByIdMap = new Map(
         distribuitori?.map(d => [d.id, d.nume_companie]) || []
+      );
+      const distributoriByNameMap = new Map(
+        distribuitori?.map(d => [d.nume_companie, d.nume_companie]) || []
       );
 
       // Get real stock data
@@ -84,15 +88,33 @@ export function useComenziLogistica() {
             stockAvailable = false;
           }
 
-          // Get distributor name using the distribuitor_uuid
-          const distributorName = comanda.distribuitor_uuid 
-            ? distributoriMap.get(comanda.distribuitor_uuid) 
-            : null;
+          // Get distributor name - try multiple approaches
+          let distributorName = null;
+          
+          // First, try to match distribuitor_uuid with distribuitor ID
+          if (comanda.distribuitor_uuid) {
+            distributorName = distributoriByIdMap.get(comanda.distribuitor_uuid);
+          }
+          
+          // If not found, try to match distribuitor_id with distribuitor ID (in case it's a UUID)
+          if (!distributorName && comanda.distribuitor_id) {
+            distributorName = distributoriByIdMap.get(comanda.distribuitor_id);
+          }
+          
+          // If still not found, check if distribuitor_id is already a company name
+          if (!distributorName && comanda.distribuitor_id) {
+            distributorName = distributoriByNameMap.get(comanda.distribuitor_id);
+          }
+          
+          // Final fallback - use distribuitor_id as is
+          if (!distributorName) {
+            distributorName = comanda.distribuitor_id;
+          }
 
           return {
             ...comanda,
             stockAvailable,
-            distribuitor_nume: distributorName || comanda.distribuitor_id
+            distribuitor_nume: distributorName
           } as ComandaWithStockStatus;
         })
       );

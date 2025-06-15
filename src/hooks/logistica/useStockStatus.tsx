@@ -11,6 +11,7 @@ interface StockStatus {
 
 interface ComandaWithStockStatus extends Comanda {
   stockStatus?: StockStatus;
+  distribuitor_nume?: string;
 }
 
 export function useStockStatus(comenzi: Comanda[]) {
@@ -87,10 +88,11 @@ export function useStockStatus(comenzi: Comanda[]) {
         return;
       }
 
-      // Initialize with loading status
+      // Initialize with loading status and preserve distribuitor_nume if it exists
       const initialComenzi = comenzi.map(comanda => ({
         ...comanda,
-        stockStatus: { type: 'loading' as const }
+        stockStatus: { type: 'loading' as const },
+        distribuitor_nume: (comanda as any).distribuitor_nume
       }));
       setComenziWithStockStatus(initialComenzi);
 
@@ -100,7 +102,8 @@ export function useStockStatus(comenzi: Comanda[]) {
           const stockStatus = await checkStockStatusForOrder(comanda);
           return {
             ...comanda,
-            stockStatus
+            stockStatus,
+            distribuitor_nume: (comanda as any).distribuitor_nume
           };
         })
       );
