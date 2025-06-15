@@ -145,8 +145,8 @@ export function ExecutiveReporting() {
           <div className="space-y-2">
             <Label>Perioada Raportului</Label>
             <CustomDateRangePicker
-              value={reportConfig.dateRange}
-              onChange={(range) => setReportConfig(prev => ({ ...prev, dateRange: range }))}
+              dateRange={reportConfig.dateRange}
+              onDateRangeChange={(range) => setReportConfig(prev => ({ ...prev, dateRange: range }))}
             />
             <p className="text-sm text-gray-600">
               Perioada selectată: {formatDateRange(reportConfig.dateRange)}
