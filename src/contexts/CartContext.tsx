@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Produs = Tables<'produse'>;
@@ -21,7 +21,7 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [cartItems, setCartItems] = React.useState<CartItem[]>([]);
 
   const addToCart = (produs: Produs, cantitate: number) => {
     setCartItems(prev => {
