@@ -1,7 +1,7 @@
-
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useComenzi } from '@/hooks/useComenzi';
+import { useDeleteComanda } from '@/hooks/useDeleteComanda';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,10 +13,12 @@ import { Eye, Edit, Copy, Trash2, Mail, Search, Filter, Plus, Truck, User } from
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { OrderDetailsModal } from '@/components/OrderDetailsModal';
+import { ConfirmDeleteOrderDialog } from '@/components/ConfirmDeleteOrderDialog';
 
 export default function ComenziMele() {
   const { user } = useAuth();
   const { comenzi, loading } = useComenzi();
+  const { deleteComanda, isDeleting } = useDeleteComanda();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -26,6 +28,8 @@ export default function ComenziMele() {
   const [dateTo, setDateTo] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedOrderForDelete, setSelectedOrderForDelete] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Filter orders based on search criteria
   const filteredComenzi = useMemo(() => {
@@ -85,6 +89,26 @@ export default function ComenziMele() {
       title: "Editare comandă",
       description: "Formularul a fost încărcat pentru editare"
     });
+  };
+
+  const handleDeleteOrder = (comanda) => {
+    setSelectedOrderForDelete(comanda);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (selectedOrderForDelete) {
+      deleteComanda(selectedOrderForDelete.id);
+      setShowDeleteDialog(false);
+      setSelectedOrderForDelete(null);
+    }
+  };
+
+  const handleCloseDeleteDialog = () => {
+    if (!isDeleting) {
+      setShowDeleteDialog(false);
+      setSelectedOrderForDelete(null);
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -285,13 +309,23 @@ export default function ComenziMele() {
                               <Copy className="h-4 w-4" />
                             </Button>
                             {comanda.status === 'in_asteptare' && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleEditOrder(comanda)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
+                              <>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleEditOrder(comanda)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteOrder(comanda)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
                             )}
                           </div>
                         </TableCell>
@@ -320,6 +354,15 @@ export default function ComenziMele() {
             comanda={selectedOrder}
           />
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <ConfirmDeleteOrderDialog
+          isOpen={showDeleteDialog}
+          onClose={handleCloseDeleteDialog}
+          onConfirm={handleConfirmDelete}
+          isDeleting={isDeleting}
+          comanda={selectedOrderForDelete}
+        />
       </div>
     </div>
   );
