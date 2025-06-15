@@ -8,6 +8,7 @@ import type { Comanda } from '@/types/comanda';
 
 interface ComandaWithStockStatus extends Comanda {
   stockAvailable?: boolean;
+  distribuitor_nume?: string;
 }
 
 export function useComenziLogistica() {
@@ -19,10 +20,13 @@ export function useComenziLogistica() {
     queryFn: async () => {
       console.log('Fetching comenzi for logistica...');
       
-      // Simple query to get all orders
+      // Query with JOIN to get distributor company name
       const { data: comenziData, error: comenziError } = await supabase
         .from('comenzi')
-        .select('*')
+        .select(`
+          *,
+          distribuitori!inner(nume_companie)
+        `)
         .order('data_comanda', { ascending: false });
 
       if (comenziError) {
@@ -72,7 +76,8 @@ export function useComenziLogistica() {
 
           return {
             ...comanda,
-            stockAvailable
+            stockAvailable,
+            distribuitor_nume: comanda.distribuitori?.nume_companie || comanda.distribuitor_id
           } as ComandaWithStockStatus;
         })
       );

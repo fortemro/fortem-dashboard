@@ -1,4 +1,3 @@
-
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -18,6 +17,7 @@ interface ComandaWithStockStatus extends Comanda {
     productName?: string;
     missingQuantity?: number;
   };
+  distribuitor_nume?: string;
 }
 
 export function ComenziLogisticaTable() {
@@ -39,9 +39,10 @@ export function ComenziLogisticaTable() {
       const matchesStatus = statusFilter === 'toate' || (comanda.status || 'in_asteptare') === statusFilter;
       
       // Filter by search term (order number or distributor name)
+      const distributorName = comanda.distribuitor_nume || comanda.distribuitor_id;
       const matchesSearch = !searchTerm || 
         comanda.numar_comanda.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        comanda.distribuitor_id.toLowerCase().includes(searchTerm.toLowerCase());
+        distributorName.toLowerCase().includes(searchTerm.toLowerCase());
       
       return matchesStatus && matchesSearch;
     });
@@ -157,7 +158,7 @@ export function ComenziLogisticaTable() {
                         {format(new Date(comanda.data_comanda), 'dd.MM.yyyy HH:mm')}
                       </TableCell>
                       <TableCell>
-                        {comanda.distribuitor_id}
+                        {comanda.distribuitor_nume || comanda.distribuitor_id}
                       </TableCell>
                       <TableCell>
                         {comanda.oras_livrare}
