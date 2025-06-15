@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useOfflineSync } from "@/hooks/dashboard-executiv/useOfflineSync";
-import { Smartphone, Wifi, WifiOff, Download, RefreshCw, Zap, TouchIcon } from "lucide-react";
+import { Smartphone, Wifi, WifiOff, Download, RefreshCw, Zap, Touch } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 
 export function MobileOptimizations() {
@@ -78,7 +78,7 @@ export function MobileOptimizations() {
     {
       name: 'Touch Support',
       status: touchSupport,
-      icon: TouchIcon,
+      icon: Touch,
       description: touchSupport ? 'Gesturi touch activate' : 'Nu sunt disponibile gesturi touch'
     },
     {

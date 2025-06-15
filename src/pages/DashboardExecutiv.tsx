@@ -1,3 +1,4 @@
+
 import { useProfile } from "@/hooks/useProfile";
 import { Navigate } from "react-router-dom";
 import { useState } from "react";
@@ -19,7 +20,9 @@ import { TrendingUp, XCircle, AlertTriangle, RefreshCw, BarChart3, FileText, Zap
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
-import { usePerformanceMonitoring } from "@/hooks/use-performance-monitoring";
+import { usePerformanceMonitoring } from "@/hooks/dashboard-executiv/usePerformanceMonitoring";
+import { PerformanceInsights } from "@/components/dashboard-executiv/PerformanceInsights";
+import { MobileOptimizations } from "@/components/dashboard-executiv/MobileOptimizations";
 
 const periodOptions: { value: PeriodFilter; label: string }[] = [
   { value: 'today', label: 'Astăzi' },
@@ -180,7 +183,7 @@ export default function DashboardExecutiv() {
               <Zap className="h-5 w-5 text-green-600" />
               <h2 className="text-xl font-semibold">Performance Monitoring & Mobile</h2>
             </div>
-            <p className="text-gray-600">Monitorizare performanță și optimizări mobile pentru experiența optimă</p>
+            <p className="text-gray-600">Monitorizare performanță și optimizări mobile pentru experiență optimă</p>
           </div>
           
           <div className="space-y-6">

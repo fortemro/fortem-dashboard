@@ -1,10 +1,11 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useMemo } from 'react';
 import { PeriodFilter } from '@/components/dashboard-executiv/PeriodFilter';
 import { DateRange } from 'react-day-picker';
 import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { usePerformanceMonitoring } from '@/utils/performanceMonitoring';
+import { usePerformanceMonitoring } from '@/hooks/dashboard-executiv/usePerformanceMonitoring';
 
 interface ExecutiveKPIs {
   vanzariTotale: number;
