@@ -1,5 +1,4 @@
 
-
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -102,12 +101,21 @@ export function useComenziLogistica() {
         updateData.data_livrare = new Date().toISOString();
       }
 
-      const { error } = await supabase
+      console.log('Update data being sent:', updateData);
+
+      // Direct update without any joins
+      const { data, error } = await supabase
         .from('comenzi')
         .update(updateData)
-        .eq('id', comandaId);
+        .eq('id', comandaId)
+        .select('*');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Update successful:', data);
 
       // Invalidate and refetch the query
       queryClient.invalidateQueries({ queryKey: ['comenzi-logistica'] });
@@ -142,4 +150,3 @@ export function useComenziLogistica() {
     refetch
   };
 }
-
