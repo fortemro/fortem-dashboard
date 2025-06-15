@@ -1,4 +1,3 @@
-
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -38,7 +37,7 @@ export function ComenziLogisticaTable() {
     // Filter by search term (order number or distributor name)
     const matchesSearch = !searchTerm || 
       comanda.numar_comanda.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (comanda.distribuitor?.nume_companie || comanda.distribuitor_id).toLowerCase().includes(searchTerm.toLowerCase());
+      comanda.distribuitor_id.toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchesStatus && matchesSearch;
   });
@@ -152,7 +151,7 @@ export function ComenziLogisticaTable() {
                         {format(new Date(comanda.data_comanda), 'dd.MM.yyyy HH:mm')}
                       </TableCell>
                       <TableCell>
-                        {comanda.distribuitor?.nume_companie || comanda.distribuitor_id}
+                        {comanda.distribuitor_id}
                       </TableCell>
                       <TableCell>
                         {comanda.oras_livrare}

@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,7 +19,7 @@ export function useComenziLogistica() {
     queryFn: async () => {
       console.log('Fetching comenzi for logistica...');
       
-      // First get all orders
+      // Get all orders without distribuitori join
       const { data: comenziData, error: comenziError } = await supabase
         .from('comenzi')
         .select('*')
@@ -141,3 +142,4 @@ export function useComenziLogistica() {
     refetch
   };
 }
+
