@@ -1,4 +1,3 @@
-
 import { useProfile } from '@/hooks/useProfile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigate } from 'react-router-dom';
@@ -19,8 +18,8 @@ export default function PortalLogistica() {
     );
   }
 
-  // Verifică dacă utilizatorul are rolul 'logistica'
-  if (profile?.rol !== 'logistica') {
+  // Verifică dacă utilizatorul are rolul 'logistica' sau 'management'
+  if (profile?.rol !== 'logistica' && profile?.rol !== 'management') {
     return <Navigate to="/" replace />;
   }
 
@@ -31,6 +30,11 @@ export default function PortalLogistica() {
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
             <Truck className="h-8 w-8 mr-3 text-blue-600" />
             Portal Logistică
+            {profile?.rol === 'management' && (
+              <span className="ml-3 px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                Acces Management
+              </span>
+            )}
           </h1>
           <p className="text-gray-600 mt-2">
             Gestionează și monitorizează operațiunile de logistică
