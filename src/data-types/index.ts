@@ -32,11 +32,17 @@ export interface Comanda {
     pret_per_palet?: number;
     total_comanda: number;
     mzv_emitent: string;
-    // Noile coloane adăugate
+    // Noile coloane adăugate pentru anulare
+    data_anulare?: string;
+    motiv_anulare?: string;
+    anulat_de?: string;
+    // Datele existente
     awb?: string;
     nume_transportator?: string;
     data_expediere?: string;
     // Pentru datele join-uite
     distribuitori?: { nume_companie: string };
     profiluri_utilizatori?: { full_name: string };
+    // Pentru profilul celui care a anulat comanda
+    profile_anulat_de?: { nume_complet: string };
 }
