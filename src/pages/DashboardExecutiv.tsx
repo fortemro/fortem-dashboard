@@ -1,4 +1,3 @@
-
 import { useProfile } from "@/hooks/useProfile";
 import { Navigate } from "react-router-dom";
 import { useState } from "react";
@@ -129,7 +128,7 @@ export default function DashboardExecutiv() {
           </TabsTrigger>
           <TabsTrigger value="cancelled" className="flex items-center gap-2">
             <XCircle className="h-4 w-4" />
-            Comenzi Anulate ({começiAnulate.length})
+            Comenzi Anulate ({comenziAnulate.length})
           </TabsTrigger>
         </TabsList>
         
@@ -198,7 +197,7 @@ export default function DashboardExecutiv() {
         
         <TabsContent value="cancelled">
           <ComenziAnulateTable
-            comenziAnulate={começiAnulate}
+            comenziAnulate={comenziAnulate}
             loading={loadingAnulate}
             showUserColumn={true}
             title="Comenzi Anulate - Dashboard Executiv"

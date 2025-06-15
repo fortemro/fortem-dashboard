@@ -130,7 +130,7 @@ export function ComenziAnulateTable({
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <User className="h-4 w-4 text-gray-500" />
-                          {comanda.profiluri_utilizatori?.nume_complet || 'Utilizator'}
+                          {comanda.profiluri_utilizatori?.full_name || 'Utilizator'}
                         </div>
                       </TableCell>
                     )}

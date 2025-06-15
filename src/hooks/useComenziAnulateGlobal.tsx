@@ -53,7 +53,7 @@ export function useComenziAnulateGlobal() {
               .single();
 
             if (!profileError && profileData) {
-              userProfile = profileData;
+              userProfile = { full_name: profileData.nume_complet };
             }
           }
 
