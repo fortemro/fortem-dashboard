@@ -1,4 +1,3 @@
-
 import { useProfile } from "@/hooks/useProfile";
 import { Navigate } from "react-router-dom";
 import { useState } from "react";
@@ -19,10 +18,6 @@ import { useExecutiveDashboardData } from "@/hooks/dashboard-executiv/useExecuti
 import { TrendingUp, XCircle, AlertTriangle, RefreshCw, BarChart3, FileText, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
-import { usePerformanceMonitoring } from "@/hooks/dashboard-executiv/usePerformanceMonitoring";
-import { PerformanceInsights } from "@/components/dashboard-executiv/PerformanceInsights";
-import { MobileOptimizations } from "@/components/dashboard-executiv/MobileOptimizations";
 
 const periodOptions: { value: PeriodFilter; label: string }[] = [
   { value: 'today', label: 'Astăzi' },
@@ -38,14 +33,7 @@ export default function DashboardExecutiv() {
   const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
   const { comenziAnulate, loading: loadingAnulate } = useComenziAnulateGlobal();
   const { kpis, topProducts, isLoading, error } = useExecutiveDashboardData(selectedPeriod, customDateRange);
-  const { trackComponentRender } = usePerformanceMonitoring();
   const { toast } = useToast();
-
-  // Track component performance
-  useEffect(() => {
-    const stopTracking = trackComponentRender('DashboardExecutiv');
-    return stopTracking;
-  }, [trackComponentRender]);
 
   const handlePeriodChange = (period: PeriodFilter) => {
     setSelectedPeriod(period);
@@ -131,7 +119,7 @@ export default function DashboardExecutiv() {
       />
 
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 mb-6">
+        <TabsList className="grid w-full grid-cols-4 mb-6">
           <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
             Dashboard
@@ -139,10 +127,6 @@ export default function DashboardExecutiv() {
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Analytics
-          </TabsTrigger>
-          <TabsTrigger value="performance" className="flex items-center gap-2">
-            <Zap className="h-4 w-4" />
-            Performance
           </TabsTrigger>
           <TabsTrigger value="reports" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
@@ -175,21 +159,6 @@ export default function DashboardExecutiv() {
           </div>
           
           <AdvancedCharts />
-        </TabsContent>
-        
-        <TabsContent value="performance">
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Zap className="h-5 w-5 text-green-600" />
-              <h2 className="text-xl font-semibold">Performance Monitoring & Mobile</h2>
-            </div>
-            <p className="text-gray-600">Monitorizare performanță și optimizări mobile pentru experiență optimă</p>
-          </div>
-          
-          <div className="space-y-6">
-            <PerformanceInsights />
-            <MobileOptimizations />
-          </div>
         </TabsContent>
         
         <TabsContent value="reports">

@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Produs = Tables<'produse'>;
@@ -21,9 +21,9 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [cartItems, setCartItems] = React.useState<CartItem[]>([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
-  const addToCart = React.useCallback((produs: Produs, cantitate: number) => {
+  const addToCart = (produs: Produs, cantitate: number) => {
     setCartItems(prev => {
       const existingItem = prev.find(item => item.produs.id === produs.id);
       if (existingItem) {
@@ -35,13 +35,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { produs, cantitate }];
     });
-  }, []);
+  };
 
-  const removeFromCart = React.useCallback((produsId: string) => {
+  const removeFromCart = (produsId: string) => {
     setCartItems(prev => prev.filter(item => item.produs.id !== produsId));
-  }, []);
+  };
 
-  const updateQuantity = React.useCallback((produsId: string, cantitate: number) => {
+  const updateQuantity = (produsId: string, cantitate: number) => {
     if (cantitate <= 0) {
       removeFromCart(produsId);
       return;
@@ -53,27 +53,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
           : item
       )
     );
-  }, [removeFromCart]);
+  };
 
-  const clearCart = React.useCallback(() => {
+  const clearCart = () => {
     setCartItems([]);
-  }, []);
+  };
 
-  const getTotalItems = React.useCallback(() => {
+  const getTotalItems = () => {
     return cartItems.reduce((total, item) => total + item.cantitate, 0);
-  }, [cartItems]);
-
-  const value = React.useMemo(() => ({
-    cartItems,
-    addToCart,
-    removeFromCart,
-    updateQuantity,
-    clearCart,
-    getTotalItems
-  }), [cartItems, addToCart, removeFromCart, updateQuantity, clearCart, getTotalItems]);
+  };
 
   return (
-    <CartContext.Provider value={value}>
+    <CartContext.Provider value={{
+      cartItems,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      clearCart,
+      getTotalItems
+    }}>
       {children}
     </CartContext.Provider>
   );
