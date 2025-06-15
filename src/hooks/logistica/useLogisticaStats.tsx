@@ -17,7 +17,7 @@ export function useLogisticaStats() {
       // Query all relevant data - make sure we get ALL orders
       const { data: allComenzi, error } = await supabase
         .from('comenzi')
-        .select('id, status, data_expediere, numar_masina, created_at, data_comanda')
+        .select('id, status, data_expediere, numar_masina, nume_transportator, created_at, data_comanda')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -26,13 +26,31 @@ export function useLogisticaStats() {
       }
 
       console.log('Total comenzi found for stats:', allComenzi?.length || 0);
-      console.log('Sample comenzi statuses:', allComenzi?.slice(0, 5).map(c => ({ id: c.id, status: c.status })));
+
+      // Get products for stock critical calculation
+      const { data: produse, error: produseError } = await supabase
+        .from('produse')
+        .select('id, nume, stoc_disponibil, prag_alerta_stoc')
+        .eq('activ', true);
+
+      if (produseError) {
+        console.error('Error fetching products for stock stats:', produseError);
+      }
+
+      // Get real stock data
+      const { data: stocuriReale, error: stocuriError } = await supabase
+        .rpc('get_stocuri_reale_pentru_produse');
+
+      if (stocuriError) {
+        console.error('Error fetching real stock:', stocuriError);
+      }
 
       if (!allComenzi) {
         return {
           comenziInProcesare: 0,
-          livrariprogramate: 0,
-          ruteActive: 0,
+          comenziCuTransportAlocat: 0,
+          comenziExpediateAstazi: 0,
+          stocCritic: 0,
           eficientaLivrari: 0
         };
       }
@@ -43,19 +61,34 @@ export function useLogisticaStats() {
         comanda.status === 'in_asteptare'
       ).length;
 
-      // Calculate livrări programate (în tranzit cu data expediere astăzi)
-      const livrariprogramate = allComenzi.filter(comanda => 
-        comanda.status === 'in_tranzit' && 
+      // Calculate comenzi cu transport alocat (have both nume_transportator and numar_masina)
+      const comenziCuTransportAlocat = allComenzi.filter(comanda => 
+        comanda.nume_transportator && 
+        comanda.nume_transportator.trim() !== '' &&
+        comanda.numar_masina && 
+        comanda.numar_masina.trim() !== '' &&
+        (comanda.status === 'in_procesare' || comanda.status === 'in_asteptare')
+      ).length;
+
+      // Calculate comenzi expediate astăzi (with expedition date today)
+      const comenziExpediateAstazi = allComenzi.filter(comanda => 
         comanda.data_expediere && 
         comanda.data_expediere.startsWith(todayStr)
       ).length;
 
-      // Calculate rute active (în tranzit cu număr mașină completat)
-      const ruteActive = allComenzi.filter(comanda => 
-        comanda.status === 'in_tranzit' && 
-        comanda.numar_masina && 
-        comanda.numar_masina.trim() !== ''
-      ).length;
+      // Calculate stoc critic (products with real stock below alert threshold)
+      let stocCritic = 0;
+      if (produse && stocuriReale) {
+        const stocuriMap = new Map(
+          stocuriReale.map(item => [item.produs_id, item.stoc_real])
+        );
+
+        stocCritic = produse.filter(produs => {
+          const stocReal = stocuriMap.get(produs.id) || 0;
+          const pragAlerta = produs.prag_alerta_stoc || 10;
+          return stocReal <= pragAlerta;
+        }).length;
+      }
 
       // Calculate eficiența livrărilor (ultimele 30 de zile)
       const comenziUltimele30Zile = allComenzi.filter(comanda => 
@@ -72,16 +105,18 @@ export function useLogisticaStats() {
 
       console.log('Stats calculated:', {
         comenziInProcesare,
-        livrariprogramate,
-        ruteActive,
+        comenziCuTransportAlocat,
+        comenziExpediateAstazi,
+        stocCritic,
         eficientaLivrari,
         totalComenzi: allComenzi.length
       });
 
       return {
         comenziInProcesare,
-        livrariprogramate,
-        ruteActive,
+        comenziCuTransportAlocat,
+        comenziExpediateAstazi,
+        stocCritic,
         eficientaLivrari
       };
     }
@@ -90,8 +125,9 @@ export function useLogisticaStats() {
   return {
     stats: stats || {
       comenziInProcesare: 0,
-      livrariprogramate: 0,
-      ruteActive: 0,
+      comenziCuTransportAlocat: 0,
+      comenziExpediateAstazi: 0,
+      stocCritic: 0,
       eficientaLivrari: 0
     },
     loading

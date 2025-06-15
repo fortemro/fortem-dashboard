@@ -1,7 +1,8 @@
+
 import { useProfile } from '@/hooks/useProfile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navigate } from 'react-router-dom';
-import { Truck, Package, MapPin, Clock } from 'lucide-react';
+import { Truck, Package, MapPin, Clock, AlertTriangle, Users } from 'lucide-react';
 import { ComenziLogisticaTable } from '@/components/logistica/ComenziLogisticaTable';
 import { SituatieStocuriTable } from '@/components/logistica/SituatieStocuriTable';
 import { useLogisticaStats } from '@/hooks/logistica/useLogisticaStats';
@@ -54,7 +55,7 @@ export default function PortalLogistica() {
                 {statsLoading ? '...' : stats.comenziInProcesare}
               </div>
               <p className="text-xs text-muted-foreground">
-                în procesare + pregătite pentru livrare
+                în așteptare + în procesare
               </p>
             </CardContent>
           </Card>
@@ -62,16 +63,33 @@ export default function PortalLogistica() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Livrări Programate
+                Transport Alocat
+              </CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {statsLoading ? '...' : stats.comenziCuTransportAlocat}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                comenzi cu transportator și mașină
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Expediate Astăzi
               </CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {statsLoading ? '...' : stats.livrariprogramate}
+                {statsLoading ? '...' : stats.comenziExpediateAstazi}
               </div>
               <p className="text-xs text-muted-foreground">
-                Pentru astăzi
+                expediate în ziua curentă
               </p>
             </CardContent>
           </Card>
@@ -79,33 +97,16 @@ export default function PortalLogistica() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Rute Active
+                Stoc Critic
               </CardTitle>
-              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <AlertTriangle className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {statsLoading ? '...' : stats.ruteActive}
+              <div className="text-2xl font-bold text-red-600">
+                {statsLoading ? '...' : stats.stocCritic}
               </div>
               <p className="text-xs text-muted-foreground">
-                Camioane în tranzit cu AWB
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Eficiență Livrări
-              </CardTitle>
-              <Truck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {statsLoading ? '...' : `${stats.eficientaLivrari}%`}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Media ultimelor 30 de zile
+                produse sub pragul de alertă
               </p>
             </CardContent>
           </Card>
