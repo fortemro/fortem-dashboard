@@ -32,28 +32,32 @@ export async function updateComandaStatusDirect(
   console.log('Final update data:', updateData);
 
   try {
-    // First, let's check if the order exists
+    // First, let's check if the order exists using only the 'id' field
     console.log('Checking if order exists...');
     const { data: existingOrder, error: checkError } = await supabase
       .from('comenzi')
-      .select('id, status, numar_comanda')
+      .select('id')
       .eq('id', comandaId)
-      .single();
+      .maybeSingle();
 
     if (checkError) {
       console.error('Error checking existing order:', checkError);
       throw checkError;
     }
 
+    if (!existingOrder) {
+      console.error('Order not found with ID:', comandaId);
+      throw new Error('Order not found');
+    }
+
     console.log('Existing order found:', existingOrder);
 
-    // Now perform the update with minimal fields
+    // Now perform the update without selecting anything back
     console.log('Performing update...');
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('comenzi')
       .update(updateData)
-      .eq('id', comandaId)
-      .select('id, status');
+      .eq('id', comandaId);
 
     if (error) {
       console.error('Update error details:', {
@@ -65,7 +69,7 @@ export async function updateComandaStatusDirect(
       throw error;
     }
 
-    console.log('Update successful:', data);
+    console.log('Update successful');
     return true;
   } catch (error) {
     console.error('Exception in updateComandaStatusDirect:', error);
