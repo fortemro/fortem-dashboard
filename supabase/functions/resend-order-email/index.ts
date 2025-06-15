@@ -150,21 +150,56 @@ const handler = async (req: Request): Promise<Response> => {
     // Use the same verified domain as send-order-email
     const fromEmail = "onboarding@resend.dev";
     
-    // Use recipients directly or default to lucian.cebuc@fortem.ro
-    const emailRecipients = recipients && recipients.length > 0 
+    // Prepare recipients - if none provided, use default
+    const requestedRecipients = recipients && recipients.length > 0 
       ? recipients 
       : ["lucian.cebuc@fortem.ro"];
 
-    console.log("Attempting to resend email with from:", fromEmail, "to:", emailRecipients);
+    console.log("Attempting to resend email with from:", fromEmail, "to:", requestedRecipients);
 
-    const emailResponse = await resend.emails.send({
+    // First try to send to all requested recipients
+    let emailResponse = await resend.emails.send({
       from: fromEmail,
-      to: emailRecipients,
+      to: requestedRecipients,
       subject: `[RETRIMIS] Comandă #${comanda.numar_comanda} - ${comanda.distribuitor_id}`,
       html: emailHtml,
     });
 
     console.log("Email response:", emailResponse);
+
+    // If there's a permission error (403), try sending only to verified email
+    if (emailResponse.error && emailResponse.error.statusCode === 403) {
+      console.log("Permission error detected, falling back to verified email only");
+      
+      const fallbackRecipients = ["lucian.cebuc@fortem.ro"];
+      emailResponse = await resend.emails.send({
+        from: fromEmail,
+        to: fallbackRecipients,
+        subject: `[RETRIMIS] Comandă #${comanda.numar_comanda} - ${comanda.distribuitor_id}`,
+        html: emailHtml,
+      });
+
+      console.log("Fallback email response:", emailResponse);
+
+      if (emailResponse.error) {
+        throw new Error(`Eroare Resend: ${emailResponse.error.message}`);
+      }
+
+      // Return success with warning about restricted recipients
+      return new Response(JSON.stringify({ 
+        success: true, 
+        emailId: emailResponse.data?.id,
+        message: "Email retrimis cu succes",
+        sentTo: fallbackRecipients,
+        warning: "Din cauza restricțiilor Resend, email-ul a fost trimis doar la adresa verificată (lucian.cebuc@fortem.ro)"
+      }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
+    }
 
     if (emailResponse.error) {
       console.error("Resend API error:", emailResponse.error);
@@ -177,7 +212,7 @@ const handler = async (req: Request): Promise<Response> => {
       success: true, 
       emailId: emailResponse.data?.id,
       message: "Email retrimis cu succes",
-      sentTo: emailRecipients
+      sentTo: requestedRecipients
     }), {
       status: 200,
       headers: {

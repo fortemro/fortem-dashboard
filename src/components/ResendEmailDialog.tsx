@@ -47,9 +47,14 @@ export function ResendEmailDialog({ isOpen, onClose, comanda }: ResendEmailDialo
       }
 
       if (data.success) {
+        const description = data.warning 
+          ? `${data.warning}`
+          : `Email-ul pentru comanda ${comanda.numar_comanda} a fost retrimis către: ${data.sentTo.join(', ')}`;
+        
         toast({
           title: "Email retrimis cu succes",
-          description: `Email-ul pentru comanda ${comanda.numar_comanda} a fost retrimis către: ${data.sentTo.join(', ')}`
+          description: description,
+          variant: data.warning ? "default" : "default"
         });
         onClose();
         setRecipients('');
