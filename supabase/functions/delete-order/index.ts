@@ -88,16 +88,32 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Folosim funcția de ștergere atomică
-    const { data: deleteResult, error: deleteError } = await supabaseClient
-      .rpc('delete_comanda_with_items', {
-        comanda_id_param: comandaId
-      });
+    // Șterge itemii comenzii mai întâi
+    const { error: itemsDeleteError } = await supabaseClient
+      .from('itemi_comanda')
+      .delete()
+      .eq('comanda_id', comandaId);
 
-    if (deleteError) {
-      console.error('Delete function error:', deleteError);
+    if (itemsDeleteError) {
+      console.error('Items delete error:', itemsDeleteError);
       return new Response(JSON.stringify({ 
-        error: `Eroare la ștergerea comenzii: ${deleteError.message}` 
+        error: `Eroare la ștergerea itemilor comenzii: ${itemsDeleteError.message}` 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Acum șterge comanda
+    const { error: comandaDeleteError } = await supabaseClient
+      .from('comenzi')
+      .delete()
+      .eq('id', comandaId);
+
+    if (comandaDeleteError) {
+      console.error('Order delete error:', comandaDeleteError);
+      return new Response(JSON.stringify({ 
+        error: `Eroare la ștergerea comenzii: ${comandaDeleteError.message}` 
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
