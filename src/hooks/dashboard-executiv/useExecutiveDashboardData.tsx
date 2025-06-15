@@ -1,10 +1,10 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useMemo } from 'react';
 import { PeriodFilter } from '@/components/dashboard-executiv/PeriodFilter';
 import { DateRange } from 'react-day-picker';
 import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { usePerformanceMonitoring } from '@/utils/performanceMonitoring';
 
 interface ExecutiveKPIs {
   vanzariTotale: number;
@@ -85,140 +85,147 @@ export function useExecutiveDashboardData(
   customDateRange?: DateRange
 ): ExecutiveDashboardData {
   const dateRange = useMemo(() => getDateRangeForPeriod(period, customDateRange), [period, customDateRange]);
+  const { trackApiCall } = usePerformanceMonitoring();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['executive-dashboard', period, dateRange.start, dateRange.end],
     queryFn: async () => {
-      console.log('🎯 Fetching executive dashboard data for period:', period);
+      const stopTracking = trackApiCall('executive-dashboard-data');
       
-      // 1. Fetch comenzile pentru perioada curentă
-      const { data: comenziCurente, error: comenziError } = await supabase
-        .from('comenzi')
-        .select(`
-          id,
-          total_comanda,
-          numar_paleti,
-          distribuitor_id,
-          data_comanda,
-          status
-        `)
-        .gte('data_comanda', dateRange.start.toISOString())
-        .lte('data_comanda', dateRange.end.toISOString())
-        .neq('status', 'anulata');
-
-      if (comenziError) throw new Error(comenziError.message);
-
-      // 2. Fetch comenzile pentru perioada precedentă
-      const { data: comenziPrecedente, error: precedenteError } = await supabase
-        .from('comenzi')
-        .select(`
-          id,
-          total_comanda,
-          distribuitor_id
-        `)
-        .gte('data_comanda', dateRange.previousStart.toISOString())
-        .lte('data_comanda', dateRange.previousEnd.toISOString())
-        .neq('status', 'anulata');
-
-      if (precedenteError) throw new Error(precedenteError.message);
-
-      // 3. Fetch itemi_comanda pentru perioada curentă
-      const { data: itemsCurente, error: itemsError } = await supabase
-        .from('itemi_comanda')
-        .select(`
-          cantitate,
-          total_item,
-          produs_id,
-          comanda_id
-        `)
-        .in('comanda_id', (comenziCurente || []).map(c => c.id));
-
-      if (itemsError) throw new Error(itemsError.message);
-
-      // 4. Fetch produse separately to avoid relationship issues
-      const produseIds = [...new Set(itemsCurente?.map(item => item.produs_id) || [])];
-      const { data: produseData, error: produseError } = await supabase
-        .from('produse')
-        .select('id, nume, categorie')
-        .in('id', produseIds);
-
-      if (produseError) throw new Error(produseError.message);
-
-      // 5. Fetch datele despre stocuri pentru alerte
-      const { data: stocuriData, error: stocuriError } = await supabase
-        .from('produse')
-        .select('id, nume, stoc_disponibil, prag_alerta_stoc')
-        .eq('activ', true);
-
-      if (stocuriError) throw new Error(stocuriError.message);
-
-      // 6. Calculează KPI-urile
-      const vanzariTotale = comenziCurente?.reduce((sum, c) => sum + (c.total_comanda || 0), 0) || 0;
-      const vanzariTotalePrecedent = comenziPrecedente?.reduce((sum, c) => sum + (c.total_comanda || 0), 0) || 0;
-      
-      const comenziActive = comenziCurente?.length || 0;
-      const comenziActivePrecedent = comenziPrecedente?.length || 0;
-      
-      const distributoriActivi = new Set(comenziCurente?.map(c => c.distribuitor_id)).size;
-      const distributoriActiviPrecedent = new Set(comenziPrecedente?.map(c => c.distribuitor_id)).size;
-      
-      const totalPaleti = comenziCurente?.reduce((sum, c) => sum + (c.numar_paleti || 0), 0) || 0;
-      
-      // Calcule pentru stocuri
-      const alerteStoc = stocuriData?.filter(p => p.stoc_disponibil <= p.prag_alerta_stoc).length || 0;
-      const produseStocZero = stocuriData?.filter(p => p.stoc_disponibil === 0).length || 0;
-
-      // 7. Create a map of products for easy lookup
-      const produseMap = new Map(produseData?.map(p => [p.id, p]) || []);
-
-      // 8. Calculează top produse din perioada curentă
-      const topProduseMap = new Map<string, TopProduct>();
-      
-      itemsCurente?.forEach(item => {
-        const produs = produseMap.get(item.produs_id);
-        const produsNume = produs?.nume || 'Produs necunoscut';
-        const key = item.produs_id;
-        const existing = topProduseMap.get(key);
+      try {
+        console.log('🎯 Fetching executive dashboard data for period:', period);
         
-        if (existing) {
-          existing.cantitate += item.cantitate;
-          existing.valoare += item.total_item || 0;
-        } else {
-          topProduseMap.set(key, {
-            nume: produsNume,
-            cantitate: item.cantitate,
-            valoare: item.total_item || 0,
-            trend: 0, // Va fi calculat mai jos
-            paleti: Math.ceil(item.cantitate / 100) // Estimare
-          });
-        }
-      });
+        // 1. Fetch comenzile pentru perioada curentă
+        const { data: comenziCurente, error: comenziError } = await supabase
+          .from('comenzi')
+          .select(`
+            id,
+            total_comanda,
+            numar_paleti,
+            distribuitor_id,
+            data_comanda,
+            status
+          `)
+          .gte('data_comanda', dateRange.start.toISOString())
+          .lte('data_comanda', dateRange.end.toISOString())
+          .neq('status', 'anulata');
 
-      const topProducts = Array.from(topProduseMap.values())
-        .sort((a, b) => b.valoare - a.valoare)
-        .slice(0, 5)
-        .map(product => ({
-          ...product,
-          trend: Math.random() * 40 - 20 // Placeholder pentru trend - va fi calculat real mai târziu
-        }));
+        if (comenziError) throw new Error(comenziError.message);
 
-      const kpis: ExecutiveKPIs = {
-        vanzariTotale,
-        vanzariTotalePrecedent,
-        comenziActive,
-        comenziActivePrecedent,
-        distributoriActivi,
-        distributoriActiviPrecedent,
-        alerteStoc,
-        produseStocZero,
-        totalPaleti,
-        totalProfit: vanzariTotale * 0.15 // Estimare 15% profit margin
-      };
+        // 2. Fetch comenzile pentru perioada precedentă
+        const { data: comenziPrecedente, error: precedenteError } = await supabase
+          .from('comenzi')
+          .select(`
+            id,
+            total_comanda,
+            distribuitor_id
+          `)
+          .gte('data_comanda', dateRange.previousStart.toISOString())
+          .lte('data_comanda', dateRange.previousEnd.toISOString())
+          .neq('status', 'anulata');
 
-      console.log('📊 Executive KPIs calculated:', kpis);
-      console.log('🏆 Top products:', topProducts);
+        if (precedenteError) throw new Error(precedenteError.message);
 
-      return { kpis, topProducts };
+        // 3. Fetch itemi_comanda pentru perioada curentă
+        const { data: itemsCurente, error: itemsError } = await supabase
+          .from('itemi_comanda')
+          .select(`
+            cantitate,
+            total_item,
+            produs_id,
+            comanda_id
+          `)
+          .in('comanda_id', (comenziCurente || []).map(c => c.id));
+
+        if (itemsError) throw new Error(itemsError.message);
+
+        // 4. Fetch produse separately to avoid relationship issues
+        const produseIds = [...new Set(itemsCurente?.map(item => item.produs_id) || [])];
+        const { data: produseData, error: produseError } = await supabase
+          .from('produse')
+          .select('id, nume, categorie')
+          .in('id', produseIds);
+
+        if (produseError) throw new Error(produseError.message);
+
+        // 5. Fetch datele despre stocuri pentru alerte
+        const { data: stocuriData, error: stocuriError } = await supabase
+          .from('produse')
+          .select('id, nume, stoc_disponibil, prag_alerta_stoc')
+          .eq('activ', true);
+
+        if (stocuriError) throw new Error(stocuriError.message);
+
+        // 6. Calculează KPI-urile
+        const vanzariTotale = comenziCurente?.reduce((sum, c) => sum + (c.total_comanda || 0), 0) || 0;
+        const vanzariTotalePrecedent = comenziPrecedente?.reduce((sum, c) => sum + (c.total_comanda || 0), 0) || 0;
+        
+        const comenziActive = comenziCurente?.length || 0;
+        const comenziActivePrecedent = comenziPrecedente?.length || 0;
+        
+        const distributoriActivi = new Set(comenziCurente?.map(c => c.distribuitor_id)).size;
+        const distributoriActiviPrecedent = new Set(comenziPrecedente?.map(c => c.distribuitor_id)).size;
+        
+        const totalPaleti = comenziCurente?.reduce((sum, c) => sum + (c.numar_paleti || 0), 0) || 0;
+        
+        // Calcule pentru stocuri
+        const alerteStoc = stocuriData?.filter(p => p.stoc_disponibil <= p.prag_alerta_stoc).length || 0;
+        const produseStocZero = stocuriData?.filter(p => p.stoc_disponibil === 0).length || 0;
+
+        // 7. Create a map of products for easy lookup
+        const produseMap = new Map(produseData?.map(p => [p.id, p]) || []);
+
+        // 8. Calculează top produse din perioada curentă
+        const topProduseMap = new Map<string, TopProduct>();
+        
+        itemsCurente?.forEach(item => {
+          const produs = produseMap.get(item.produs_id);
+          const produsNume = produs?.nume || 'Produs necunoscut';
+          const key = item.produs_id;
+          const existing = topProduseMap.get(key);
+          
+          if (existing) {
+            existing.cantitate += item.cantitate;
+            existing.valoare += item.total_item || 0;
+          } else {
+            topProduseMap.set(key, {
+              nume: produsNume,
+              cantitate: item.cantitate,
+              valoare: item.total_item || 0,
+              trend: 0, // Va fi calculat mai jos
+              paleti: Math.ceil(item.cantitate / 100) // Estimare
+            });
+          }
+        });
+
+        const topProducts = Array.from(topProduseMap.values())
+          .sort((a, b) => b.valoare - a.valoare)
+          .slice(0, 5)
+          .map(product => ({
+            ...product,
+            trend: Math.random() * 40 - 20 // Placeholder pentru trend - va fi calculat real mai târziu
+          }));
+
+        const kpis: ExecutiveKPIs = {
+          vanzariTotale,
+          vanzariTotalePrecedent,
+          comenziActive,
+          comenziActivePrecedent,
+          distributoriActivi,
+          distributoriActiviPrecedent,
+          alerteStoc,
+          produseStocZero,
+          totalPaleti,
+          totalProfit: vanzariTotale * 0.15 // Estimare 15% profit margin
+        };
+
+        console.log('📊 Executive KPIs calculated:', kpis);
+        console.log('🏆 Top products:', topProducts);
+
+        return { kpis, topProducts };
+      } finally {
+        stopTracking();
+      }
     },
     staleTime: 30000, // 30 secunde cache
     gcTime: 5 * 60 * 1000, // 5 minute în memorie
