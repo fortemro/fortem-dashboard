@@ -1,14 +1,18 @@
+
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import { useComenziLogistica } from '@/hooks/logistica/useComenziLogistica';
 import { ComandaDetailsModal } from './ComandaDetailsModal';
 import { ComandaEditModal } from './ComandaEditModal';
+import { ProduseComenziModal } from './ProduseComenziModal';
 import { TableFilters } from './TableFilters';
 import { StockStatusBadge, OrderStatusBadge } from './StatusBadges';
 import { ActionButtons } from './ActionButtons';
 import { useStockStatus } from '@/hooks/logistica/useStockStatus';
 import { useState, useMemo } from 'react';
+import { Package } from 'lucide-react';
 import type { Comanda } from '@/types/comanda';
 
 interface ComandaWithStockStatus extends Comanda {
@@ -28,6 +32,8 @@ export function ComenziLogisticaTable() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedComandaEdit, setSelectedComandaEdit] = useState<ComandaWithStockStatus | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedComandaProduse, setSelectedComandaProduse] = useState<ComandaWithStockStatus | null>(null);
+  const [isProduseModalOpen, setIsProduseModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('toate');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
@@ -95,6 +101,16 @@ export function ComenziLogisticaTable() {
     await updateComandaStatus(comanda.id, 'anulata');
   };
 
+  const handleVeziProduse = (comanda: ComandaWithStockStatus) => {
+    setSelectedComandaProduse(comanda);
+    setIsProduseModalOpen(true);
+  };
+
+  const handleProduseModalClose = () => {
+    setIsProduseModalOpen(false);
+    setSelectedComandaProduse(null);
+  };
+
   if (loading) {
     return (
       <Card>
@@ -141,6 +157,7 @@ export function ComenziLogisticaTable() {
                     <TableHead>Dată Plasare</TableHead>
                     <TableHead>Distribuitor</TableHead>
                     <TableHead>Oraș Livrare</TableHead>
+                    <TableHead>Produse</TableHead>
                     <TableHead>Status Stoc</TableHead>
                     <TableHead>Nume Transportator</TableHead>
                     <TableHead>Număr Mașină</TableHead>
@@ -163,6 +180,19 @@ export function ComenziLogisticaTable() {
                       </TableCell>
                       <TableCell>
                         {comanda.oras_livrare}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleVeziProduse(comanda)}
+                          className="flex items-center gap-1"
+                        >
+                          <Package className="h-3 w-3" />
+                          <span className="text-xs">
+                            {comanda.numar_paleti || 0} pal.
+                          </span>
+                        </Button>
                       </TableCell>
                       <TableCell>
                         <StockStatusBadge stockStatus={comanda.stockStatus} />
@@ -208,6 +238,12 @@ export function ComenziLogisticaTable() {
         isOpen={isEditModalOpen}
         onClose={handleEditModalClose}
         onSuccess={handleEditSuccess}
+      />
+
+      <ProduseComenziModal
+        comanda={selectedComandaProduse}
+        isOpen={isProduseModalOpen}
+        onClose={handleProduseModalClose}
       />
     </>
   );
