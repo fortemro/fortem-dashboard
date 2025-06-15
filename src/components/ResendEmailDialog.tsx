@@ -49,7 +49,7 @@ export function ResendEmailDialog({ isOpen, onClose, comanda }: ResendEmailDialo
       if (data.success) {
         toast({
           title: "Email retrimis cu succes",
-          description: `Email-ul pentru comanda ${comanda.numar_comanda} a fost retrimis către: ${data.sentTo.join(', ')}`
+          description: `Email-ul pentru comanda ${comanda.numar_comanda} a fost retrimis către: ${data.sentTo.join(', ')}${data.note ? ` (${data.note})` : ''}`
         });
         onClose();
         setRecipients('');
@@ -84,7 +84,7 @@ export function ResendEmailDialog({ isOpen, onClose, comanda }: ResendEmailDialo
           <DialogTitle>Retrimite Email Comandă</DialogTitle>
           <DialogDescription>
             Retrimite email-ul pentru comanda #{comanda?.numar_comanda}. 
-            Lasă câmpul destinatari gol pentru a trimite la adresa implicită.
+            Lasă câmpul destinatari gol pentru a trimite la adresa implicită (lucian.cebuc@fortem.ro).
           </DialogDescription>
         </DialogHeader>
         
@@ -95,13 +95,13 @@ export function ResendEmailDialog({ isOpen, onClose, comanda }: ResendEmailDialo
             </Label>
             <Input
               id="recipients"
-              placeholder="email1@exemplu.ro, email2@exemplu.ro"
+              placeholder="Lasă gol pentru adresa implicită"
               value={recipients}
               onChange={(e) => setRecipients(e.target.value)}
               disabled={isResending}
             />
             <p className="text-xs text-gray-500">
-              Separă multiple adrese cu virgulă. Lasă gol pentru adresa implicită.
+              Notă: Din motive de securitate, în modul de test se poate trimite doar la lucian.cebuc@fortem.ro
             </p>
           </div>
           
