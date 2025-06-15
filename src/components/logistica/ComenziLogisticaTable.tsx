@@ -1,3 +1,4 @@
+
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -8,7 +9,7 @@ import { TableFilters } from './TableFilters';
 import { StockStatusBadge, OrderStatusBadge } from './StatusBadges';
 import { ActionButtons } from './ActionButtons';
 import { useStockStatus } from '@/hooks/logistica/useStockStatus';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Comanda } from '@/types/comanda';
 
 interface ComandaWithStockStatus extends Comanda {
@@ -29,18 +30,22 @@ export function ComenziLogisticaTable() {
   const [statusFilter, setStatusFilter] = useState<string>('toate');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  // Filter comenzi based on selected status and search term
-  const filteredComenzi = comenziWithStockStatus.filter(comanda => {
-    // Filter by status
-    const matchesStatus = statusFilter === 'toate' || (comanda.status || 'in_asteptare') === statusFilter;
+  // Filter comenzi based on selected status and search term - using useMemo to prevent re-computation
+  const filteredComenzi = useMemo(() => {
+    if (!comenziWithStockStatus) return [];
     
-    // Filter by search term (order number or distributor name)
-    const matchesSearch = !searchTerm || 
-      comanda.numar_comanda.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      comanda.distribuitor_id.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    return matchesStatus && matchesSearch;
-  });
+    return comenziWithStockStatus.filter(comanda => {
+      // Filter by status
+      const matchesStatus = statusFilter === 'toate' || (comanda.status || 'in_asteptare') === statusFilter;
+      
+      // Filter by search term (order number or distributor name)
+      const matchesSearch = !searchTerm || 
+        comanda.numar_comanda.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        comanda.distribuitor_id.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      return matchesStatus && matchesSearch;
+    });
+  }, [comenziWithStockStatus, statusFilter, searchTerm]);
 
   const handleStatusUpdate = async (comandaId: string, newStatus: string) => {
     await updateComandaStatus(comandaId, newStatus);
@@ -76,6 +81,7 @@ export function ComenziLogisticaTable() {
   };
 
   const handleMarcheazaExpediat = async (comanda: ComandaWithStockStatus) => {
+    console.log('Attempting to mark as expediated:', comanda.id);
     await updateComandaStatus(comanda.id, 'in_tranzit', true);
   };
 
@@ -112,7 +118,7 @@ export function ComenziLogisticaTable() {
             onSearchChange={setSearchTerm}
             statusFilter={statusFilter}
             onStatusFilterChange={setStatusFilter}
-            totalCount={comenziWithStockStatus.length}
+            totalCount={comenziWithStockStatus?.length || 0}
             filteredCount={filteredComenzi.length}
           />
         </CardHeader>

@@ -18,7 +18,7 @@ export function useComenziLogistica() {
     queryFn: async () => {
       console.log('Fetching comenzi for logistica...');
       
-      // Get all orders without distribuitori join
+      // Simple query to get all orders - no joins to avoid distribuitori table
       const { data: comenziData, error: comenziError } = await supabase
         .from('comenzi')
         .select('*')
@@ -84,7 +84,7 @@ export function useComenziLogistica() {
 
   const updateComandaStatus = async (comandaId: string, newStatus: string, setExpeditionDate: boolean = false, setDeliveryDate: boolean = false) => {
     try {
-      console.log('Updating comanda status:', comandaId, 'to:', newStatus);
+      console.log('Starting status update for comanda:', comandaId, 'to status:', newStatus);
       
       const updateData: any = { 
         status: newStatus,
@@ -94,28 +94,29 @@ export function useComenziLogistica() {
       // If marking as 'in_tranzit' (expediated), set the expedition date
       if (setExpeditionDate && newStatus === 'in_tranzit') {
         updateData.data_expediere = new Date().toISOString();
+        console.log('Setting expedition date');
       }
 
       // If marking as 'livrata' (delivered), set the delivery date
       if (setDeliveryDate && newStatus === 'livrata') {
         updateData.data_livrare = new Date().toISOString();
+        console.log('Setting delivery date');
       }
 
-      console.log('Update data being sent:', updateData);
+      console.log('Update payload:', updateData);
 
-      // Direct update without any joins
-      const { data, error } = await supabase
+      // Simple update query with no joins or selects
+      const { error } = await supabase
         .from('comenzi')
         .update(updateData)
-        .eq('id', comandaId)
-        .select('*');
+        .eq('id', comandaId);
 
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('Database update error:', error);
         throw error;
       }
 
-      console.log('Update successful:', data);
+      console.log('Status update successful');
 
       // Invalidate and refetch the query
       queryClient.invalidateQueries({ queryKey: ['comenzi-logistica'] });
