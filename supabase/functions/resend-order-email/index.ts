@@ -150,20 +150,16 @@ const handler = async (req: Request): Promise<Response> => {
     // Use the same verified domain as send-order-email
     const fromEmail = "onboarding@resend.dev";
     
-    // For testing environment, restrict recipients to verified email
-    // In production, this would use the actual recipients
+    // Use recipients directly or default to lucian.cebuc@fortem.ro
     const emailRecipients = recipients && recipients.length > 0 
-      ? recipients.filter(email => email === "lucian.cebuc@fortem.ro") // Only allow verified email for now
+      ? recipients 
       : ["lucian.cebuc@fortem.ro"];
 
-    // If no valid recipients after filtering, use default
-    const finalRecipients = emailRecipients.length > 0 ? emailRecipients : ["lucian.cebuc@fortem.ro"];
-
-    console.log("Attempting to resend email with from:", fromEmail, "to:", finalRecipients);
+    console.log("Attempting to resend email with from:", fromEmail, "to:", emailRecipients);
 
     const emailResponse = await resend.emails.send({
       from: fromEmail,
-      to: finalRecipients,
+      to: emailRecipients,
       subject: `[RETRIMIS] Comandă #${comanda.numar_comanda} - ${comanda.distribuitor_id}`,
       html: emailHtml,
     });
@@ -181,10 +177,7 @@ const handler = async (req: Request): Promise<Response> => {
       success: true, 
       emailId: emailResponse.data?.id,
       message: "Email retrimis cu succes",
-      sentTo: finalRecipients,
-      note: recipients && recipients.length > 0 && finalRecipients.length !== recipients.length 
-        ? "Unele adrese au fost filtrate pentru securitate" 
-        : undefined
+      sentTo: emailRecipients
     }), {
       status: 200,
       headers: {
