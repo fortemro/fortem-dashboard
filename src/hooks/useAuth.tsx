@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +19,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event, session);
@@ -30,7 +28,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -65,33 +62,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    try {
-      console.log('Attempting to sign out...');
-      
-      // Clear local state immediately
-      setSession(null);
-      setUser(null);
-      
-      // Attempt to sign out from Supabase
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('Sign out error:', error);
-        // Even if there's an error, we've already cleared local state
-        // This handles cases where the session is already invalid
-      } else {
-        console.log('Successfully signed out');
-      }
-      
-      // Redirect to auth page after sign out
-      window.location.href = '/auth';
-    } catch (error) {
-      console.error('Unexpected error during sign out:', error);
-      // Clear local state even on unexpected errors
-      setSession(null);
-      setUser(null);
-      window.location.href = '/auth';
+    console.log('Attempting to sign out...');
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      console.error('Sign out error:', error.message);
+    } else {
+      console.log('Successfully signed out');
     }
+
+    window.location.href = '/auth';
   };
 
   const value = {

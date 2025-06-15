@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -162,7 +161,7 @@ export default function MobileMenu({ user, profile, loading, onSignOut }: Mobile
               )}
 
               {/* Links pentru Admin */}
-              {!loading && profile?.rol === 'Admin' && (
+              {!loading && profile?.rol === 'admin' && (
                 <>
                   <div className="pt-2">
                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 pb-2">

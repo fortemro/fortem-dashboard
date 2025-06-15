@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import ManagementDropdown from "./ManagementDropdown";
 import { Factory, Truck } from "lucide-react";
@@ -54,7 +53,7 @@ export default function DesktopNavigation({ profile, loading }: DesktopNavigatio
           Portal Logistică
         </Link>
       )}
-      {!loading && profile?.rol === 'Admin' && (
+      {!loading && profile?.rol === 'admin' && (
         <>
           <Link
             to="/admin-dashboard"

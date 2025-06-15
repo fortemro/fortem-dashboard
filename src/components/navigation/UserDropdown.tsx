@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -88,7 +87,7 @@ export default function UserDropdown({ user, profile, loading, onSignOut }: User
             </Link>
           </DropdownMenuItem>
         )}
-        {!loading && profile?.rol === 'Admin' && (
+        {!loading && profile?.rol === 'admin' && (
           <>
             <DropdownMenuItem asChild>
               <Link to="/admin-dashboard">
