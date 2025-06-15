@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,35 +46,9 @@ export function useComenziLogistica() {
         stocuriReale?.map(item => [item.produs_id, item.stoc_real]) || []
       );
 
-      // Then get distributor details for each order if the distribuitor_id is a UUID
+      // Process orders with stock availability check
       const comenziWithDetails = await Promise.all(
         comenziData.map(async (comanda) => {
-          let distributorDetails = null;
-          
-          // Check if distribuitor_id is a UUID
-          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(comanda.distribuitor_id);
-          
-          if (isUUID) {
-            try {
-              const { data: distributorData, error: distributorError } = await supabase
-                .from('distribuitori')
-                .select('*')
-                .eq('id', comanda.distribuitor_id)
-                .single();
-
-              // Only set distributorDetails if no error and data exists
-              if (!distributorError && distributorData) {
-                distributorDetails = distributorData;
-              } else if (distributorError && distributorError.code !== 'PGRST116') {
-                // Log only if it's not a "no rows found" error
-                console.warn('Error fetching distributor:', distributorError);
-              }
-            } catch (error) {
-              // Silently handle distributor fetch errors
-              console.warn('Failed to fetch distributor for comanda:', comanda.id);
-            }
-          }
-
           // Get order items to check stock availability
           let stockAvailable = true;
           try {
@@ -96,13 +71,12 @@ export function useComenziLogistica() {
 
           return {
             ...comanda,
-            distribuitor: distributorDetails,
             stockAvailable
           } as ComandaWithStockStatus;
         })
       );
 
-      console.log('Processed comenzi with distributors and stock status:', comenziWithDetails.length);
+      console.log('Processed comenzi with stock status:', comenziWithDetails.length);
       
       return comenziWithDetails;
     }
