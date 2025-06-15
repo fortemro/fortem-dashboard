@@ -23,6 +23,7 @@ interface ComandaWithStockStatus extends Comanda {
 export function ComenziLogisticaTable() {
   const { comenzi, loading, updateComandaStatus, refetch } = useComenziLogistica();
   const { comenziWithStockStatus } = useStockStatus(comenzi);
+  
   const [selectedComanda, setSelectedComanda] = useState<ComandaWithStockStatus | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedComandaEdit, setSelectedComandaEdit] = useState<ComandaWithStockStatus | null>(null);

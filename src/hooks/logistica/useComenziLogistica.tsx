@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,13 +19,10 @@ export function useComenziLogistica() {
     queryFn: async () => {
       console.log('Fetching comenzi for logistica...');
       
-      // Query with JOIN to get distributor company name
+      // Query orders and distributors separately, then join them
       const { data: comenziData, error: comenziError } = await supabase
         .from('comenzi')
-        .select(`
-          *,
-          distribuitori!inner(nume_companie)
-        `)
+        .select('*')
         .order('data_comanda', { ascending: false });
 
       if (comenziError) {
@@ -37,6 +33,20 @@ export function useComenziLogistica() {
       console.log('Found comenzi:', comenziData?.length || 0);
 
       if (!comenziData) return [];
+
+      // Get distributors data
+      const { data: distribuitori, error: distributoriError } = await supabase
+        .from('distribuitori')
+        .select('id, nume_companie');
+
+      if (distributoriError) {
+        console.error('Error fetching distribuitori:', distributoriError);
+      }
+
+      // Create a map of distributor UUID to company name
+      const distributoriMap = new Map(
+        distribuitori?.map(d => [d.id, d.nume_companie]) || []
+      );
 
       // Get real stock data
       const { data: stocuriReale, error: stocuriError } = await supabase
@@ -74,10 +84,15 @@ export function useComenziLogistica() {
             stockAvailable = false;
           }
 
+          // Get distributor name using the distribuitor_uuid
+          const distributorName = comanda.distribuitor_uuid 
+            ? distributoriMap.get(comanda.distribuitor_uuid) 
+            : null;
+
           return {
             ...comanda,
             stockAvailable,
-            distribuitor_nume: comanda.distribuitori?.nume_companie || comanda.distribuitor_id
+            distribuitor_nume: distributorName || comanda.distribuitor_id
           } as ComandaWithStockStatus;
         })
       );
