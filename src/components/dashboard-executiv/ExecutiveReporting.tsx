@@ -12,6 +12,9 @@ import { DateRange } from 'react-day-picker';
 import { CustomDateRangePicker } from '@/components/CustomDateRangePicker';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
+import { useExecutiveDashboardData } from '@/hooks/dashboard-executiv/useExecutiveDashboardData';
+import { PeriodFilter } from './PeriodFilter';
+import { generatePDFReport, generateExcelData, generateCSVData, ReportData } from '@/utils/reportGenerator';
 
 interface ReportConfig {
   title: string;
@@ -33,7 +36,10 @@ export function ExecutiveReporting() {
   const [reportConfig, setReportConfig] = useState<ReportConfig>({
     title: 'Raport Executiv Dashboard',
     description: '',
-    dateRange: undefined,
+    dateRange: {
+      from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      to: new Date()
+    },
     format: 'pdf',
     includeSections: {
       kpis: true,
@@ -49,32 +55,75 @@ export function ExecutiveReporting() {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
+  // Determină perioada pentru hook-ul de date
+  const period: PeriodFilter = 'custom';
+  const { kpis, topProducts, performanceData, isLoading } = useExecutiveDashboardData(period, reportConfig.dateRange);
+
   const handleGenerateReport = async () => {
+    if (!reportConfig.dateRange?.from || !reportConfig.dateRange?.to) {
+      toast({
+        title: "❌ Eroare",
+        description: "Vă rugăm să selectați o perioadă pentru raport",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsGenerating(true);
     
     try {
-      // Simulare generare raport
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const reportData = {
+      const reportData: ReportData = {
         title: reportConfig.title,
         timestamp: new Date().toISOString(),
-        dateRange: reportConfig.dateRange,
-        sections: reportConfig.includeSections,
+        dateRange: {
+          from: reportConfig.dateRange.from.toISOString(),
+          to: reportConfig.dateRange.to.toISOString()
+        },
+        kpis,
+        topProducts,
+        performanceData,
         format: reportConfig.format
       };
       
-      console.log('📊 Generating executive report:', reportData);
+      console.log('📊 Generating executive report with real data:', reportData);
       
       if (reportConfig.schedule === 'now') {
-        // Descărcare imediată
-        const blob = new Blob([JSON.stringify(reportData, null, 2)], {
-          type: 'application/json'
-        });
+        let fileContent: string;
+        let fileName: string;
+        let mimeType: string;
+        
+        switch (reportConfig.format) {
+          case 'pdf':
+            fileContent = generatePDFReport(reportData);
+            fileName = `raport-executiv-${format(new Date(), 'yyyy-MM-dd-HH-mm')}.html`;
+            mimeType = 'text/html';
+            break;
+            
+          case 'excel':
+            const excelData = generateExcelData(reportData);
+            fileContent = JSON.stringify(excelData, null, 2);
+            fileName = `raport-executiv-${format(new Date(), 'yyyy-MM-dd-HH-mm')}.json`;
+            mimeType = 'application/json';
+            break;
+            
+          case 'csv':
+            fileContent = generateCSVData(reportData);
+            fileName = `raport-executiv-${format(new Date(), 'yyyy-MM-dd-HH-mm')}.csv`;
+            mimeType = 'text/csv';
+            break;
+            
+          default:
+            throw new Error('Format nesuportat');
+        }
+        
+        // Descărcare fișier
+        const blob = new Blob([fileContent], { type: mimeType });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `raport-executiv-${format(new Date(), 'yyyy-MM-dd-HH-mm')}.json`;
+        a.download = fileName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -82,10 +131,9 @@ export function ExecutiveReporting() {
         
         toast({
           title: "📄 Raport Generat",
-          description: "Raportul executiv a fost descărcat cu succes",
+          description: `Raportul ${reportConfig.format.toUpperCase()} a fost descărcat cu succes`,
         });
       } else {
-        // Programare automată
         toast({
           title: "📅 Raport Programat",
           description: `Raportul va fi trimis automat ${reportConfig.schedule === 'daily' ? 'zilnic' : reportConfig.schedule === 'weekly' ? 'săptămânal' : 'lunar'}`,
@@ -109,6 +157,31 @@ export function ExecutiveReporting() {
     if (!range.to) return format(range.from, 'dd MMM yyyy', { locale: ro });
     return `${format(range.from, 'dd MMM', { locale: ro })} - ${format(range.to, 'dd MMM yyyy', { locale: ro })}`;
   };
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              <div className="h-4 bg-gray-200 rounded w-4/5"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/5"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -166,8 +239,8 @@ export function ExecutiveReporting() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pdf">📄 PDF</SelectItem>
-                  <SelectItem value="excel">📊 Excel</SelectItem>
+                  <SelectItem value="pdf">📄 HTML/PDF</SelectItem>
+                  <SelectItem value="excel">📊 Excel (JSON)</SelectItem>
                   <SelectItem value="csv">📝 CSV</SelectItem>
                 </SelectContent>
               </Select>
@@ -208,15 +281,27 @@ export function ExecutiveReporting() {
         </CardContent>
       </Card>
       
-      {/* Secțiuni Raport */}
+      {/* Secțiuni Raport și Previzualizare Date */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-green-600" />
-            Secțiuni de Inclus
+            Previzualizare Date Raport
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+            <h4 className="font-semibold text-sm text-gray-700">📊 Date Disponibile:</h4>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div>• Vânzări: {kpis.vanzariTotale?.toLocaleString('ro-RO')} RON</div>
+              <div>• Comenzi: {kpis.comenziActive}</div>
+              <div>• Distribuitori: {kpis.distributoriActivi}</div>
+              <div>• Paleți: {kpis.totalPaleti}</div>
+              <div>• Top Produse: {topProducts.length}</div>
+              <div>• Zile Date: {performanceData.length}</div>
+            </div>
+          </div>
+
           <div className="space-y-3">
             {Object.entries({
               kpis: { label: 'KPI-uri și Metrici', icon: TrendingUp },
@@ -275,8 +360,8 @@ export function ExecutiveReporting() {
           </div>
           
           <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded">
-            <p className="font-medium mb-1">💡 Sfat:</p>
-            <p>Rapoartele programate vor fi trimise automat la adresele specificate în fiecare {reportConfig.schedule === 'daily' ? 'zi' : reportConfig.schedule === 'weekly' ? 'săptămână' : 'lună'} la ora 08:00.</p>
+            <p className="font-medium mb-1">💡 Nou:</p>
+            <p>Rapoartele conțin acum date reale din dashboard: KPI-uri, top produse, performanță zilnică și alerte. Formatele PDF/HTML sunt optimizate pentru printare.</p>
           </div>
         </CardContent>
       </Card>
