@@ -14,7 +14,7 @@ import { Mail, Lock, Building2, UserCog } from 'lucide-react';
 const availableRoles = [
   { value: 'MZV', label: 'MZV (Membru Zonă Vânzări)' },
   { value: 'management', label: 'Management' },
-  { value: 'Admin', label: 'Administrator' },
+  { value: 'admin', label: 'Administrator' },
   { value: 'logistica', label: 'Logistică' },
   { value: 'productie', label: 'Producție' },
   { value: 'centralizator', label: 'Centralizator Comenzi' }
