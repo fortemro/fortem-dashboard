@@ -165,7 +165,7 @@ function toast({ ...props }: Toast) {
   }
 }
 
-// Implementare simplă fără React hooks
+// Simple implementation without React hooks
 function useToast() {
   return {
     toasts: memoryState.toasts,
