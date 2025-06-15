@@ -1,3 +1,4 @@
+
 import { useProfile } from "@/hooks/useProfile";
 import { Navigate } from "react-router-dom";
 import { useState } from "react";
@@ -32,7 +33,7 @@ export default function DashboardExecutiv() {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>('today');
   const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
   const { comenziAnulate, loading: loadingAnulate } = useComenziAnulateGlobal();
-  const { kpis, topProducts, isLoading, error } = useExecutiveDashboardData(selectedPeriod, customDateRange);
+  const { kpis, topProducts, performanceData, isLoading, error } = useExecutiveDashboardData(selectedPeriod, customDateRange);
   const { toast } = useToast();
 
   const handlePeriodChange = (period: PeriodFilter) => {
@@ -142,7 +143,11 @@ export default function DashboardExecutiv() {
           <StatsCards kpis={kpis} isLoading={isLoading} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-            <PerformanceCharts periodDisplay={getDisplayPeriod()} />
+            <PerformanceCharts 
+              periodDisplay={getDisplayPeriod()} 
+              performanceData={performanceData}
+              isLoading={isLoading}
+            />
             <TopProducts products={topProducts} isLoading={isLoading} />
           </div>
 

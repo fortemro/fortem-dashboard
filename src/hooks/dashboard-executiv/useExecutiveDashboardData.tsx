@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useMemo } from 'react';
 import { PeriodFilter } from '@/components/dashboard-executiv/PeriodFilter';
 import { DateRange } from 'react-day-picker';
-import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
 
 interface ExecutiveKPIs {
   vanzariTotale: number;
@@ -27,9 +27,17 @@ interface TopProduct {
   paleti: number;
 }
 
+interface PerformanceDataPoint {
+  date: string;
+  vanzari: number;
+  comenzi: number;
+  dateLabel: string;
+}
+
 interface ExecutiveDashboardData {
   kpis: ExecutiveKPIs;
   topProducts: TopProduct[];
+  performanceData: PerformanceDataPoint[];
   isLoading: boolean;
   error: Error | null;
 }
@@ -78,6 +86,43 @@ const getDateRangeForPeriod = (period: PeriodFilter, customRange?: DateRange) =>
     default:
       return getDateRangeForPeriod('today');
   }
+};
+
+const generatePerformanceData = async (dateRange: any): Promise<PerformanceDataPoint[]> => {
+  const startDate = new Date(dateRange.start);
+  const endDate = new Date(dateRange.end);
+  const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  const performanceData: PerformanceDataPoint[] = [];
+
+  // Generate data points for each day in the range
+  for (let i = 0; i <= daysDiff; i++) {
+    const currentDate = new Date(startDate);
+    currentDate.setDate(startDate.getDate() + i);
+    
+    const dayStart = startOfDay(currentDate);
+    const dayEnd = endOfDay(currentDate);
+
+    const { data: comenziZi, error } = await supabase
+      .from('comenzi')
+      .select('total_comanda, id')
+      .gte('data_comanda', dayStart.toISOString())
+      .lte('data_comanda', dayEnd.toISOString())
+      .neq('status', 'anulata');
+
+    if (error) throw new Error(error.message);
+
+    const vanzariZi = comenziZi?.reduce((sum, c) => sum + (c.total_comanda || 0), 0) || 0;
+    const comenziZi_count = comenziZi?.length || 0;
+
+    performanceData.push({
+      date: currentDate.toISOString(),
+      vanzari: Math.round(vanzariZi),
+      comenzi: comenziZi_count,
+      dateLabel: format(currentDate, 'dd/MM')
+    });
+  }
+
+  return performanceData;
 };
 
 export function useExecutiveDashboardData(
@@ -152,7 +197,10 @@ export function useExecutiveDashboardData(
 
       if (stocuriError) throw new Error(stocuriError.message);
 
-      // 6. Calculează KPI-urile
+      // 6. Generate performance data
+      const performanceData = await generatePerformanceData(dateRange);
+
+      // 7. Calculează KPI-urile
       const vanzariTotale = comenziCurente?.reduce((sum, c) => sum + (c.total_comanda || 0), 0) || 0;
       const vanzariTotalePrecedent = comenziPrecedente?.reduce((sum, c) => sum + (c.total_comanda || 0), 0) || 0;
       
@@ -168,10 +216,10 @@ export function useExecutiveDashboardData(
       const alerteStoc = stocuriData?.filter(p => p.stoc_disponibil <= p.prag_alerta_stoc).length || 0;
       const produseStocZero = stocuriData?.filter(p => p.stoc_disponibil === 0).length || 0;
 
-      // 7. Create a map of products for easy lookup
+      // 8. Create a map of products for easy lookup
       const produseMap = new Map(produseData?.map(p => [p.id, p]) || []);
 
-      // 8. Calculează top produse din perioada curentă
+      // 9. Calculează top produse din perioada curentă
       const topProduseMap = new Map<string, TopProduct>();
       
       itemsCurente?.forEach(item => {
@@ -217,8 +265,9 @@ export function useExecutiveDashboardData(
 
       console.log('📊 Executive KPIs calculated:', kpis);
       console.log('🏆 Top products:', topProducts);
+      console.log('📈 Performance data:', performanceData);
 
-      return { kpis, topProducts };
+      return { kpis, topProducts, performanceData };
     },
     staleTime: 30000, // 30 secunde cache
     gcTime: 5 * 60 * 1000, // 5 minute în memorie
@@ -239,6 +288,7 @@ export function useExecutiveDashboardData(
       totalProfit: 0
     },
     topProducts: data?.topProducts || [],
+    performanceData: data?.performanceData || [],
     isLoading,
     error: error as Error | null
   };
