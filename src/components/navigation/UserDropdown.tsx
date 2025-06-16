@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +18,8 @@ import {
   Truck,
   Factory,
   BarChart3,
+  Package,
+  ShoppingCart,
 } from "lucide-react";
 
 interface UserDropdownProps {
@@ -55,13 +58,23 @@ export default function UserDropdown({ user, profile, loading, onSignOut }: User
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        
+        {/* Linkuri de bază pentru toate rolurile */}
         <DropdownMenuItem asChild>
           <Link to="/profile">
             <User className="mr-2 h-4 w-4" />
             <span>Profil</span>
           </Link>
         </DropdownMenuItem>
-        {/* Link dropdown Dashboard Executiv doar pt rol management */}
+        
+        <DropdownMenuItem asChild>
+          <Link to="/comenzile-mele">
+            <Package className="mr-2 h-4 w-4" />
+            <span>Comenzile Mele</span>
+          </Link>
+        </DropdownMenuItem>
+
+        {/* Links specializate pe rol */}
         {!loading && profile?.rol === 'management' && (
           <DropdownMenuItem asChild>
             <Link to="/dashboard-executiv">
@@ -70,7 +83,7 @@ export default function UserDropdown({ user, profile, loading, onSignOut }: User
             </Link>
           </DropdownMenuItem>
         )}
-        {/* Link dropdown Producție doar pt rol productie */}
+        
         {!loading && profile?.rol === 'productie' && (
           <DropdownMenuItem asChild>
             <Link to="/productie">
@@ -79,6 +92,7 @@ export default function UserDropdown({ user, profile, loading, onSignOut }: User
             </Link>
           </DropdownMenuItem>
         )}
+        
         {!loading && profile?.rol === 'logistica' && (
           <DropdownMenuItem asChild>
             <Link to="/portal-logistica">
@@ -87,6 +101,7 @@ export default function UserDropdown({ user, profile, loading, onSignOut }: User
             </Link>
           </DropdownMenuItem>
         )}
+        
         {!loading && profile?.rol === 'admin' && (
           <>
             <DropdownMenuItem asChild>
@@ -103,6 +118,7 @@ export default function UserDropdown({ user, profile, loading, onSignOut }: User
             </DropdownMenuItem>
           </>
         )}
+        
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onSignOut}>
           <LogOut className="mr-2 h-4 w-4" />

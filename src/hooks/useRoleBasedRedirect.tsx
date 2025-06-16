@@ -8,7 +8,7 @@ export function useRoleBasedRedirect() {
   const navigate = useNavigate();
   const location = useLocation();
   const { profile, loading } = useProfile();
-  const { getDashboardForRole, canAccessDashboard } = usePermissions();
+  const { getDashboardForRole, canAccessRoute } = usePermissions();
 
   useEffect(() => {
     if (loading || !profile) return;
@@ -16,18 +16,18 @@ export function useRoleBasedRedirect() {
     const currentPath = location.pathname;
     const targetDashboard = getDashboardForRole(profile.rol);
 
-    // Verifică dacă utilizatorul poate accesa dashboard-ul curent
-    if (!canAccessDashboard(currentPath)) {
+    // Verifică dacă utilizatorul poate accesa ruta curentă
+    if (!canAccessRoute(currentPath)) {
       console.log(`Redirecting from ${currentPath} to ${targetDashboard} for role ${profile.rol}`);
       navigate(targetDashboard, { replace: true });
       return;
     }
 
-    // Pentru prima autentificare, redirecționează către dashboard-ul corespunzător
-    if (currentPath === '/' && targetDashboard !== '/') {
+    // Pentru prima autentificare pe ruta root, redirecționează către dashboard-ul corespunzător DOAR pentru rolurile cu dashboard specializat
+    if (currentPath === '/' && targetDashboard !== '/' && profile.rol !== 'MZV') {
       navigate(targetDashboard, { replace: true });
     }
-  }, [profile, loading, location.pathname, navigate, getDashboardForRole, canAccessDashboard]);
+  }, [profile, loading, location.pathname, navigate, getDashboardForRole, canAccessRoute]);
 
   return {
     isRedirecting: loading,

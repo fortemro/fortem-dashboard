@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import ManagementDropdown from "./ManagementDropdown";
 import { Factory, Truck } from "lucide-react";
@@ -16,6 +17,8 @@ export default function DesktopNavigation({ profile, loading }: DesktopNavigatio
       >
         Dashboard
       </Link>
+      
+      {/* Linkurile de bază accesibile tuturor rolurilor */}
       <Link
         to="/produse"
         className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
@@ -34,7 +37,7 @@ export default function DesktopNavigation({ profile, loading }: DesktopNavigatio
         <ManagementDropdown />
       )}
 
-      {/* Link doar pentru utilizatori cu rolul productie */}
+      {/* Links specifice pentru roluri specializate */}
       {!loading && profile?.rol === 'productie' && (
         <Link
           to="/productie"

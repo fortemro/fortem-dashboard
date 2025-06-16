@@ -164,46 +164,35 @@ export function ProfileForm() {
             />
           </div>
 
-          <PermissionGuard 
-            dashboardType="profile" 
-            action="manage"
-            fallback={
-              <div className="space-y-2">
-                <Label htmlFor="rol">
-                  <UserCog className="h-4 w-4 inline mr-1" />
-                  Rol
-                </Label>
-                <Input
-                  value={formData.rol}
-                  readOnly
-                  className="bg-gray-50"
-                  placeholder="Rolul nu poate fi modificat"
-                />
-              </div>
-            }
-          >
-            <div className="space-y-2">
-              <Label htmlFor="rol">
-                <UserCog className="h-4 w-4 inline mr-1" />
-                Rol {hasFullAccess && "(Admin/Management pot modifica)"}
-              </Label>
+          {/* Permitem schimbarea rolului pentru testare - poate fi restricționată în producție */}
+          <div className="space-y-2">
+            <Label htmlFor="rol">
+              <UserCog className="h-4 w-4 inline mr-1" />
+              Rol {hasFullAccess && "(Admin/Management pot modifica)"}
+            </Label>
+            {hasFullAccess ? (
               <Select value={formData.rol} onValueChange={handleRolChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selectează rolul" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="MZV">MZV</SelectItem>
-                  <SelectItem value="Admin">Admin</SelectItem>
-                  <SelectItem value="Manager">Manager</SelectItem>
-                  <SelectItem value="User">User</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="management">Management</SelectItem>
                   <SelectItem value="logistica">Logistică</SelectItem>
                   <SelectItem value="productie">Producție</SelectItem>
-                  <SelectItem value="management">Management</SelectItem>
                   <SelectItem value="centralizator">Centralizator</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-          </PermissionGuard>
+            ) : (
+              <Input
+                value={formData.rol}
+                readOnly
+                className="bg-gray-50"
+                placeholder="Rolul nu poate fi modificat"
+              />
+            )}
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="telefon">

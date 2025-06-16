@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -14,6 +15,7 @@ import {
   AlertTriangle,
   User,
   LogOut,
+  ListChecks,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -66,6 +68,7 @@ export default function MobileMenu({ user, profile, loading, onSignOut }: Mobile
             </div>
             
             <nav className="flex-1 p-4 space-y-2">
+              {/* Linkuri de bază pentru toate rolurile */}
               <Link
                 to="/"
                 className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors"
@@ -91,6 +94,15 @@ export default function MobileMenu({ user, profile, loading, onSignOut }: Mobile
               >
                 <ShoppingCart className="h-5 w-5" />
                 <span>Comandă Nouă</span>
+              </Link>
+
+              <Link
+                to="/comenzile-mele"
+                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                onClick={closeMobileMenu}
+              >
+                <ListChecks className="h-5 w-5" />
+                <span>Comenzile Mele</span>
               </Link>
 
               {/* Portal Management pentru rolul management */}
