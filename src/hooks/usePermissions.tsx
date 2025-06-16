@@ -1,5 +1,6 @@
 
 import { useProfile } from './useProfile';
+import { useAuth } from './useAuth';
 
 export type UserRole = 'MZV' | 'admin' | 'management' | 'logistica' | 'productie' | 'centralizator';
 
@@ -13,9 +14,26 @@ export interface Permission {
 
 export function usePermissions() {
   const { profile } = useProfile();
+  const { user } = useAuth();
   
   const hasFullAccess = (role?: string): boolean => {
     return role === 'admin' || role === 'management';
+  };
+
+  // Verifică dacă utilizatorul este super-admin (prin email sau rol)
+  const isSuperUser = (): boolean => {
+    const userRole = profile?.rol;
+    const userEmail = user?.email;
+    
+    // Email-ul specific pentru super-admin sau rolurile cu acces complet
+    return userEmail === 'lucian.cebuc@fortem.ro' || 
+           userRole === 'admin' || 
+           userRole === 'management';
+  };
+
+  // Verifică dacă utilizatorul poate schimba rolul
+  const canChangeRole = (): boolean => {
+    return isSuperUser();
   };
 
   // Rutele de bază accesibile tuturor rolurilor autentificate
@@ -38,6 +56,11 @@ export function usePermissions() {
       return true;
     }
 
+    // Super-userii pot accesa orice rută pentru testare
+    if (isSuperUser()) {
+      return true;
+    }
+
     // Admin și management pot accesa orice rută
     if (hasFullAccess(userRole)) {
       return true;
@@ -54,8 +77,8 @@ export function usePermissions() {
   const getPermissionsForDashboard = (dashboardType: string): Permission => {
     const userRole = profile?.rol;
     
-    // Admin și management au drepturi complete peste tot
-    if (hasFullAccess(userRole)) {
+    // Super-userii și Admin/management au drepturi complete peste tot
+    if (isSuperUser() || hasFullAccess(userRole)) {
       return {
         canCreate: true,
         canRead: true,
@@ -109,6 +132,11 @@ export function usePermissions() {
   const canAccessDashboard = (dashboardPath: string): boolean => {
     const userRole = profile?.rol;
     
+    // Super-userii pot accesa orice dashboard
+    if (isSuperUser()) {
+      return true;
+    }
+
     // Admin și management pot accesa orice dashboard
     if (hasFullAccess(userRole)) {
       return true;
@@ -122,9 +150,11 @@ export function usePermissions() {
   return {
     permissions: getPermissionsForDashboard,
     hasFullAccess: hasFullAccess(profile?.rol),
+    isSuperUser,
+    canChangeRole,
     getDashboardForRole,
     canAccessDashboard,
-    canAccessRoute, // Noua funcție pentru rutele de bază
+    canAccessRoute,
     userRole: profile?.rol as UserRole
   };
 }

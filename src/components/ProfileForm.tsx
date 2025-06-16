@@ -5,15 +5,27 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useProfile } from '@/hooks/useProfile';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
-import { User, Phone, MapPin, UserCog } from 'lucide-react';
+import { User, Phone, MapPin, UserCog, Shield, AlertTriangle } from 'lucide-react';
 import { PermissionGuard } from './PermissionGuard';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export function ProfileForm() {
   const { profile, createProfile, updateProfile, loading } = useProfile();
-  const { hasFullAccess } = usePermissions();
+  const { hasFullAccess, isSuperUser, canChangeRole } = usePermissions();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     nume: profile?.nume || '',
@@ -26,6 +38,7 @@ export function ProfileForm() {
     rol: profile?.rol || 'MZV'
   });
   const [submitting, setSubmitting] = useState(false);
+  const [pendingRoleChange, setPendingRoleChange] = useState<string | null>(null);
 
   // Actualizează formData când se încarcă profilul
   useEffect(() => {
@@ -62,11 +75,31 @@ export function ProfileForm() {
     });
   };
 
-  const handleRolChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      rol: value
-    }));
+  const handleRoleChange = (value: string) => {
+    if (canChangeRole()) {
+      setPendingRoleChange(value);
+    } else {
+      toast({
+        title: "Acces restricționat",
+        description: "Nu aveți permisiunea să schimbați rolul.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const confirmRoleChange = () => {
+    if (pendingRoleChange) {
+      setFormData(prev => ({
+        ...prev,
+        rol: pendingRoleChange
+      }));
+      setPendingRoleChange(null);
+      
+      toast({
+        title: "Rol actualizat",
+        description: `Rolul a fost schimbat în ${pendingRoleChange}. Salvați profilul pentru a aplica modificările.`,
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,6 +113,13 @@ export function ProfileForm() {
           title: "Profil actualizat",
           description: "Profilul tău a fost actualizat cu succes.",
         });
+        
+        // Dacă s-a schimbat rolul, reîncarcă pagina pentru a aplica noile permisiuni
+        if (formData.rol !== profile.rol) {
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        }
       } else {
         await createProfile(formData);
         toast({
@@ -115,15 +155,29 @@ export function ProfileForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <User className="h-5 w-5 mr-2" />
+        <CardTitle className="flex items-center gap-2">
+          <User className="h-5 w-5" />
           {profile ? 'Actualizează Profilul' : 'Completează Profilul'}
+          {isSuperUser() && (
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+              <Shield className="h-3 w-3 mr-1" />
+              Super Admin
+            </Badge>
+          )}
         </CardTitle>
         <CardDescription>
           {profile 
             ? 'Modifică informațiile din profilul tău.' 
             : 'Completează informațiile pentru a-ți crea profilul.'
           }
+          {canChangeRole() && (
+            <div className="mt-2 p-2 bg-blue-50 rounded-md border border-blue-200">
+              <div className="flex items-center text-blue-800 text-sm">
+                <Shield className="h-4 w-4 mr-1" />
+                Ca super-admin, poți schimba rolul pentru testare și administrare.
+              </div>
+            </div>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -164,14 +218,18 @@ export function ProfileForm() {
             />
           </div>
 
-          {/* Permitem schimbarea rolului pentru testare - poate fi restricționată în producție */}
           <div className="space-y-2">
-            <Label htmlFor="rol">
-              <UserCog className="h-4 w-4 inline mr-1" />
-              Rol {hasFullAccess && "(Admin/Management pot modifica)"}
+            <Label htmlFor="rol" className="flex items-center gap-2">
+              <UserCog className="h-4 w-4" />
+              Rol
+              {canChangeRole() && (
+                <Badge variant="outline" className="text-xs">
+                  Modificabil
+                </Badge>
+              )}
             </Label>
-            {hasFullAccess ? (
-              <Select value={formData.rol} onValueChange={handleRolChange}>
+            {canChangeRole() ? (
+              <Select value={formData.rol} onValueChange={handleRoleChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selectează rolul" />
                 </SelectTrigger>
@@ -246,6 +304,32 @@ export function ProfileForm() {
             {submitting ? 'Se salvează...' : profile ? 'Actualizează Profilul' : 'Creează Profilul'}
           </Button>
         </form>
+
+        {/* Dialog de confirmare pentru schimbarea rolului */}
+        <AlertDialog open={!!pendingRoleChange} onOpenChange={() => setPendingRoleChange(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-orange-500" />
+                Confirmare Schimbare Rol
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Ești pe cale să schimbi rolul în <strong>{pendingRoleChange}</strong>. 
+                Această acțiune va schimba permisiunile și dashboard-ul curent.
+                <br /><br />
+                Continui cu schimbarea?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setPendingRoleChange(null)}>
+                Anulează
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={confirmRoleChange}>
+                Confirmă Schimbarea
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
