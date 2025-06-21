@@ -39,6 +39,34 @@ export function ProductItemForm({
   const stocDisponibil = selectedProduct?.stoc_disponibil || 0;
   const depasesteStocul = item.cantitate > stocDisponibil && selectedProduct;
 
+  // Funcție pentru a gestiona schimbarea prețului
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // Dacă câmpul este gol, setez la 0
+    if (value === '') {
+      onUpdate(index, 'pret_unitar', 0);
+      return;
+    }
+    
+    // Încerc să convertesc la număr
+    const numericValue = parseFloat(value);
+    if (!isNaN(numericValue) && numericValue >= 0) {
+      onUpdate(index, 'pret_unitar', numericValue);
+    }
+  };
+
+  // Funcție pentru a gestiona focus-ul pe câmpul de preț
+  const handlePriceFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Dacă valoarea este 0, selectez tot textul pentru ușurința înlocuirii
+    if (item.pret_unitar === 0) {
+      e.target.select();
+    }
+  };
+
+  // Afișez valoarea prețului - string gol dacă este 0, altfel valoarea actuală
+  const displayPrice = item.pret_unitar === 0 ? '' : item.pret_unitar.toString();
+
   return (
     <Card className="mb-4">
       <CardContent className="pt-4">
@@ -95,9 +123,10 @@ export function ProductItemForm({
             <Input
               type="number"
               step="0.01"
-              value={item.pret_unitar}
-              onChange={(e) => onUpdate(index, 'pret_unitar', parseFloat(e.target.value) || 0)}
-              placeholder="0.00"
+              value={displayPrice}
+              onChange={handlePriceChange}
+              onFocus={handlePriceFocus}
+              placeholder="Introduceți prețul"
               className="font-semibold"
             />
           </div>
