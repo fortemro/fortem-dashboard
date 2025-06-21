@@ -1,7 +1,9 @@
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { Comanda } from '@/data-types';
+import { useCallback } from 'react';
 
 export function useComenzi() {
   const { user } = useAuth();
@@ -65,8 +67,8 @@ export function useComenzi() {
     gcTime: 5 * 60 * 1000,
   });
 
-  // Stable function for getting order by ID
-  const getComandaById = async (id: string): Promise<Comanda | null> => {
+  // Stable function for getting order by ID - wrapped with useCallback
+  const getComandaById = useCallback(async (id: string): Promise<Comanda | null> => {
     if (!id) {
       console.log('No ID provided to getComandaById');
       return null;
@@ -146,7 +148,7 @@ export function useComenzi() {
       console.error('Excepție la preluarea comenzii după ID:', e);
       return null;
     }
-  };
+  }, []); // Empty dependency array to make it stable
 
   // Force refresh function
   const fetchComenzi = async () => {

@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useProduse } from '@/hooks/useProduse';
 import { useComenzi } from '@/hooks/useComenzi';
 import { useOrderLoader } from './comanda/useOrderLoader';
@@ -51,9 +51,16 @@ export function useComandaForm() {
     setItems
   );
 
+  // Track if we've already loaded this order to prevent multiple loads
+  const loadedOrderId = useRef<string | null>(null);
+
   // Load order data when in edit mode
   useEffect(() => {
-    if (isEditMode && editId) {
+    // Only load if we're in edit mode, have an ID, and haven't loaded this order yet
+    if (isEditMode && editId && loadedOrderId.current !== editId) {
+      console.log('Loading order for first time:', editId);
+      loadedOrderId.current = editId;
+      
       loadOrderForEditing().then((result) => {
         if (result) {
           form.reset(result.formData);
@@ -63,7 +70,12 @@ export function useComandaForm() {
         }
       });
     }
-  }, [isEditMode, editId, loadOrderForEditing, form, setSelectedDistributorId, setSelectedDistributorName, setItems]);
+    
+    // Reset the loaded order ID when switching out of edit mode
+    if (!isEditMode) {
+      loadedOrderId.current = null;
+    }
+  }, [isEditMode, editId]); // Removed form, setSelectedDistributorId, setSelectedDistributorName, setItems, loadOrderForEditing from dependencies
 
   const handleSuccessWithClear = (successOrderData: any) => {
     handleSuccess(successOrderData);

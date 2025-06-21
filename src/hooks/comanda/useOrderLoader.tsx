@@ -82,7 +82,7 @@ export function useOrderLoader() {
     } finally {
       setLoadingOrder(false);
     }
-  }, [isEditMode, editId, getComandaById]);
+  }, [isEditMode, editId, getComandaById]); // Added getComandaById to dependencies
 
   return {
     isEditMode,
