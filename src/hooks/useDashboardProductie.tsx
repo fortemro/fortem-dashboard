@@ -12,22 +12,47 @@ export interface DashboardProductieRow {
 }
 
 async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
+  console.log('[useDashboardProductie] Starting fetchDashboardProduse...');
+  
   // 1. Obține toate produsele cu stocul fizic
   const { data: produseData, error: produseError } = await supabase
     .from("produse")
     .select("id, nume, stoc_disponibil, prag_alerta_stoc")
     .order("nume", { ascending: true });
 
-  if (produseError) throw new Error(produseError.message);
+  if (produseError) {
+    console.error('[useDashboardProductie] Error fetching produse:', produseError);
+    throw new Error(produseError.message);
+  }
 
-  // 2. Fetch items and commands separately to avoid relationship ambiguity
+  console.log('[useDashboardProductie] Fetched produse:', produseData?.length || 0);
+
+  // 2. Folosim funcția PostgreSQL reparată pentru stocurile reale
+  const { data: stocuriReale, error: stocuriError } = await supabase
+    .rpc('get_stocuri_reale_pentru_produse');
+
+  if (stocuriError) {
+    console.error('[useDashboardProductie] Error fetching real stock:', stocuriError);
+    // Continuăm cu calcul manual dacă funcția nu merge
+  }
+
+  console.log('[useDashboardProductie] Real stock data:', stocuriReale?.length || 0);
+
+  // Create map pentru lookup rapid
+  const stocuriRealeMap = new Map(
+    stocuriReale?.map(item => [item.produs_id, item.stoc_real]) || []
+  );
+
+  // 3. Calculăm manual stocul alocat ca backup
   const { data: itemsData, error: itemsError } = await supabase
     .from("itemi_comanda")
     .select("produs_id, cantitate, comanda_id");
 
-  if (itemsError) throw new Error(itemsError.message);
+  if (itemsError) {
+    console.error('[useDashboardProductie] Error fetching items:', itemsError);
+  }
 
-  // 3. Fetch commands data separately
+  // 4. Fetch commands data separately
   const comandaIds = Array.from(new Set(itemsData?.map(item => item.comanda_id).filter(Boolean) || []));
   
   let comenziData: any[] = [];
@@ -37,17 +62,19 @@ async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
       .select("id, status")
       .in("id", comandaIds);
 
-    if (comenziError) throw new Error(comenziError.message);
+    if (comenziError) {
+      console.error('[useDashboardProductie] Error fetching comenzi:', comenziError);
+    }
     comenziData = comenziResult || [];
   }
 
-  // 4. Create a map of comanda_id to status
+  // 5. Create a map of comanda_id to status
   const comenziMap: Record<string, string> = {};
   comenziData.forEach(comanda => {
     comenziMap[comanda.id] = comanda.status;
   });
 
-  // 5. Calculate allocated stock per product
+  // 6. Calculate allocated stock per product
   const stocAlocatMap: Record<string, number> = {};
   if (Array.isArray(itemsData)) {
     for (const item of itemsData) {
@@ -66,10 +93,14 @@ async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
     }
   }
 
-  return (produseData ?? []).map((produs) => {
+  const result = (produseData ?? []).map((produs) => {
     const stocFizic = typeof produs.stoc_disponibil === "number" ? produs.stoc_disponibil : 0;
     const stocAlocat = stocAlocatMap[produs.id] ?? 0;
-    const stocRealDisponibil = stocFizic - stocAlocat;
+    
+    // Folosim stocul real din funcția PostgreSQL sau calculăm manual
+    const stocRealDisponibil = stocuriRealeMap.get(produs.id) ?? (stocFizic - stocAlocat);
+
+    console.log(`[useDashboardProductie] Product ${produs.nume}: fizic=${stocFizic}, alocat=${stocAlocat}, real=${stocRealDisponibil}`);
 
     return {
       id: produs.id,
@@ -80,11 +111,16 @@ async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
       prag_alerta_stoc: typeof produs.prag_alerta_stoc === "number" ? produs.prag_alerta_stoc : 0,
     };
   });
+
+  console.log('[useDashboardProductie] Final result:', result.length);
+  return result;
 }
 
 export function useDashboardProductie() {
   return useQuery<DashboardProductieRow[]>({
     queryKey: ["dashboard_productie"],
     queryFn: fetchDashboardProduse,
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnWindowFocus: false,
   });
 }

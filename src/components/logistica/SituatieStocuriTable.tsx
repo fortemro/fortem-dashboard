@@ -1,14 +1,26 @@
 
 import { useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useDashboardProductie } from '@/hooks/useDashboardProductie';
 
 export function SituatieStocuriTable() {
-  const { data: produse, isLoading, error } = useDashboardProductie();
+  const { data: produse, isLoading, error, refetch } = useDashboardProductie();
   const [searchTerm, setSearchTerm] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    console.log('[SituatieStocuriTable] Manual refresh triggered');
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Filter products based on search term
   const filteredProduse = produse?.filter(produs =>
@@ -37,8 +49,14 @@ export function SituatieStocuriTable() {
           <CardTitle>Situație Generală Stocuri Produse</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="py-8 text-center text-red-500">
-            Eroare la încărcarea datelor: {error.message}
+          <div className="py-8 text-center">
+            <div className="text-red-500 mb-4">
+              Eroare la încărcarea datelor
+            </div>
+            <Button onClick={handleRefresh} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Încearcă din nou
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -48,7 +66,18 @@ export function SituatieStocuriTable() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Situație Generală Stocuri Produse</CardTitle>
+        <CardTitle className="flex items-center justify-between">
+          Situație Generală Stocuri Produse
+          <Button 
+            onClick={handleRefresh} 
+            variant="outline" 
+            size="sm"
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Actualizează
+          </Button>
+        </CardTitle>
         <div className="flex items-center gap-2 mt-4">
           <Search className="h-4 w-4 text-muted-foreground" />
           <Input

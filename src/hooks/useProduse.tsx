@@ -4,26 +4,47 @@ import { supabase } from "@/integrations/supabase/client";
 import { Produs } from "@/data-types";
 
 async function fetchProduse(): Promise<Produs[]> {
-  // Fetch basic product data
+  console.log('[useProduse] Starting fetchProduse...');
+  
+  // Fetch basic product data - NU mai suprascriem stoc_disponibil
   const { data: produseData, error: produseError } = await supabase
     .from('produse')
     .select('*')
     .order('nume', { ascending: true });
 
   if (produseError) {
+    console.error('[useProduse] Error fetching produse:', produseError);
     throw new Error(produseError.message);
   }
 
-  // Fetch items and commands separately to avoid relationship ambiguity
+  console.log('[useProduse] Fetched produse:', produseData?.length || 0);
+
+  // Folosim funcția PostgreSQL reparată pentru stocurile reale
+  const { data: stocuriReale, error: stocuriError } = await supabase
+    .rpc('get_stocuri_reale_pentru_produse');
+
+  if (stocuriError) {
+    console.error('[useProduse] Error fetching real stock:', stocuriError);
+    // Nu aruncăm eroare - continuăm cu stocurile fizice
+  }
+
+  console.log('[useProduse] Real stock data:', stocuriReale?.length || 0);
+
+  // Create a map of product ID to real stock for efficient lookup
+  const stocuriRealeMap = new Map(
+    stocuriReale?.map(item => [item.produs_id, item.stoc_real]) || []
+  );
+
+  // Calculăm separat stocul alocat pentru transparency
   const { data: itemsData, error: itemsError } = await supabase
     .from("itemi_comanda")
     .select("produs_id, cantitate, comanda_id");
 
   if (itemsError) {
-    throw new Error(itemsError.message);
+    console.error('[useProduse] Error fetching items:', itemsError);
   }
 
-  // Fetch commands data separately
+  // Fetch commands data separately pentru comenzile active
   const comandaIds = Array.from(new Set(itemsData?.map(item => item.comanda_id).filter(Boolean) || []));
   
   let comenziData: any[] = [];
@@ -34,7 +55,7 @@ async function fetchProduse(): Promise<Produs[]> {
       .in("id", comandaIds);
 
     if (comenziError) {
-      throw new Error(comenziError.message);
+      console.error('[useProduse] Error fetching comenzi:', comenziError);
     }
     comenziData = comenziResult || [];
   }
@@ -45,7 +66,7 @@ async function fetchProduse(): Promise<Produs[]> {
     comenziMap[comanda.id] = comanda.status;
   });
 
-  // Calculate allocated stock per product
+  // Calculate allocated stock per product - pentru transparență
   const stocAlocatMap: Record<string, number> = {};
   if (Array.isArray(itemsData)) {
     for (const item of itemsData) {
@@ -64,20 +85,24 @@ async function fetchProduse(): Promise<Produs[]> {
     }
   }
 
-  // Combine product data with calculated stock values
+  // Combine product data with SEPARATED stock values - NU suprascriem stoc_disponibil
   const produseWithCalculatedStock = (produseData || []).map((produs) => {
     const stocFizic = typeof produs.stoc_disponibil === "number" ? produs.stoc_disponibil : 0;
     const stocAlocat = stocAlocatMap[produs.id] ?? 0;
-    const stocRealDisponibil = stocFizic - stocAlocat;
+    const stocRealCalculat = stocuriRealeMap.get(produs.id) ?? (stocFizic - stocAlocat);
+
+    console.log(`[useProduse] Product ${produs.nume}: fizic=${stocFizic}, alocat=${stocAlocat}, real=${stocRealCalculat}`);
 
     return {
       ...produs,
-      stoc_fizic: stocFizic,
-      stoc_alocat: stocAlocat,
-      stoc_disponibil: stocRealDisponibil
+      // PĂSTRĂM stoc_disponibil original - acesta e stocul fizic din baza de date
+      stoc_fizic: stocFizic,              // Explicit pentru claritate
+      stoc_alocat: stocAlocat,            // Calculat din comenzi active
+      stoc_real_disponibil: stocRealCalculat  // Calculat: fizic - alocat
     };
   });
 
+  console.log('[useProduse] Final processed products:', produseWithCalculatedStock.length);
   return produseWithCalculatedStock;
 }
 
@@ -85,7 +110,11 @@ export function useProduse() {
   const { data: produse = [], isLoading, isError, refetch } = useQuery<Produs[]>({
     queryKey: ['produse'],
     queryFn: fetchProduse,
+    staleTime: 30 * 1000, // 30 seconds - reduce frequent refetches
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches
   });
+
+  console.log('[useProduse] Hook result - products:', produse.length, 'loading:', isLoading, 'error:', isError);
 
   return { produse, loading: isLoading, error: isError, refetch };
 }

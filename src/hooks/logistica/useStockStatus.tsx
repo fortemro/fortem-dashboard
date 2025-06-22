@@ -20,6 +20,8 @@ export function useStockStatus(comenzi: Comanda[]) {
   // Function to check stock status for a specific order
   const checkStockStatusForOrder = async (comanda: Comanda): Promise<StockStatus> => {
     try {
+      console.log(`[useStockStatus] Checking stock for order ${comanda.id}`);
+      
       // Get order items
       const { data: itemsData, error: itemsError } = await supabase
         .from('itemi_comanda')
@@ -27,22 +29,25 @@ export function useStockStatus(comenzi: Comanda[]) {
         .eq('comanda_id', comanda.id);
 
       if (itemsError) {
-        console.error('Error fetching items for order:', comanda.id, itemsError);
+        console.error('[useStockStatus] Error fetching items for order:', comanda.id, itemsError);
         return { type: 'loading' };
       }
 
       if (!itemsData || itemsData.length === 0) {
+        console.log(`[useStockStatus] No items found for order ${comanda.id}`);
         return { type: 'available' };
       }
 
-      // Get real stock data
+      // Folosim funcția PostgreSQL reparată pentru stocuri reale
       const { data: stocuriReale, error: stocuriError } = await supabase
         .rpc('get_stocuri_reale_pentru_produse');
 
       if (stocuriError) {
-        console.error('Error fetching real stock:', stocuriError);
+        console.error('[useStockStatus] Error fetching real stock:', stocuriError);
         return { type: 'loading' };
       }
+
+      console.log(`[useStockStatus] Real stock data received:`, stocuriReale?.length || 0);
 
       // Create a map of product ID to real stock
       const stocuriMap = new Map(
@@ -52,6 +57,8 @@ export function useStockStatus(comenzi: Comanda[]) {
       // Check each item in the order
       for (const item of itemsData) {
         const realStock = stocuriMap.get(item.produs_id) || 0;
+        
+        console.log(`[useStockStatus] Item ${item.produs_id}: needed=${item.cantitate}, available=${realStock}`);
         
         if (realStock < item.cantitate) {
           // Get product name for the insufficient stock item
@@ -64,6 +71,8 @@ export function useStockStatus(comenzi: Comanda[]) {
           const productName = productData?.nume || 'Produs necunoscut';
           const missingQuantity = item.cantitate - realStock;
 
+          console.log(`[useStockStatus] Insufficient stock for ${productName}: missing ${missingQuantity}`);
+
           return {
             type: 'insufficient',
             productName,
@@ -73,9 +82,10 @@ export function useStockStatus(comenzi: Comanda[]) {
       }
 
       // All items have sufficient stock
+      console.log(`[useStockStatus] All items have sufficient stock for order ${comanda.id}`);
       return { type: 'available' };
     } catch (error) {
-      console.error('Error checking stock for order:', comanda.id, error);
+      console.error('[useStockStatus] Error checking stock for order:', comanda.id, error);
       return { type: 'loading' };
     }
   };
@@ -87,6 +97,8 @@ export function useStockStatus(comenzi: Comanda[]) {
         setComenziWithStockStatus([]);
         return;
       }
+
+      console.log(`[useStockStatus] Checking stock status for ${comenzi.length} orders`);
 
       // Initialize with loading status and preserve distribuitor_nume if it exists
       const initialComenzi = comenzi.map(comanda => ({
@@ -108,6 +120,7 @@ export function useStockStatus(comenzi: Comanda[]) {
         })
       );
 
+      console.log(`[useStockStatus] Stock status check completed for all orders`);
       setComenziWithStockStatus(updatedComenzi);
     };
 
