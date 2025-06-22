@@ -104,18 +104,32 @@ export default function ComenziMele() {
   };
 
   const handleDeleteOrder = (comanda) => {
+    console.log('Delete button clicked for order:', comanda.numar_comanda);
+    
+    // Check if order can be cancelled
+    if (comanda.status !== 'in_asteptare') {
+      toast({
+        title: "Nu se poate anula",
+        description: "Doar comenzile în așteptare pot fi anulate",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setSelectedOrderForDelete(comanda);
     setShowDeleteDialog(true);
   };
 
   const handleConfirmDelete = async (motivAnulare?: string) => {
     if (selectedOrderForDelete) {
+      console.log('Confirming deletion for order:', selectedOrderForDelete.numar_comanda);
       try {
         await deleteComanda(selectedOrderForDelete.id, motivAnulare);
         setShowDeleteDialog(false);
         setSelectedOrderForDelete(null);
       } catch (error) {
         console.error('Delete error:', error);
+        // Error is already handled by the hook
       }
     }
   };
@@ -125,6 +139,16 @@ export default function ComenziMele() {
       setShowDeleteDialog(false);
       setSelectedOrderForDelete(null);
     }
+  };
+
+  // Check if delete button should be visible and enabled
+  const canDeleteOrder = (comanda) => {
+    const isEligibleStatus = comanda.status === 'in_asteptare';
+    console.log(`Order ${comanda.numar_comanda} delete eligibility:`, {
+      status: comanda.status,
+      canDelete: isEligibleStatus
+    });
+    return isEligibleStatus;
   };
 
   const getStatusBadge = (status) => {
@@ -325,6 +349,7 @@ export default function ComenziMele() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleViewOrder(comanda)}
+                                  title="Vezi detalii comandă"
                                 >
                                   <Eye className="h-4 w-4" />
                                 </Button>
@@ -332,15 +357,17 @@ export default function ComenziMele() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleDuplicateOrder(comanda)}
+                                  title="Duplică comanda"
                                 >
                                   <Copy className="h-4 w-4" />
                                 </Button>
-                                {comanda.status === 'in_asteptare' && (
+                                {canDeleteOrder(comanda) && (
                                   <>
                                     <Button 
                                       variant="ghost" 
                                       size="sm"
                                       onClick={() => handleEditOrder(comanda)}
+                                      title="Editează comanda"
                                     >
                                       <Edit className="h-4 w-4" />
                                     </Button>
@@ -350,6 +377,7 @@ export default function ComenziMele() {
                                       onClick={() => handleDeleteOrder(comanda)}
                                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                       disabled={isDeleting}
+                                      title="Anulează comanda"
                                     >
                                       <Trash2 className="h-4 w-4" />
                                     </Button>

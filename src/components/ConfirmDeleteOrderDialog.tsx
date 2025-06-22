@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 
 interface ConfirmDeleteOrderDialogProps {
   isOpen: boolean;
@@ -44,6 +44,10 @@ export function ConfirmDeleteOrderDialog({
   };
 
   const handleConfirm = () => {
+    console.log('User confirmed order cancellation:', {
+      orderId: comanda.numar_comanda,
+      reason: motivAnulare.trim()
+    });
     onConfirm(motivAnulare.trim() || undefined);
     setMotivAnulare('');
   };
@@ -58,6 +62,7 @@ export function ConfirmDeleteOrderDialog({
           </DialogTitle>
           <DialogDescription>
             Această acțiune va marca comanda ca anulată și va elibera stocul alocat.
+            Comanda va rămâne vizibilă în sistem pentru evidență.
           </DialogDescription>
         </DialogHeader>
         
@@ -85,9 +90,13 @@ export function ConfirmDeleteOrderDialog({
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-blue-600 mt-0.5" />
               <div className="text-sm text-blue-800">
-                <p className="font-medium">Informație:</p>
-                <p>Comanda anulată va rămâne în sistem pentru evidență și va fi vizibilă 
-                   în secțiunea de comenzi anulate din portalurile administrative.</p>
+                <p className="font-medium">Efecte anulare:</p>
+                <ul className="list-disc list-inside mt-1 space-y-1">
+                  <li>Stocul alocat va fi eliberat automat</li>
+                  <li>Comanda va apărea în secțiunea "Anulate"</li>
+                  <li>Datele vor fi sincronizate cu Logistica și Producția</li>
+                  <li>Statisticile se vor actualiza în toate dashboard-urile</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -105,8 +114,16 @@ export function ConfirmDeleteOrderDialog({
             variant="destructive" 
             onClick={handleConfirm} 
             disabled={isDeleting}
+            className="min-w-[140px]"
           >
-            {isDeleting ? 'Se anulează...' : 'Anulează comanda'}
+            {isDeleting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Se anulează...
+              </>
+            ) : (
+              'Anulează comanda'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
