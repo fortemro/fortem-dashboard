@@ -1,4 +1,3 @@
-
 import Dashboard from "./Dashboard";
 
 const Index = () => {
