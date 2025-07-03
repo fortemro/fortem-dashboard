@@ -22,7 +22,14 @@ import Productie from '@/pages/Productie';
 import DashboardExecutiv from '@/pages/DashboardExecutiv';
 import PanouVanzari from '@/pages/PanouVanzari';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
   return (
