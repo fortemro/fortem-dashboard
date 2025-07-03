@@ -26,10 +26,10 @@ export function useComandaCreate() {
         items.map(async (item) => {
           if (!item.produs_id) throw new Error('Produs ID lipsește pentru unul dintre itemii comenzii');
           
-          // Verific că produsul există în baza de date și preiau numele
+          // Verific că produsul există în baza de date și preiau numele + stocul curent
           const { data: produs, error: produsError } = await supabase
             .from('produse')
-            .select('nume')
+            .select('nume, stoc_disponibil')
             .eq('id', item.produs_id)
             .single();
 
@@ -38,23 +38,31 @@ export function useComandaCreate() {
             throw new Error(`Nu s-a putut prelua informații pentru produsul ${item.produs_id}`);
           }
 
+          // Verific dacă este stoc suficient
+          const stocCurent = produs.stoc_disponibil || 0;
+          const cantitateNecesara = item.cantitate || 0;
+          
+          if (stocCurent < cantitateNecesara) {
+            throw new Error(`Stoc insuficient pentru produsul "${produs.nume}". Disponibil: ${stocCurent}, Necesar: ${cantitateNecesara}`);
+          }
+
           // Folosesc prețul introdus manual din formular, NU cel din baza de date
           const pretUnitar = item.pret_unitar || 0;
-          const cantitate = item.cantitate || 0;
           
           // Validez că prețul manual este > 0
           if (pretUnitar <= 0) {
             throw new Error(`Prețul pentru produsul "${produs.nume}" trebuie să fie mai mare decât 0`);
           }
           
-          const totalItem = pretUnitar * cantitate;
+          const totalItem = pretUnitar * cantitateNecesara;
 
           return {
             produs_id: item.produs_id,
-            cantitate: cantitate,
-            pret_unitar: pretUnitar, // Folosesc prețul din formular
+            cantitate: cantitateNecesara,
+            pret_unitar: pretUnitar,
             total_item: totalItem,
             nume_produs: produs.nume,
+            stoc_curent: stocCurent, // Pentru actualizare ulterioară
           };
         })
       );
@@ -63,7 +71,7 @@ export function useComandaCreate() {
       const totalComanda = itemsWithPrices.reduce((sum, item) => sum + item.total_item, 0);
       const totalPaleti = itemsWithPrices.reduce((sum, item) => sum + item.cantitate, 0);
 
-      console.log('Calculare total comandă:', { totalComanda, totalPaleti, itemsWithPrices });
+      console.log('[useComandaCreate] Calculare total comandă:', { totalComanda, totalPaleti, itemsWithPrices });
 
       const comandaPentruInserare = {
         ...restOfFormData,
@@ -77,9 +85,11 @@ export function useComandaCreate() {
         total_comanda: totalComanda,
       };
 
+      // Creez comanda
       const { data: comanda, error: comandaError } = await supabase.from('comenzi').insert(comandaPentruInserare).select().single();
       if (comandaError) throw comandaError;
 
+      // Creez itemii comenzii
       const itemsData = itemsWithPrices.map(item => ({
         comanda_id: comanda.id,
         produs_id: item.produs_id!,
@@ -91,13 +101,35 @@ export function useComandaCreate() {
       const { error: itemsError } = await supabase.from('itemi_comanda').insert(itemsData);
       if (itemsError) throw itemsError;
 
-      // Invalidez cache-ul produselor pentru a reîncărca stocurile reale în toată aplicația
+      // **PASUL CRITIC**: Actualizez stocul fizic pentru fiecare produs comandat
+      console.log('[useComandaCreate] Actualizez stocurile fizice pentru produsele comandate...');
+      
+      for (const item of itemsWithPrices) {
+        const noulStoc = item.stoc_curent - item.cantitate;
+        console.log(`[useComandaCreate] Actualizez stocul pentru ${item.nume_produs}: ${item.stoc_curent} -> ${noulStoc}`);
+        
+        const { error: stocError } = await supabase
+          .from('produse')
+          .update({ stoc_disponibil: noulStoc })
+          .eq('id', item.produs_id);
+
+        if (stocError) {
+          console.error(`[useComandaCreate] Eroare la actualizarea stocului pentru ${item.nume_produs}:`, stocError);
+          throw new Error(`Nu s-a putut actualiza stocul pentru produsul ${item.nume_produs}`);
+        }
+      }
+
+      console.log('[useComandaCreate] Stocurile fizice au fost actualizate cu succes!');
+
+      // Invalidez cache-ul produselor pentru a reîncărca stocurile în toată aplicația
       await queryClient.invalidateQueries({ queryKey: ['produse'] });
-      console.log('Cache-ul produselor a fost invalidat - stocurile vor fi reîncărcate');
+      await queryClient.invalidateQueries({ queryKey: ['dashboard_productie'] });
+      await queryClient.invalidateQueries({ queryKey: ['comenzi-logistica'] });
+      console.log('[useComandaCreate] Cache-ul produselor a fost invalidat - stocurile vor fi reîncărcate');
 
       // Încerc să trimit email-ul, dar nu blochez procesul dacă fail-uiește
       try {
-        console.log('Attempting to send order email...');
+        console.log('[useComandaCreate] Attempting to send order email...');
         const emailData = {
           comandaId: comanda.id,
           numarul_comanda: comanda.numar_comanda,
@@ -115,12 +147,12 @@ export function useComandaCreate() {
         });
 
         if (emailError) {
-          console.error('Eroare la trimiterea email-ului:', emailError);
+          console.error('[useComandaCreate] Eroare la trimiterea email-ului:', emailError);
         } else {
-          console.log('Email trimis cu succes:', emailResult);
+          console.log('[useComandaCreate] Email trimis cu succes:', emailResult);
         }
       } catch (emailError) {
-        console.error('Excepție la trimiterea email-ului:', emailError);
+        console.error('[useComandaCreate] Excepție la trimiterea email-ului:', emailError);
         // Nu arunc eroarea - comanda a fost creată cu succes
       }
 
@@ -131,7 +163,7 @@ export function useComandaCreate() {
         items: itemsWithPrices,
       };
     } catch (error) {
-      console.error('Eroare în fluxul de creare a comenzii:', error);
+      console.error('[useComandaCreate] Eroare în fluxul de creare a comenzii:', error);
       throw error;
     }
   };

@@ -1,107 +1,118 @@
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 export function useDeleteComanda() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const { user } = useAuth();
 
-  const mutation = useMutation({
-    mutationFn: async ({ comandaId, motivAnulare }: { comandaId: string; motivAnulare?: string }) => {
-      console.log('Starting order cancellation:', { comandaId, motivAnulare, userId: user?.id });
-      
-      const { data, error } = await supabase.functions.invoke('delete-order', {
-        body: { comandaId, motivAnulare }
-      });
+  return useMutation({
+    mutationFn: async (comandaId: string) => {
+      console.log(`[useDeleteComanda] Încep ștergerea comenzii ${comandaId}`);
 
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(error.message);
+      // 1. Preiau itemii comenzii pentru a restabili stocurile (doar dacă nu e deja anulată)
+      const { data: comandaData, error: comandaFetchError } = await supabase
+        .from('comenzi')
+        .select('status')
+        .eq('id', comandaId)
+        .single();
+
+      if (comandaFetchError) {
+        console.error('[useDeleteComanda] Eroare la preluarea statusului comenzii:', comandaFetchError);
+        throw comandaFetchError;
       }
 
-      if (!data.success) {
-        console.error('Cancellation failed:', data.error);
-        throw new Error(data.error || 'Eroare necunoscută la anularea comenzii');
+      // Restabilesc stocul doar dacă comanda nu era deja anulată
+      if (comandaData.status !== 'anulata') {
+        console.log('[useDeleteComanda] Comanda nu era anulată - restabilesc stocurile');
+        
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('itemi_comanda')
+          .select('produs_id, cantitate')
+          .eq('comanda_id', comandaId);
+
+        if (itemsError) {
+          console.error('[useDeleteComanda] Eroare la preluarea itemilor:', itemsError);
+          throw itemsError;
+        }
+
+        // Restabilesc stocul pentru fiecare produs
+        for (const item of itemsData || []) {
+          const { data: produs, error: produsError } = await supabase
+            .from('produse')
+            .select('nume, stoc_disponibil')
+            .eq('id', item.produs_id)
+            .single();
+
+          if (produsError || !produs) {
+            console.error(`[useDeleteComanda] Eroare la preluarea produsului ${item.produs_id}:`, produsError);
+            continue; // Nu blochez procesul pentru o eroare la un produs
+          }
+
+          const stocCurent = produs.stoc_disponibil || 0;
+          const noulStoc = stocCurent + item.cantitate;
+          
+          console.log(`[useDeleteComanda] Restabilesc stocul pentru ${produs.nume}: ${stocCurent} -> ${noulStoc}`);
+
+          const { error: stocError } = await supabase
+            .from('produse')
+            .update({ stoc_disponibil: noulStoc })
+            .eq('id', item.produs_id);
+
+          if (stocError) {
+            console.error(`[useDeleteComanda] Eroare la restabilirea stocului pentru ${produs.nume}:`, stocError);
+            // Nu arunc eroare - continui cu ștergerea
+          }
+        }
+      } else {
+        console.log('[useDeleteComanda] Comanda era deja anulată - nu restabilesc stocurile');
       }
 
-      console.log('Order cancellation successful:', data);
-      return data;
+      // 2. Șterg itemii comenzii
+      const { error: deleteItemsError } = await supabase
+        .from('itemi_comanda')
+        .delete()
+        .eq('comanda_id', comandaId);
+
+      if (deleteItemsError) {
+        console.error('[useDeleteComanda] Eroare la ștergerea itemilor:', deleteItemsError);
+        throw deleteItemsError;
+      }
+
+      // 3. Șterg comanda
+      const { error: deleteComandaError } = await supabase
+        .from('comenzi')
+        .delete()
+        .eq('id', comandaId);
+
+      if (deleteComandaError) {
+        console.error('[useDeleteComanda] Eroare la ștergerea comenzii:', deleteComandaError);
+        throw deleteComandaError;
+      }
+
+      console.log(`[useDeleteComanda] Comanda ${comandaId} a fost ștearsă cu succes`);
+      return comandaId;
     },
-    onMutate: async ({ comandaId }) => {
-      console.log('Optimistic update: removing order from UI', comandaId);
+    onSuccess: () => {
+      // Invalidez toate cache-urile relevante
+      queryClient.invalidateQueries({ queryKey: ['comenzi'] });
+      queryClient.invalidateQueries({ queryKey: ['produse'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard_productie'] });
+      queryClient.invalidateQueries({ queryKey: ['comenzi-logistica'] });
+      queryClient.invalidateQueries({ queryKey: ['centralizator-data'] });
       
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['comenzi', user?.id] });
-
-      // Snapshot the previous value
-      const previousComenzi = queryClient.getQueryData(['comenzi', user?.id]);
-
-      // Optimistically update to remove the order
-      queryClient.setQueryData(['comenzi', user?.id], (old: any[]) => {
-        if (!old) return [];
-        const filtered = old.filter(comanda => comanda.id !== comandaId);
-        console.log('Optimistic update applied, orders remaining:', filtered.length);
-        return filtered;
-      });
-
-      return { previousComenzi };
-    },
-    onError: (error: Error, { comandaId }, context) => {
-      console.error('Order cancellation failed, reverting:', error.message);
-      
-      // Revert the optimistic update
-      if (context?.previousComenzi) {
-        queryClient.setQueryData(['comenzi', user?.id], context.previousComenzi);
-      }
-
       toast({
-        title: "Eroare la anularea comenzii",
-        description: error.message,
-        variant: "destructive"
+        title: "Comandă ștearsă",
+        description: "Comanda a fost ștearsă cu succes și stocurile au fost restabilite.",
       });
     },
-    onSuccess: (data) => {
-      console.log('Order cancellation confirmed, invalidating all related queries');
-      
-      // Invalidate all related queries to ensure sync across all modules
-      const queriesToInvalidate = [
-        ['comenzi'],
-        ['comenzi-anulate'],
-        ['comenzi-logistica'],
-        ['produse'],
-        ['stocuri-reale'],
-        ['logistica-stats'],
-        ['dashboard-productie'],
-        ['admin-stats'],
-        ['centralizator-data'],
-        ['panou-vanzari-data']
-      ];
-
-      queriesToInvalidate.forEach(queryKey => {
-        queryClient.invalidateQueries({ queryKey });
-      });
-
+    onError: (error: any) => {
+      console.error('[useDeleteComanda] Eroare la ștergerea comenzii:', error);
       toast({
-        title: "Comandă anulată cu succes",
-        description: data.message,
-        variant: "default"
+        title: "Eroare la ștergere",
+        description: error.message || "A apărut o eroare la ștergerea comenzii",
+        variant: "destructive",
       });
     },
-    onSettled: () => {
-      // Always refetch the main orders list to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ['comenzi', user?.id] });
-    }
   });
-
-  return {
-    deleteComanda: (comandaId: string, motivAnulare?: string) => {
-      console.log('Delete command received:', { comandaId, motivAnulare });
-      return mutation.mutate({ comandaId, motivAnulare });
-    },
-    isDeleting: mutation.isPending,
-    error: mutation.error
-  };
 }
