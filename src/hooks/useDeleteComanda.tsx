@@ -36,6 +36,8 @@ export function useDeleteComanda() {
           throw itemsError;
         }
 
+        console.log('[useDeleteComanda] Items preluați pentru restabilire:', itemsData);
+
         // Restabilesc stocul fizic pentru fiecare produs
         for (const item of itemsData || []) {
           const { data: produs, error: produsError } = await supabase
@@ -63,6 +65,8 @@ export function useDeleteComanda() {
             console.error(`[useDeleteComanda] Eroare la restabilirea stocului pentru ${produs.nume}:`, stocError);
             throw new Error(`Nu s-a putut restabili stocul pentru produsul ${produs.nume}`);
           }
+
+          console.log(`[useDeleteComanda] ✅ Stocul pentru ${produs.nume} a fost restabilit cu succes`);
         }
       } else {
         console.log('[useDeleteComanda] Comanda era deja anulată - nu restabilesc stocurile fizice');
@@ -90,16 +94,21 @@ export function useDeleteComanda() {
         throw deleteComandaError;
       }
 
-      console.log(`[useDeleteComanda] Comanda ${comandaId} a fost ștearsă cu succes`);
+      console.log(`[useDeleteComanda] ✅ Comanda ${comandaId} a fost ștearsă cu succes`);
       return comandaId;
     },
     onSuccess: () => {
-      // Invalidez toate cache-urile relevante pentru a reîncărca stocurile în toate departamentele
+      // Invalidez TOATE cache-urile relevante pentru a forța reîncărcarea datelor
+      console.log('[useDeleteComanda] Invalidez cache-urile pentru actualizare...');
+      
       queryClient.invalidateQueries({ queryKey: ['comenzi'] });
       queryClient.invalidateQueries({ queryKey: ['produse'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard_productie'] });
       queryClient.invalidateQueries({ queryKey: ['comenzi-logistica'] });
       queryClient.invalidateQueries({ queryKey: ['centralizator-data'] });
+      
+      // Forțez și un refetch explicit pentru produse
+      queryClient.refetchQueries({ queryKey: ['produse'] });
       
       toast({
         title: "Comandă ștearsă",

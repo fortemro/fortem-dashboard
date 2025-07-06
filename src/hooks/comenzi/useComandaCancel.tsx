@@ -25,6 +25,8 @@ export function useComandaCancel() {
         throw new Error('Nu s-au putut prelua itemii comenzii pentru anulare');
       }
 
+      console.log('[useComandaCancel] Items preluați pentru anulare:', itemsData);
+
       // 2. Pentru fiecare item, restabilesc stocul fizic
       console.log('[useComandaCancel] Restabilesc stocurile fizice...');
       
@@ -41,7 +43,7 @@ export function useComandaCancel() {
           throw new Error(`Nu s-au putut prelua informații pentru produsul ${item.produs_id}`);
         }
 
-        // Calculez noul stoc fizic (adaug înapoi cantitatea anulată)
+        // Calculez noul stoc fizic (ADAUG ÎNAPOI cantitatea anulată)
         const stocCurent = produs.stoc_disponibil || 0;
         const noulStoc = stocCurent + item.cantitate;
         
@@ -57,6 +59,8 @@ export function useComandaCancel() {
           console.error(`[useComandaCancel] Eroare la restabilirea stocului pentru ${produs.nume}:`, stocError);
           throw new Error(`Nu s-a putut restabili stocul pentru produsul ${produs.nume}`);
         }
+
+        console.log(`[useComandaCancel] ✅ Stocul pentru ${produs.nume} a fost restabilit cu succes`);
       }
 
       // 3. Marchez comanda ca fiind anulată
@@ -75,17 +79,22 @@ export function useComandaCancel() {
         throw comandaError;
       }
 
-      console.log(`[useComandaCancel] Comanda ${comandaId} a fost anulată cu succes și stocurile fizice au fost restabilite`);
+      console.log(`[useComandaCancel] ✅ Comanda ${comandaId} a fost anulată cu succes și stocurile fizice au fost restabilite`);
 
       return { success: true };
     },
     onSuccess: () => {
-      // Invalidez toate cache-urile relevante pentru a reîncărca stocurile în toate departamentele
+      // Invalidez TOATE cache-urile relevante pentru a forța reîncărcarea datelor
+      console.log('[useComandaCancel] Invalidez cache-urile pentru actualizare...');
+      
       queryClient.invalidateQueries({ queryKey: ['comenzi'] });
       queryClient.invalidateQueries({ queryKey: ['produse'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard_productie'] });
       queryClient.invalidateQueries({ queryKey: ['comenzi-logistica'] });
       queryClient.invalidateQueries({ queryKey: ['centralizator-data'] });
+      
+      // Forțez și un refetch explicit pentru produse
+      queryClient.refetchQueries({ queryKey: ['produse'] });
       
       toast({
         title: "Comandă anulată",
