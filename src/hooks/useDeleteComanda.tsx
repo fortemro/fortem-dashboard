@@ -10,7 +10,7 @@ export function useDeleteComanda() {
     mutationFn: async (comandaId: string) => {
       console.log(`[useDeleteComanda] Încep ștergerea comenzii ${comandaId}`);
 
-      // 1. Preiau itemii comenzii pentru a restabili stocurile (doar dacă nu e deja anulată)
+      // 1. Preiau comanda pentru a verifica statusul
       const { data: comandaData, error: comandaFetchError } = await supabase
         .from('comenzi')
         .select('status')
@@ -22,9 +22,9 @@ export function useDeleteComanda() {
         throw comandaFetchError;
       }
 
-      // Restabilesc stocul doar dacă comanda nu era deja anulată
+      // 2. Doar dacă comanda nu era deja anulată, restabilesc stocurile fizice
       if (comandaData.status !== 'anulata') {
-        console.log('[useDeleteComanda] Comanda nu era anulată - restabilesc stocurile');
+        console.log('[useDeleteComanda] Comanda nu era anulată - restabilesc stocurile fizice');
         
         const { data: itemsData, error: itemsError } = await supabase
           .from('itemi_comanda')
@@ -36,7 +36,7 @@ export function useDeleteComanda() {
           throw itemsError;
         }
 
-        // Restabilesc stocul pentru fiecare produs
+        // Restabilesc stocul fizic pentru fiecare produs
         for (const item of itemsData || []) {
           const { data: produs, error: produsError } = await supabase
             .from('produse')
@@ -52,7 +52,7 @@ export function useDeleteComanda() {
           const stocCurent = produs.stoc_disponibil || 0;
           const noulStoc = stocCurent + item.cantitate;
           
-          console.log(`[useDeleteComanda] Restabilesc stocul pentru ${produs.nume}: ${stocCurent} -> ${noulStoc}`);
+          console.log(`[useDeleteComanda] Restabilesc stocul fizic pentru ${produs.nume}: ${stocCurent} -> ${noulStoc} (+${item.cantitate})`);
 
           const { error: stocError } = await supabase
             .from('produse')
@@ -61,14 +61,14 @@ export function useDeleteComanda() {
 
           if (stocError) {
             console.error(`[useDeleteComanda] Eroare la restabilirea stocului pentru ${produs.nume}:`, stocError);
-            // Nu arunc eroare - continui cu ștergerea
+            throw new Error(`Nu s-a putut restabili stocul pentru produsul ${produs.nume}`);
           }
         }
       } else {
-        console.log('[useDeleteComanda] Comanda era deja anulată - nu restabilesc stocurile');
+        console.log('[useDeleteComanda] Comanda era deja anulată - nu restabilesc stocurile fizice');
       }
 
-      // 2. Șterg itemii comenzii
+      // 3. Șterg itemii comenzii
       const { error: deleteItemsError } = await supabase
         .from('itemi_comanda')
         .delete()
@@ -79,7 +79,7 @@ export function useDeleteComanda() {
         throw deleteItemsError;
       }
 
-      // 3. Șterg comanda
+      // 4. Șterg comanda
       const { error: deleteComandaError } = await supabase
         .from('comenzi')
         .delete()
@@ -94,7 +94,7 @@ export function useDeleteComanda() {
       return comandaId;
     },
     onSuccess: () => {
-      // Invalidez toate cache-urile relevante
+      // Invalidez toate cache-urile relevante pentru a reîncărca stocurile în toate departamentele
       queryClient.invalidateQueries({ queryKey: ['comenzi'] });
       queryClient.invalidateQueries({ queryKey: ['produse'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard_productie'] });
@@ -103,7 +103,7 @@ export function useDeleteComanda() {
       
       toast({
         title: "Comandă ștearsă",
-        description: "Comanda a fost ștearsă cu succes și stocurile au fost restabilite.",
+        description: "Comanda a fost ștearsă cu succes și stocurile fizice au fost restabilite.",
       });
     },
     onError: (error: any) => {

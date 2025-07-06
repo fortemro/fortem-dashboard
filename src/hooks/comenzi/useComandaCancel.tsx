@@ -14,7 +14,7 @@ export function useComandaCancel() {
 
       console.log(`[useComandaCancel] Încep anularea comenzii ${comandaId}`);
 
-      // 1. Preiau itemii comenzii pentru a restabili stocurile
+      // 1. Preiau itemii comenzii pentru a restabili stocurile fizice
       const { data: itemsData, error: itemsError } = await supabase
         .from('itemi_comanda')
         .select('produs_id, cantitate')
@@ -41,13 +41,13 @@ export function useComandaCancel() {
           throw new Error(`Nu s-au putut prelua informații pentru produsul ${item.produs_id}`);
         }
 
-        // Calculez noul stoc (adaug înapoi cantitatea anulată)
+        // Calculez noul stoc fizic (adaug înapoi cantitatea anulată)
         const stocCurent = produs.stoc_disponibil || 0;
         const noulStoc = stocCurent + item.cantitate;
         
-        console.log(`[useComandaCancel] Restabilesc stocul pentru ${produs.nume}: ${stocCurent} -> ${noulStoc} (+${item.cantitate})`);
+        console.log(`[useComandaCancel] Restabilesc stocul fizic pentru ${produs.nume}: ${stocCurent} -> ${noulStoc} (+${item.cantitate})`);
 
-        // Actualizez stocul în baza de date
+        // Actualizez stocul fizic în baza de date
         const { error: stocError } = await supabase
           .from('produse')
           .update({ stoc_disponibil: noulStoc })
@@ -75,12 +75,12 @@ export function useComandaCancel() {
         throw comandaError;
       }
 
-      console.log(`[useComandaCancel] Comanda ${comandaId} a fost anulată cu succes și stocurile au fost restabilite`);
+      console.log(`[useComandaCancel] Comanda ${comandaId} a fost anulată cu succes și stocurile fizice au fost restabilite`);
 
       return { success: true };
     },
     onSuccess: () => {
-      // Invalidez toate cache-urile relevante
+      // Invalidez toate cache-urile relevante pentru a reîncărca stocurile în toate departamentele
       queryClient.invalidateQueries({ queryKey: ['comenzi'] });
       queryClient.invalidateQueries({ queryKey: ['produse'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard_productie'] });
@@ -89,7 +89,7 @@ export function useComandaCancel() {
       
       toast({
         title: "Comandă anulată",
-        description: "Comanda a fost anulată cu succes și stocurile au fost restabilite.",
+        description: "Comanda a fost anulată cu succes și stocurile fizice au fost restabilite.",
       });
     },
     onError: (error: any) => {
