@@ -1,9 +1,9 @@
-
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useComenzi } from '@/hooks/useComenzi';
 import { useComenziAnulate } from '@/hooks/useComenziAnulate';
 import { useDeleteComanda } from '@/hooks/useDeleteComanda';
+import { useComandaCancel } from '@/hooks/comenzi/useComandaCancel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,7 @@ export default function ComenziMele() {
   const { comenzi, loading } = useComenzi();
   const { comenziAnulate, loading: loadingAnulate } = useComenziAnulate();
   const { deleteComanda, isDeleting } = useDeleteComanda();
+  const cancelComanda = useComandaCancel();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -125,12 +126,21 @@ export default function ComenziMele() {
     if (selectedOrderForDelete) {
       console.log('Confirming deletion for order:', selectedOrderForDelete.numar_comanda);
       try {
-        await deleteComanda(selectedOrderForDelete.id);
+        if (motivAnulare && motivAnulare.trim()) {
+          // Folosesc anularea cu motiv
+          await cancelComanda.mutateAsync({
+            comandaId: selectedOrderForDelete.id,
+            motiv: motivAnulare
+          });
+        } else {
+          // Folosesc ștergerea directă
+          await deleteComanda(selectedOrderForDelete.id);
+        }
         setShowDeleteDialog(false);
         setSelectedOrderForDelete(null);
       } catch (error) {
-        console.error('Delete error:', error);
-        // Error is already handled by the hook
+        console.error('Delete/Cancel error:', error);
+        // Error is already handled by the hooks
       }
     }
   };
