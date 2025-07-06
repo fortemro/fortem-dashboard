@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useComenzi } from '@/hooks/useComenzi';
@@ -124,7 +125,7 @@ export default function ComenziMele() {
     if (selectedOrderForDelete) {
       console.log('Confirming deletion for order:', selectedOrderForDelete.numar_comanda);
       try {
-        await deleteComanda(selectedOrderForDelete.id, motivAnulare);
+        await deleteComanda(selectedOrderForDelete.id);
         setShowDeleteDialog(false);
         setSelectedOrderForDelete(null);
       } catch (error) {
