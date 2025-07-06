@@ -6,7 +6,7 @@ import { toast } from '@/hooks/use-toast';
 export function useDeleteComanda() {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async (comandaId: string) => {
       console.log(`[useDeleteComanda] Încep ștergerea comenzii ${comandaId}`);
 
@@ -115,4 +115,9 @@ export function useDeleteComanda() {
       });
     },
   });
+
+  return {
+    deleteComanda: mutation.mutate,
+    isDeleting: mutation.isPending,
+  };
 }
