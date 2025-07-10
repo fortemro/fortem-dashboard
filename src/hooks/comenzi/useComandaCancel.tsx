@@ -1,55 +1,51 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '../useAuth';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export function useComandaCancel() {
-  const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  const cancelComanda = useMutation({
-    mutationFn: async ({ comandaId, motiv }: { comandaId: string; motiv: string }) => {
-      if (!user) throw new Error('Nu ești autentificat');
+  return useMutation({
+    mutationFn: async (comandaId: string) => {
+      console.log('[useComandaCancel] Începe anularea comenzii:', comandaId);
 
-      console.log(`[useComandaCancel] Încep anularea comenzii ${comandaId}`);
-
-      // 1. Preiau itemii comenzii pentru a restabili stocurile fizice
+      // 1. Obțin itemii comenzii pentru a restabili stocurile scriptice
       const { data: itemsData, error: itemsError } = await supabase
         .from('itemi_comanda')
         .select('produs_id, cantitate')
         .eq('comanda_id', comandaId);
 
       if (itemsError) {
-        console.error('[useComandaCancel] Eroare la preluarea itemilor comenzii:', itemsError);
+        console.error('[useComandaCancel] Eroare la preluarea itemilor:', itemsError);
         throw new Error('Nu s-au putut prelua itemii comenzii pentru anulare');
       }
 
       console.log('[useComandaCancel] Items preluați pentru anulare:', itemsData);
 
-      // 2. Pentru fiecare item, restabilesc stocul fizic
-      console.log('[useComandaCancel] Restabilesc stocurile fizice...');
+      // 2. Pentru fiecare item, restabilesc stocul scriptic
+      console.log('[useComandaCancel] Restabilesc stocurile scriptice...');
       
       for (const item of itemsData || []) {
-        // Preiau stocul curent
+        // Obțin informații despre produs
         const { data: produs, error: produsError } = await supabase
           .from('produse')
           .select('nume, stoc_disponibil')
           .eq('id', item.produs_id)
           .single();
 
-        if (produsError || !produs) {
-          console.error(`[useComandaCancel] Eroare la preluarea produsului ${item.produs_id}:`, produsError);
+        if (produsError) {
+          console.error('[useComandaCancel] Eroare la preluarea produsului:', produsError);
           throw new Error(`Nu s-au putut prelua informații pentru produsul ${item.produs_id}`);
         }
 
-        // Calculez noul stoc fizic (ADAUG ÎNAPOI cantitatea anulată)
+        // Calculez noul stoc scriptic (ADAUG ÎNAPOI cantitatea anulată)
         const stocCurent = produs.stoc_disponibil || 0;
         const noulStoc = stocCurent + item.cantitate;
         
-        console.log(`[useComandaCancel] Restabilesc stocul fizic pentru ${produs.nume}: ${stocCurent} -> ${noulStoc} (+${item.cantitate})`);
+        console.log(`[useComandaCancel] Produs: ${produs.nume}, Stoc curent scriptic: ${stocCurent}, Cantitate anulată: ${item.cantitate}, Noul stoc scriptic: ${noulStoc}`);
 
-        // Actualizez stocul fizic în baza de date
+        // Actualizez stocul scriptic în baza de date
         const { error: stocError } = await supabase
           .from('produse')
           .update({ stoc_disponibil: noulStoc })
@@ -60,17 +56,16 @@ export function useComandaCancel() {
           throw new Error(`Nu s-a putut restabili stocul pentru produsul ${produs.nume}`);
         }
 
-        console.log(`[useComandaCancel] ✅ Stocul pentru ${produs.nume} a fost restabilit cu succes`);
+        console.log(`[useComandaCancel] ✅ Stocul scriptic pentru ${produs.nume} a fost restabilit cu succes`);
       }
 
       // 3. Marchez comanda ca fiind anulată
       const { error: comandaError } = await supabase
         .from('comenzi')
-        .update({
+        .update({ 
           status: 'anulata',
           data_anulare: new Date().toISOString(),
-          anulat_de: user.id,
-          motiv_anulare: motiv
+          anulat_de: (await supabase.auth.getUser()).data.user?.id
         })
         .eq('id', comandaId);
 
@@ -79,7 +74,7 @@ export function useComandaCancel() {
         throw comandaError;
       }
 
-      console.log(`[useComandaCancel] ✅ Comanda ${comandaId} a fost anulată cu succes și stocurile fizice au fost restabilite`);
+      console.log(`[useComandaCancel] ✅ Comanda ${comandaId} a fost anulată cu succes și stocurile scriptice au fost restabilite`);
 
       return { success: true };
     },
@@ -105,11 +100,9 @@ export function useComandaCancel() {
       console.error('[useComandaCancel] Eroare la anularea comenzii:', error);
       toast({
         title: "Eroare",
-        description: `Nu s-a putut anula comanda: ${error.message}`,
-        variant: "destructive"
+        description: "Nu s-a putut anula comanda. Încercați din nou.",
+        variant: "destructive",
       });
     }
   });
-
-  return cancelComanda;
 }

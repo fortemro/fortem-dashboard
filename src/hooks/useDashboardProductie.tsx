@@ -14,7 +14,7 @@ export interface DashboardProductieRow {
 async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
   console.log('[useDashboardProductie] Starting fetchDashboardProduse...');
   
-  // 1. Obține toate produsele cu stocul fizic
+  // 1. Obține toate produsele cu stocul scriptic
   const { data: produseData, error: produseError } = await supabase
     .from("produse")
     .select("id, nume, stoc_disponibil, prag_alerta_stoc")
@@ -94,18 +94,18 @@ async function fetchDashboardProduse(): Promise<DashboardProductieRow[]> {
   }
 
   const result = (produseData ?? []).map((produs) => {
-    const stocFizic = typeof produs.stoc_disponibil === "number" ? produs.stoc_disponibil : 0;
+    const stocScriptic = typeof produs.stoc_disponibil === "number" ? produs.stoc_disponibil : 0;
     const stocAlocat = stocAlocatMap[produs.id] ?? 0;
     
     // Folosim stocul real din funcția PostgreSQL sau calculăm manual
-    const stocRealDisponibil = stocuriRealeMap.get(produs.id) ?? (stocFizic - stocAlocat);
+    const stocRealDisponibil = stocuriRealeMap.get(produs.id) ?? (stocScriptic - stocAlocat);
 
-    console.log(`[useDashboardProductie] Product ${produs.nume}: fizic=${stocFizic}, alocat=${stocAlocat}, real=${stocRealDisponibil}`);
+    console.log(`[useDashboardProductie] Product ${produs.nume}: scriptic=${stocScriptic}, alocat=${stocAlocat}, real=${stocRealDisponibil}`);
 
     return {
       id: produs.id,
       nume: produs.nume,
-      stoc_fizic: stocFizic,
+      stoc_fizic: stocScriptic,
       stoc_alocat: stocAlocat,
       stoc_real_disponibil: stocRealDisponibil,
       prag_alerta_stoc: typeof produs.prag_alerta_stoc === "number" ? produs.prag_alerta_stoc : 0,

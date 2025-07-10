@@ -49,7 +49,7 @@ export function DashboardProductieTable() {
           <TableHeader>
             <TableRow>
               <TableHead className="min-w-[200px]">Nume Produs</TableHead>
-              <TableHead className="text-center">Stoc Fizic</TableHead>
+              <TableHead className="text-center">Stoc Scriptic</TableHead>
               <TableHead className="text-center">Stoc Alocat Comenzilor</TableHead>
               <TableHead className="text-center">Stoc Real Disponibil pt. Vânzare</TableHead>
             </TableRow>

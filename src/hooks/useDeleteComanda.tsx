@@ -1,30 +1,30 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export function useDeleteComanda() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  const mutation = useMutation({
+  return useMutation({
     mutationFn: async (comandaId: string) => {
-      console.log(`[useDeleteComanda] Încep ștergerea comenzii ${comandaId}`);
+      console.log('[useDeleteComanda] Începe ștergerea comenzii:', comandaId);
 
-      // 1. Preiau comanda pentru a verifica statusul
-      const { data: comandaData, error: comandaFetchError } = await supabase
+      // 1. Verific statusul comenzii
+      const { data: comanda, error: comandaError } = await supabase
         .from('comenzi')
         .select('status')
         .eq('id', comandaId)
         .single();
 
-      if (comandaFetchError) {
-        console.error('[useDeleteComanda] Eroare la preluarea statusului comenzii:', comandaFetchError);
-        throw comandaFetchError;
+      if (comandaError) {
+        console.error('[useDeleteComanda] Eroare la verificarea statusului comenzii:', comandaError);
+        throw comandaError;
       }
 
-      // 2. Doar dacă comanda nu era deja anulată, restabilesc stocurile fizice
-      if (comandaData.status !== 'anulata') {
-        console.log('[useDeleteComanda] Comanda nu era anulată - restabilesc stocurile fizice');
+      // 2. Dacă comanda NU este deja anulată, restabilesc stocurile scriptice
+      if (comanda.status !== 'anulata') {
+        console.log('[useDeleteComanda] Comanda nu era anulată - restabilesc stocurile scriptice...');
         
         const { data: itemsData, error: itemsError } = await supabase
           .from('itemi_comanda')
@@ -38,7 +38,7 @@ export function useDeleteComanda() {
 
         console.log('[useDeleteComanda] Items preluați pentru restabilire:', itemsData);
 
-        // Restabilesc stocul fizic pentru fiecare produs
+        // Restabilesc stocul scriptic pentru fiecare produs
         for (const item of itemsData || []) {
           const { data: produs, error: produsError } = await supabase
             .from('produse')
@@ -46,15 +46,15 @@ export function useDeleteComanda() {
             .eq('id', item.produs_id)
             .single();
 
-          if (produsError || !produs) {
-            console.error(`[useDeleteComanda] Eroare la preluarea produsului ${item.produs_id}:`, produsError);
-            continue; // Nu blochez procesul pentru o eroare la un produs
+          if (produsError) {
+            console.error('[useDeleteComanda] Eroare la preluarea produsului:', produsError);
+            throw new Error(`Nu s-au putut prelua informații pentru produsul ${item.produs_id}`);
           }
 
           const stocCurent = produs.stoc_disponibil || 0;
           const noulStoc = stocCurent + item.cantitate;
           
-          console.log(`[useDeleteComanda] Restabilesc stocul fizic pentru ${produs.nume}: ${stocCurent} -> ${noulStoc} (+${item.cantitate})`);
+          console.log(`[useDeleteComanda] Produs: ${produs.nume}, Stoc curent scriptic: ${stocCurent}, Cantitate de restabilit: ${item.cantitate}, Noul stoc scriptic: ${noulStoc}`);
 
           const { error: stocError } = await supabase
             .from('produse')
@@ -66,10 +66,10 @@ export function useDeleteComanda() {
             throw new Error(`Nu s-a putut restabili stocul pentru produsul ${produs.nume}`);
           }
 
-          console.log(`[useDeleteComanda] ✅ Stocul pentru ${produs.nume} a fost restabilit cu succes`);
+          console.log(`[useDeleteComanda] ✅ Stocul scriptic pentru ${produs.nume} a fost restabilit cu succes`);
         }
       } else {
-        console.log('[useDeleteComanda] Comanda era deja anulată - nu restabilesc stocurile fizice');
+        console.log('[useDeleteComanda] Comanda era deja anulată - nu restabilesc stocurile scriptice');
       }
 
       // 3. Șterg itemii comenzii
@@ -98,35 +98,20 @@ export function useDeleteComanda() {
       return comandaId;
     },
     onSuccess: () => {
-      // Invalidez TOATE cache-urile relevante pentru a forța reîncărcarea datelor
-      console.log('[useDeleteComanda] Invalidez cache-urile pentru actualizare...');
-      
       queryClient.invalidateQueries({ queryKey: ['comenzi'] });
-      queryClient.invalidateQueries({ queryKey: ['produse'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard_productie'] });
-      queryClient.invalidateQueries({ queryKey: ['comenzi-logistica'] });
-      queryClient.invalidateQueries({ queryKey: ['centralizator-data'] });
-      
-      // Forțez și un refetch explicit pentru produse
-      queryClient.refetchQueries({ queryKey: ['produse'] });
-      
+      queryClient.invalidateQueries({ queryKey: ['comenzi-anulate'] });
       toast({
-        title: "Comandă ștearsă",
-        description: "Comanda a fost ștearsă cu succes și stocurile fizice au fost restabilite.",
+        title: "Succes",
+        description: "Comanda a fost ștearsă cu succes.",
       });
     },
     onError: (error: any) => {
       console.error('[useDeleteComanda] Eroare la ștergerea comenzii:', error);
       toast({
-        title: "Eroare la ștergere",
-        description: error.message || "A apărut o eroare la ștergerea comenzii",
+        title: "Eroare",
+        description: "Nu s-a putut șterge comanda. Încercați din nou.",
         variant: "destructive",
       });
-    },
+    }
   });
-
-  return {
-    deleteComanda: mutation.mutate,
-    isDeleting: mutation.isPending,
-  };
 }

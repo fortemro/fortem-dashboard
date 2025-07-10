@@ -87,18 +87,18 @@ async function fetchProduse(): Promise<Produs[]> {
 
   // Combine product data with SEPARATED stock values - NU suprascriem stoc_disponibil
   const produseWithCalculatedStock = (produseData || []).map((produs) => {
-    const stocFizic = typeof produs.stoc_disponibil === "number" ? produs.stoc_disponibil : 0;
+    const stocScriptic = typeof produs.stoc_disponibil === "number" ? produs.stoc_disponibil : 0;
     const stocAlocat = stocAlocatMap[produs.id] ?? 0;
-    const stocRealCalculat = stocuriRealeMap.get(produs.id) ?? (stocFizic - stocAlocat);
+    const stocRealCalculat = stocuriRealeMap.get(produs.id) ?? (stocScriptic - stocAlocat);
 
-    console.log(`[useProduse] Product ${produs.nume}: fizic=${stocFizic}, alocat=${stocAlocat}, real=${stocRealCalculat}`);
+    console.log(`[useProduse] Product ${produs.nume}: scriptic=${stocScriptic}, alocat=${stocAlocat}, real=${stocRealCalculat}`);
 
     return {
       ...produs,
-      // PĂSTRĂM stoc_disponibil original - acesta e stocul fizic din baza de date
-      stoc_fizic: stocFizic,              // Explicit pentru claritate
+      // PĂSTRĂM stoc_disponibil original - acesta e stocul scriptic din baza de date
+      stoc_fizic: stocScriptic,              // Explicit pentru claritate
       stoc_alocat: stocAlocat,            // Calculat din comenzi active
-      stoc_real_disponibil: stocRealCalculat  // Calculat: fizic - alocat
+      stoc_real_disponibil: stocRealCalculat  // Calculat: scriptic - alocat
     };
   });
 
