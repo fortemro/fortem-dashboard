@@ -69,18 +69,18 @@ export function ProduseGrid() {
               <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 line-clamp-3">{produs.descriere}</p>
             )}
             
-            {/* Secțiunea nouă pentru stocul real */}
+            {/* Informații stoc - cifra mare: stoc real disponibil pentru vânzare */}
             <div className="mb-4 p-3 bg-gray-50 rounded-lg border-l-4 border-blue-500">
               <div className="flex items-center mb-2">
                 <Warehouse className="h-4 w-4 mr-2 text-blue-600" />
-                <h4 className="text-sm font-semibold text-gray-800">Stoc Disponibil</h4>
+                <h4 className="text-sm font-semibold text-gray-800">Stoc Real Disponibil pt. Vânzare</h4>
               </div>
               <div className="text-center">
-                <div className={`text-2xl ${getStockColor(produs.stoc_disponibil || 0, produs.prag_alerta_stoc || 10)}`}>
-                  {produs.stoc_disponibil || 0}
+                <div className={`text-2xl ${getStockColor((produs as any).stoc_real_disponibil || 0, produs.prag_alerta_stoc || 10)}`}>
+                  {(produs as any).stoc_real_disponibil || 0}
                 </div>
                 <div className="text-xs text-gray-500 mt-1 space-y-0.5">
-                  <div>Fizic în depozit: {(produs as any).stoc_fizic || 0}</div>
+                  <div>Stoc Scriptic: {produs.stoc_disponibil || 0}</div>
                   <div>Alocat comenzilor: {(produs as any).stoc_alocat || 0}</div>
                 </div>
               </div>

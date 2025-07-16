@@ -26,7 +26,7 @@ export function useComandaCreate() {
         items.map(async (item) => {
           if (!item.produs_id) throw new Error('Produs ID lipsește pentru unul dintre itemii comenzii');
           
-          // Verific că produsul există în baza de date și preiau numele + stocul curent
+          // Verific că produsul există în baza de date și preiau numele + stocul real disponibil
           const { data: produs, error: produsError } = await supabase
             .from('produse')
             .select('nume, stoc_disponibil')
@@ -38,12 +38,18 @@ export function useComandaCreate() {
             throw new Error(`Nu s-a putut prelua informații pentru produsul ${item.produs_id}`);
           }
 
-          // Verific dacă este stoc suficient
-          const stocCurent = produs.stoc_disponibil || 0;
+          // Obțin stocul real disponibil pentru vânzare
+          const { data: stocRealData, error: stocError } = await supabase.rpc('get_stocuri_reale_pentru_produse');
+          if (stocError) throw new Error(`Nu s-a putut obține stocul real pentru validare: ${stocError.message}`);
+          
+          const stocRealProdus = stocRealData?.find((s: any) => s.produs_id === item.produs_id);
+          const stocRealDisponibil = stocRealProdus?.stoc_real || 0;
+          const stocScriptic = produs.stoc_disponibil || 0;
           const cantitateNecesara = item.cantitate || 0;
           
-          if (stocCurent < cantitateNecesara) {
-            throw new Error(`Stoc insuficient pentru produsul "${produs.nume}". Disponibil: ${stocCurent}, Necesar: ${cantitateNecesara}`);
+          // Validez împotriva stocului real disponibil pentru vânzare
+          if (stocRealDisponibil < cantitateNecesara) {
+            throw new Error(`Stoc real insuficient pentru produsul "${produs.nume}". Stoc real disponibil: ${stocRealDisponibil}, Necesar: ${cantitateNecesara}`);
           }
 
           // Folosesc prețul introdus manual din formular, NU cel din baza de date
@@ -62,7 +68,7 @@ export function useComandaCreate() {
             pret_unitar: pretUnitar,
             total_item: totalItem,
             nume_produs: produs.nume,
-            stoc_curent: stocCurent, // Pentru actualizare ulterioară
+            stoc_curent: stocScriptic, // Pentru actualizare ulterioară a stocului scriptic
           };
         })
       );

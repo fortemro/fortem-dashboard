@@ -19,6 +19,18 @@ export function ProductCartButton({ produs }: ProductCartButtonProps) {
   const { toast } = useToast();
 
   const handleAddToCart = () => {
+    // Validez stocul real disponibil pentru vânzare
+    const stocRealDisponibil = (produs as any).stoc_real_disponibil || 0;
+    
+    if (cantitate > stocRealDisponibil) {
+      toast({
+        title: "Stoc insuficient",
+        description: `Nu sunt disponibili ${cantitate} paleti. Stoc real disponibil: ${stocRealDisponibil}`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (cantitate > 0) {
       addToCart(produs, cantitate);
       toast({
@@ -30,7 +42,8 @@ export function ProductCartButton({ produs }: ProductCartButtonProps) {
   };
 
   const incrementQuantity = () => {
-    setCantitate(prev => prev + 1);
+    const stocRealDisponibil = (produs as any).stoc_real_disponibil || 0;
+    setCantitate(prev => Math.min(prev + 1, stocRealDisponibil));
   };
 
   const decrementQuantity = () => {
@@ -53,9 +66,14 @@ export function ProductCartButton({ produs }: ProductCartButtonProps) {
         <Input
           type="number"
           value={cantitate}
-          onChange={(e) => setCantitate(Math.max(1, parseInt(e.target.value) || 1))}
+          onChange={(e) => {
+            const val = parseInt(e.target.value) || 1;
+            const stocRealDisponibil = (produs as any).stoc_real_disponibil || 0;
+            setCantitate(Math.max(1, Math.min(val, stocRealDisponibil)));
+          }}
           className="w-16 text-center"
           min="1"
+          max={(produs as any).stoc_real_disponibil || 0}
         />
         
         <Button
@@ -76,9 +94,10 @@ export function ProductCartButton({ produs }: ProductCartButtonProps) {
         onClick={handleAddToCart}
         className="w-full"
         size="sm"
+        disabled={((produs as any).stoc_real_disponibil || 0) <= 0}
       >
         <ShoppingCart className="h-4 w-4 mr-2" />
-        Adaugă la comandă
+        {((produs as any).stoc_real_disponibil || 0) <= 0 ? 'Stoc epuizat' : 'Adaugă la comandă'}
       </Button>
     </div>
   );
