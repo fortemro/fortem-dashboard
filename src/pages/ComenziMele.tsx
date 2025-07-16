@@ -22,7 +22,7 @@ export default function ComenziMele() {
   const { user } = useAuth();
   const { comenzi, loading } = useComenzi();
   const { comenziAnulate, loading: loadingAnulate } = useComenziAnulate();
-  const { deleteComanda, isDeleting } = useDeleteComanda();
+  const deleteComandaMutation = useDeleteComanda();
   const cancelComanda = useComandaCancel();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -128,13 +128,10 @@ export default function ComenziMele() {
       try {
         if (motivAnulare && motivAnulare.trim()) {
           // Folosesc anularea cu motiv
-          await cancelComanda.mutateAsync({
-            comandaId: selectedOrderForDelete.id,
-            motiv: motivAnulare
-          });
+          await cancelComanda.mutateAsync(selectedOrderForDelete.id);
         } else {
           // Folosesc ștergerea directă
-          await deleteComanda(selectedOrderForDelete.id);
+          await deleteComandaMutation.mutateAsync(selectedOrderForDelete.id);
         }
         setShowDeleteDialog(false);
         setSelectedOrderForDelete(null);
@@ -146,7 +143,7 @@ export default function ComenziMele() {
   };
 
   const handleCloseDeleteDialog = () => {
-    if (!isDeleting) {
+    if (!deleteComandaMutation.isPending && !cancelComanda.isPending) {
       setShowDeleteDialog(false);
       setSelectedOrderForDelete(null);
     }
@@ -387,7 +384,7 @@ export default function ComenziMele() {
                                       size="sm"
                                       onClick={() => handleDeleteOrder(comanda)}
                                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                      disabled={isDeleting}
+                                      disabled={deleteComandaMutation.isPending || cancelComanda.isPending}
                                       title="Anulează comanda"
                                     >
                                       <Trash2 className="h-4 w-4" />
@@ -528,7 +525,7 @@ export default function ComenziMele() {
           isOpen={showDeleteDialog}
           onClose={handleCloseDeleteDialog}
           onConfirm={handleConfirmDelete}
-          isDeleting={isDeleting}
+          isDeleting={deleteComandaMutation.isPending || cancelComanda.isPending}
           comanda={selectedOrderForDelete}
         />
       </div>
